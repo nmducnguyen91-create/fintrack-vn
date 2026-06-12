@@ -183,6 +183,16 @@ body.dark input::placeholder,body.dark select option{color:#7b8fa8}
 .toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#222;color:#fff;font-size:13px;padding:10px 20px;border-radius:20px;z-index:500;display:none}
 /* MONEY INPUT DISPLAY */
 .money-display{font-size:11px;color:var(--navy);font-weight:600;margin-top:4px;min-height:16px;padding-left:2px}
+
+/* EDIT/DELETE TX */
+.tx-item{position:relative;transition:background .15s}
+.tx-item:active{background:var(--light)}
+.tx-actions{display:flex;gap:6px;justify-content:flex-end;padding:4px 14px 8px;border-bottom:1px solid #f2f4f9}
+.tx-actions:last-child{border-bottom:none}
+.tx-action-btn{font-size:11px;padding:4px 10px;border-radius:6px;border:none;cursor:pointer;font-weight:500}
+.tx-action-edit{background:#e8f0fe;color:#1a3c5e}
+.tx-action-del{background:var(--dbg);color:var(--red)}
+
 /* OVERDUE BADGE */
 .overdue-banner{background:var(--dbg);border:1px solid #f5c6cb;border-radius:10px;padding:9px 12px;margin:8px 12px;font-size:12px;color:var(--red);display:flex;align-items:center;gap:8px}
 /* DAY GROUP */
@@ -811,6 +821,58 @@ body.dark input::placeholder,body.dark select option{color:#7b8fa8}
   </div>
 </div>
 
+<!-- EDIT TRANSACTION MODAL -->
+<div class="modal-overlay" id="edit-tx-modal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">✏️ Sửa giao dịch</div>
+    <div class="form-group">
+      <label class="form-label">Số tiền (₫)</label>
+      <input class="form-input money-input" type="text" inputmode="numeric" id="et-amount" placeholder="0">
+      <div class="money-display" id="et-amount-display"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Mô tả</label><input class="form-input" type="text" id="et-desc" placeholder="Mô tả giao dịch"></div>
+    <div class="form-group"><label class="form-label">Danh mục</label>
+      <select class="form-input form-select" id="et-cat">
+        <optgroup label="Cá nhân/Gia đình">
+          <option value="Ăn uống|personal">🍜 Ăn uống</option>
+          <option value="Di chuyển|personal">🚗 Di chuyển</option>
+          <option value="Mua sắm|personal">🛒 Mua sắm</option>
+          <option value="Giáo dục|personal">📚 Giáo dục</option>
+          <option value="Y tế|personal">🏥 Y tế</option>
+          <option value="Giải trí|personal">🎮 Giải trí</option>
+          <option value="Gia đình|personal">🏠 Gia đình</option>
+          <option value="Khác|personal">📎 Khác cá nhân</option>
+        </optgroup>
+        <optgroup label="Công ty">
+          <option value="Phòng pháp chế|company">⚖️ Phòng pháp chế</option>
+          <option value="Vận hành|company">⚙️ Vận hành</option>
+          <option value="Marketing|company">📣 Marketing</option>
+          <option value="Khác|company">📎 Khác công ty</option>
+        </optgroup>
+        <optgroup label="Dự án đầu tư">
+          <option value="Trạm dừng chân|project">🛣️ Trạm dừng chân</option>
+          <option value="Trạm xăng|project">⛽ Trạm xăng</option>
+          <option value="Khác|project">📎 Khác dự án</option>
+        </optgroup>
+        <optgroup label="Thu nhập">
+          <option value="Lương|income">💼 Lương</option>
+          <option value="Thưởng|income">🎁 Thưởng</option>
+          <option value="Đầu tư|income">📈 Lợi nhuận đầu tư</option>
+          <option value="Online|income">💻 Thu nhập online</option>
+          <option value="Khác|income">💰 Khác</option>
+        </optgroup>
+      </select>
+    </div>
+    <div class="form-group"><label class="form-label">Ngày</label><input class="form-input" type="date" id="et-date"></div>
+    <div class="form-group"><label class="form-label">Ghi chú</label><input class="form-input" type="text" id="et-note" placeholder="Ghi chú..."></div>
+    <div class="btn-row">
+      <button class="btn btn-cancel" onclick="closeEditTx()">Hủy</button>
+      <button class="btn btn-primary" onclick="saveEditTx()">Lưu thay đổi</button>
+    </div>
+  </div>
+</div>
+
 <!-- IMAGE VIEWER -->
 <div class="img-viewer" id="img-viewer" onclick="this.classList.remove('open')">
   <div class="img-viewer-close" onclick="event.stopPropagation();document.getElementById('img-viewer').classList.remove('open')">✕</div>
@@ -1012,10 +1074,18 @@ function renderRecent(){
   const all=[...db.transactions].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,8);
   el.innerHTML=all.length?all.map(t=>txRow(t)).join(''):'<div class="empty"><div class="empty-icon">📭</div>Chưa có giao dịch</div>';
 }
-function txRow(t){
+function txRow(t,showActions){
   const isIn=t.group==='income';const icon=CAT_ICONS[t.category]||'📎';
   const bg=isIn?'#e3f2fd':'#fdecea';const sign=isIn?'+':'−';
-  return`<div class="tx-item"><div class="tx-icon" style="background:${bg}">${icon}</div><div class="tx-meta"><div class="tx-name">${t.desc||t.category}</div><div class="tx-sub">${t.category}${t.note?' · '+t.note:''}</div></div><div class="tx-right"><div class="tx-amt ${isIn?'g':'r'}">${sign}${fmtK(t.amount)} ₫</div><div class="tx-date">${dateLabel(t.date)}</div></div></div>`;
+  const id=t.id||'';
+  const actions=showActions!==false?`<div class="tx-actions" style="display:none"><button class="tx-action-btn tx-action-edit" onclick="openEditTx(${id})">✏️ Sửa</button><button class="tx-action-btn tx-action-del" onclick="deleteTx(${id})">🗑️ Xóa</button></div>`:'';
+  return`<div class="tx-item" onclick="toggleTxActions(this)"><div class="tx-icon" style="background:${bg}">${icon}</div><div class="tx-meta"><div class="tx-name">${t.desc||t.category}</div><div class="tx-sub">${t.category}${t.note?' · '+t.note:''}</div></div><div class="tx-right"><div class="tx-amt ${isIn?'g':'r'}">${sign}${fmtK(t.amount)} ₫</div><div class="tx-date">${dateLabel(t.date)}</div></div></div>${actions}`;
+}
+function toggleTxActions(el){
+  const next=el.nextElementSibling;
+  if(next&&next.classList.contains('tx-actions')){
+    next.style.display=next.style.display==='none'?'flex':'none';
+  }
 }
 
 // ── PERSONAL ──
@@ -1108,7 +1178,7 @@ function renderCryptoHistory(){
   el.innerHTML=sorted.map(t=>{
     const isB=t.action==='buy';const bg=isB?'#e8f5e9':'#fdecea';const color=isB?'var(--green)':'var(--red)';
     const pnl=!isB&&t.pnlVnd!==undefined?`<div style="font-size:11px;font-weight:700;color:${t.pnlVnd>=0?'var(--green)':'var(--red)'}">${t.pnlVnd>=0?'+':''}${fmtK(t.pnlVnd)} ₫</div>`:'';
-    return`<div class="tx-item"><div class="tx-icon" style="background:${bg};color:${color};font-size:12px;font-weight:700">${isB?'MUA':'BÁN'}</div><div class="tx-meta"><div class="tx-name">${t.coin}</div><div class="tx-sub">${t.qty} coin @ ${t.price} USDT${t.note?' · '+t.note:''}</div>${pnl}</div><div class="tx-right"><div class="tx-amt" style="color:${color}">${isB?'−':'+'}${fmtK(t.qty*t.price*(t.rate||25400))} ₫</div><div class="tx-date">${dateLabel(t.date)}</div></div></div>`;
+    return`<div class="tx-item" onclick="toggleTxActions(this)"><div class="tx-icon" style="background:${bg};color:${color};font-size:12px;font-weight:700">${isB?'MUA':'BÁN'}</div><div class="tx-meta"><div class="tx-name">${t.coin}</div><div class="tx-sub">${t.qty} coin @ ${t.price} USDT${t.note?' · '+t.note:''}</div>${pnl}</div><div class="tx-right"><div class="tx-amt" style="color:${color}">${isB?'−':'+'}${fmtK(t.qty*t.price*(t.rate||25400))} ₫</div><div class="tx-date">${dateLabel(t.date)}</div></div></div><div class="tx-actions" style="display:none"><button class="tx-action-btn tx-action-del" onclick="deleteCryptoTx(${t.id})">🗑️ Xóa lệnh này</button></div>`;
   }).join('');
 }
 function renderCryptoSummary(){
@@ -1356,6 +1426,59 @@ function seedDemo(){
   db.goals=[{name:'Tiết kiệm mua xe',type:'save',target:300000000,current:50000000,deadline:'2026-12-31'},{name:'Thu nhập tháng 10tr+',type:'income',target:10000000,current:0,deadline:''}];
   db.journals=[{coin:'SOL',signal:'RSI 28 - vùng quá bán mạnh',action:'buy',date:m+'-01',result:'win',note:'Đúng xu hướng, chốt lãi tốt'},{coin:'XRP',signal:'MACD cắt lên, breakout vùng 0.5',action:'buy',date:m+'-02',result:'',note:'Đang theo dõi'}];
   save();
+}
+
+
+// ── EDIT / DELETE TRANSACTIONS ──
+let editTxId = null;
+
+function openEditTx(id) {
+  const t = db.transactions.find(tx => tx.id === id);
+  if (!t) return;
+  editTxId = id;
+  setMoneyVal('et-amount', t.amount);
+  document.getElementById('et-desc').value = t.desc || '';
+  document.getElementById('et-date').value = t.date || today();
+  document.getElementById('et-note').value = t.note || '';
+  // Set category select
+  const catEl = document.getElementById('et-cat');
+  const catVal = t.category + '|' + t.group;
+  for (let opt of catEl.options) { if (opt.value === catVal) { catEl.value = catVal; break; } }
+  document.getElementById('edit-tx-modal').classList.add('open');
+}
+
+function closeEditTx() {
+  document.getElementById('edit-tx-modal').classList.remove('open');
+  editTxId = null;
+}
+
+function saveEditTx() {
+  const t = db.transactions.find(tx => tx.id === editTxId);
+  if (!t) return;
+  const amount = getMoneyVal('et-amount');
+  if (!amount) { toast('Nhập số tiền!'); return; }
+  const catRaw = document.getElementById('et-cat').value;
+  const [category, group] = catRaw.split('|');
+  t.amount = amount;
+  t.desc = document.getElementById('et-desc').value;
+  t.category = category;
+  t.group = group;
+  t.date = document.getElementById('et-date').value;
+  t.note = document.getElementById('et-note').value;
+  save(); closeEditTx(); renderAll(); toast('Đã cập nhật ✓');
+}
+
+function deleteTx(id) {
+  if (!confirm('Xóa giao dịch này?')) return;
+  db.transactions = db.transactions.filter(tx => tx.id !== id);
+  save(); renderAll(); toast('Đã xóa ✓');
+}
+
+// Edit crypto trade
+function deleteCryptoTx(id) {
+  if (!confirm('Xóa lệnh crypto này?')) return;
+  db.cryptoTrades = db.cryptoTrades.filter(t => t.id !== id);
+  save(); renderAll(); toast('Đã xóa ✓');
 }
 
 // ── INIT ──
