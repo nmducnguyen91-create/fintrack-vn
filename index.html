@@ -1,10 +1,19 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
+
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="application-name" content="FinTrack VN">
+<meta name="apple-mobile-web-app-title" content="FinTrack VN">
+<meta name="theme-color" content="#16314d">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" type="image/png" href="icon-192.png">
 <title>FinTrack VN</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -17,7 +26,7 @@
 }
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);max-width:430px;margin:0 auto;min-height:100vh;position:relative;padding-bottom:70px}
 /* TOPBAR */
-.topbar{background:var(--navy);padding:20px 16px 14px;color:#fff}
+.topbar{background:linear-gradient(168deg,#26527d 0%,var(--navy) 52%,#163049 100%);padding:max(20px,env(safe-area-inset-top)) 16px 14px;color:#fff;box-shadow:0 3px 14px rgba(16,40,64,.16);position:relative;z-index:10}
 .topbar-greeting{font-size:12px;opacity:.7;margin-bottom:2px}
 .topbar-balance{font-size:28px;font-weight:600;letter-spacing:-.5px}
 .topbar-meta{display:flex;gap:14px;margin-top:8px;flex-wrap:wrap}
@@ -25,7 +34,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .topbar-stat span{display:block;font-size:13px;font-weight:500;opacity:1}
 /* DARK MODE */
 body.dark{--bg:#0f1923;--card:#1a2636;--bdr:#2a3a4e;--text:#e8edf5;--muted:#7b8fa8;--light:#1e2d3d}
-body.dark .topbar{background:#0d1e2e}
+body.dark .topbar{background:linear-gradient(168deg,#14293e,#0a1825)}
 body.dark .bottom-nav{background:#1a2636;border-color:#2a3a4e}
 body.dark .modal{background:#1a2636}
 body.dark .form-input{background:#1e2d3d;border-color:#2a3a4e;color:#e8edf5}
@@ -36,20 +45,27 @@ body.dark .stat-tile{background:#1e2d3d}
 body.dark .type-btn{background:#1e2d3d;border-color:#2a3a4e;color:#e8edf5}
 body.dark input::placeholder,body.dark select option{color:#7b8fa8}
 /* NAV */
-.bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:#fff;border-top:1px solid var(--bdr);display:flex;z-index:100;padding-bottom:env(safe-area-inset-bottom)}
+.bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:rgba(255,255,255,.92);backdrop-filter:saturate(180%) blur(12px);-webkit-backdrop-filter:saturate(180%) blur(12px);border-top:1px solid var(--bdr);display:flex;z-index:100;padding-bottom:env(safe-area-inset-bottom);box-shadow:0 -2px 16px rgba(16,40,64,.05)}
+body.dark .bottom-nav{background:rgba(26,38,54,.9)}
 .nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;padding:10px 2px 6px;font-size:9px;color:var(--muted);border:none;background:none;cursor:pointer;gap:3px;transition:color .15s;position:relative}
-.nav-btn.active{color:var(--navy)}
+.nav-btn.active{color:var(--navy);font-weight:600}
+.nav-btn.active::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:26px;height:3px;border-radius:0 0 3px 3px;background:var(--navy)}
+body.dark .nav-btn.active{color:#7eb6e8}
+body.dark .nav-btn.active::before{background:#7eb6e8}
 .nav-btn svg{width:21px;height:21px;stroke-width:1.8}
 .nav-badge{position:absolute;top:6px;right:calc(50% - 18px);background:var(--red);color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:10px;min-width:16px;text-align:center}
 /* SCREENS */
-.screen{display:none;animation:fadeIn .18s ease}
-.screen.active{display:block}
-@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.screen{display:none}
+.screen.active{display:block;animation:screenIn .26s cubic-bezier(.22,.61,.36,1)}
+@keyframes screenIn{from{transform:translateY(9px)}to{transform:translateY(0)}}
+@media (prefers-reduced-motion:reduce){.screen.active{animation:none}}
 /* CARDS */
-.card{background:var(--card);border-radius:14px;border:1px solid var(--bdr);margin:0 12px 12px;overflow:hidden}
+.card{background:var(--card);border-radius:14px;border:1px solid var(--bdr);margin:0 12px 12px;overflow:hidden;box-shadow:0 1px 2px rgba(16,40,64,.04),0 4px 14px rgba(16,40,64,.04)}
+body.dark .card{box-shadow:0 2px 10px rgba(0,0,0,.22)}
 /* STAT GRID */
 .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px 12px}
-.stat-tile{background:var(--light);border-radius:10px;padding:9px 11px}
+.stat-tile{background:var(--light);border-radius:10px;padding:10px 12px;border:1px solid rgba(16,40,64,.05)}
+body.dark .stat-tile{border-color:rgba(255,255,255,.04)}
 .stat-label{font-size:10px;color:var(--muted);margin-bottom:3px}
 .stat-val{font-size:16px;font-weight:700}
 .stat-val.g{color:var(--green)}.stat-val.r{color:var(--red)}.stat-val.b{color:var(--navy)}.stat-val.p{color:var(--purple)}.stat-val.t{color:var(--teal)}
@@ -84,8 +100,8 @@ body.dark input::placeholder,body.dark select option{color:#7b8fa8}
 .chip{background:var(--card);border:1px solid var(--bdr);border-radius:20px;padding:5px 12px;font-size:12px;color:var(--muted);white-space:nowrap;cursor:pointer;transition:all .15s}
 .chip.active{background:var(--navy);color:#fff;border-color:var(--navy)}
 /* FAB */
-.fab{position:fixed;bottom:80px;right:20px;width:52px;height:52px;background:var(--navy);border-radius:50%;border:none;color:#fff;font-size:28px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(26,60,94,.35);z-index:99;transition:transform .15s}
-.fab:active{transform:scale(.93)}
+.fab{position:fixed;bottom:calc(80px + env(safe-area-inset-bottom));right:18px;width:54px;height:54px;background:linear-gradient(150deg,#2a5480,var(--navy));border-radius:50%;border:none;color:#fff;font-size:28px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 20px rgba(26,60,94,.38);z-index:99;transition:transform .15s,box-shadow .15s}
+.fab:active{transform:scale(.92)}
 /* MODAL */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;display:none;align-items:flex-end;justify-content:center}
 .modal-overlay.open{display:flex}
@@ -135,7 +151,8 @@ body.dark input::placeholder,body.dark select option{color:#7b8fa8}
 .pnl-val{font-size:13px;font-weight:700}
 .pnl-val.g{color:var(--green)}.pnl-val.r{color:var(--red)}
 /* SERVICE */
-.svc-card{background:var(--card);border-radius:14px;border:1px solid var(--bdr);margin:0 12px 10px;overflow:hidden;cursor:pointer}
+.svc-card{background:var(--card);border-radius:14px;border:1px solid var(--bdr);margin:0 12px 10px;overflow:hidden;cursor:pointer;box-shadow:0 1px 2px rgba(16,40,64,.04),0 4px 14px rgba(16,40,64,.04);transition:transform .12s,box-shadow .12s}
+.svc-card:active{transform:scale(.985)}
 .svc-card-header{padding:12px 14px 6px;display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
 .svc-card-title{font-size:13px;font-weight:600;flex:1;line-height:1.3}
 .svc-status{font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;white-space:nowrap;flex-shrink:0}
@@ -183,16 +200,6 @@ body.dark input::placeholder,body.dark select option{color:#7b8fa8}
 .toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#222;color:#fff;font-size:13px;padding:10px 20px;border-radius:20px;z-index:500;display:none}
 /* MONEY INPUT DISPLAY */
 .money-display{font-size:11px;color:var(--navy);font-weight:600;margin-top:4px;min-height:16px;padding-left:2px}
-
-/* EDIT/DELETE TX */
-.tx-item{position:relative;transition:background .15s}
-.tx-item:active{background:var(--light)}
-.tx-actions{display:flex;gap:6px;justify-content:flex-end;padding:4px 14px 8px;border-bottom:1px solid #f2f4f9}
-.tx-actions:last-child{border-bottom:none}
-.tx-action-btn{font-size:11px;padding:4px 10px;border-radius:6px;border:none;cursor:pointer;font-weight:500}
-.tx-action-edit{background:#e8f0fe;color:#1a3c5e}
-.tx-action-del{background:var(--dbg);color:var(--red)}
-
 /* OVERDUE BADGE */
 .overdue-banner{background:var(--dbg);border:1px solid #f5c6cb;border-radius:10px;padding:9px 12px;margin:8px 12px;font-size:12px;color:var(--red);display:flex;align-items:center;gap:8px}
 /* DAY GROUP */
@@ -215,7 +222,8 @@ body.dark input::placeholder,body.dark select option{color:#7b8fa8}
 <div class="topbar" id="topbar">
   <div style="display:flex;justify-content:space-between;align-items:flex-start">
     <div>
-      <div class="topbar-greeting">Tháng <span id="cur-month"></span> · Xin chào, Đức 👋</div>
+      <div class="topbar-greeting" id="top-greeting">Xin chào, Đức 👋</div>
+      <div id="top-caption" style="font-size:11px;opacity:.68;margin:7px 0 1px;font-weight:500">Số dư ròng tháng</div>
       <div class="topbar-balance" id="top-balance">0 ₫</div>
     </div>
     <div style="display:flex;gap:8px;margin-top:4px">
@@ -223,12 +231,7 @@ body.dark input::placeholder,body.dark select option{color:#7b8fa8}
       <button onclick="showTab('settings');switchSettingsTab(document.querySelector(\'#screen-settings .tab-item\'),\'export\')" style="background:rgba(255,255,255,.15);border:none;border-radius:8px;padding:6px 10px;color:#fff;font-size:13px;cursor:pointer">⚙️</button>
     </div>
   </div>
-  <div class="topbar-meta">
-    <div class="topbar-stat">Thu <span id="top-thu" style="color:#7ee8a2">—</span></div>
-    <div class="topbar-stat">Chi <span id="top-chi" style="color:#ffb3ab">—</span></div>
-    <div class="topbar-stat">DV <span id="top-sv" style="color:#b3d4ff">—</span></div>
-    <div class="topbar-stat">Crypto P&L <span id="top-crypto" style="color:#d4b3ff">—</span></div>
-  </div>
+  <div class="topbar-meta" id="topbar-meta"></div>
   <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.15)">
     <div id="sync-status"><span style="color:rgba(255,255,255,.5);font-size:11px">🔄 Đang kết nối...</span></div>
     <button onclick="manualSync()" style="background:rgba(255,255,255,.15);border:none;border-radius:8px;padding:4px 10px;color:#fff;font-size:11px;cursor:pointer">↺ Đồng bộ ngay</button>
@@ -246,7 +249,7 @@ body.dark input::placeholder,body.dark select option{color:#7b8fa8}
     <div class="stat-tile"><div class="stat-label">💰 Số dư</div><div class="stat-val b" id="h-sodu">—</div></div>
     <div class="stat-tile"><div class="stat-label">📈 Thu tháng</div><div class="stat-val g" id="h-thu">—</div></div>
     <div class="stat-tile"><div class="stat-label">📉 Chi tháng</div><div class="stat-val r" id="h-chi">—</div></div>
-    <div class="stat-tile"><div class="stat-label">🪙 Crypto P&L</div><div class="stat-val p" id="h-crypto">—</div></div>
+    <div class="stat-tile"><div class="stat-label">🪙 Đầu tư P&L</div><div class="stat-val p" id="h-crypto">—</div></div>
     <div class="stat-tile"><div class="stat-label">📋 DV tháng</div><div class="stat-val t" id="h-sv">—</div></div>
     <div class="stat-tile"><div class="stat-label">🎯 Mục tiêu</div><div class="stat-val b" id="h-goal-pct">—</div></div>
   </div>
@@ -319,10 +322,6 @@ body.dark input::placeholder,body.dark select option{color:#7b8fa8}
     <button class="tab-item" onclick="switchCryptoTab(this,'summary')">💰 Tổng kết</button>
   </div>
   <div id="crypto-portfolio">
-    <div class="stat-grid">
-      <div class="stat-tile"><div class="stat-label">🪙 Đang nắm</div><div class="stat-val b" id="c-holding">—</div></div>
-      <div class="stat-tile"><div class="stat-label">💹 Tổng P&L</div><div class="stat-val" id="c-pnl">—</div></div>
-    </div>
     <div id="crypto-list"></div>
   </div>
   <div id="crypto-journal" style="display:none">
@@ -348,11 +347,6 @@ body.dark input::placeholder,body.dark select option{color:#7b8fa8}
   <div class="tab-bar">
     <button class="tab-item active" onclick="switchServiceTab(this,'list')">📋 Hồ sơ</button>
     <button class="tab-item" onclick="switchServiceTab(this,'stats')">📊 Thống kê</button>
-  </div>
-  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:10px 12px 4px">
-    <div class="stat-tile" style="padding:8px 10px"><div class="stat-label" style="font-size:9px">Đang xử lý</div><div class="stat-val b" id="sv-open">—</div></div>
-    <div class="stat-tile" style="padding:8px 10px"><div class="stat-label" style="font-size:9px">Tổng thu DV</div><div class="stat-val g" id="sv-thu">—</div></div>
-    <div class="stat-tile" style="padding:8px 10px"><div class="stat-label" style="font-size:9px">Lợi nhuận</div><div class="stat-val" id="sv-profit">—</div></div>
   </div>
   <div id="service-list-tab">
     <div class="chip-row">
@@ -417,6 +411,7 @@ body.dark input::placeholder,body.dark select option{color:#7b8fa8}
   <div class="tab-bar">
     <button class="tab-item active" onclick="switchSettingsTab(this,'budget')">💼 Ngân sách</button>
     <button class="tab-item" onclick="switchSettingsTab(this,'goal')">🎯 Mục tiêu</button>
+    <button class="tab-item" onclick="switchSettingsTab(this,'recurring')">🔁 Định kỳ</button>
     <button class="tab-item" onclick="switchSettingsTab(this,'report')">📊 Báo cáo</button>
     <button class="tab-item" onclick="switchSettingsTab(this,'export')">📤 Dữ liệu</button>
   </div>
@@ -441,6 +436,11 @@ body.dark input::placeholder,body.dark select option{color:#7b8fa8}
   <div id="settings-goal" style="display:none">
     <div class="sec-head" style="padding-top:14px"><span class="sec-head-title">Mục tiêu tài chính</span><span class="sec-head-action" onclick="openGoalForm()">+ Thêm</span></div>
     <div class="card"><div id="goal-list-settings"></div></div>
+  </div>
+  <div id="settings-recurring" style="display:none">
+    <div class="sec-head" style="padding-top:14px"><span class="sec-head-title">🔁 Giao dịch định kỳ</span></div>
+    <div style="padding:0 14px 6px;font-size:11px;color:var(--muted);line-height:1.5">Các khoản tự động tạo theo chu kỳ tuần / tháng / quý / năm (tiền thuê nhà, lương, internet...). Để tạo: bấm <b>+</b>, nhập giao dịch rồi bật <b>“Lặp lại tự động”</b>.</div>
+    <div class="card"><div id="recurring-list"></div></div>
   </div>
   <div id="settings-report" style="display:none">
     <div class="card" style="margin-top:10px">
@@ -484,7 +484,7 @@ body.dark input::placeholder,body.dark select option{color:#7b8fa8}
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Cá nhân
   </button>
   <button class="nav-btn" onclick="showTab('crypto')" id="nav-crypto" style="font-size:9px">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><path d="M9.5 8h4a2 2 0 010 4h-4m0 0h4.5a2 2 0 010 4H9.5m0-8v-1.5m0 9.5v1.5m3-11v-1.5m0 12.5v1.5"/></svg>Crypto
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="3,17 9,11 13,15 21,7"/><polyline points="15,7 21,7 21,13"/></svg>Đầu tư
   </button>
   <button class="nav-btn" onclick="showTab('service')" id="nav-service" style="font-size:9px">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Dịch vụ<span class="nav-badge" id="overdue-badge" style="display:none">0</span>
@@ -505,7 +505,7 @@ body.dark input::placeholder,body.dark select option{color:#7b8fa8}
     <div class="type-toggle">
       <button class="type-btn income active" id="btn-income" onclick="setTxType('income')">+ Thu nhập</button>
       <button class="type-btn expense" id="btn-expense" onclick="setTxType('expense')">− Chi tiêu</button>
-      <button class="type-btn" id="btn-crypto" onclick="setTxType('crypto')" style="flex:1.4;font-size:12px">🪙 Crypto</button>
+      <button class="type-btn" id="btn-crypto" onclick="setTxType('crypto')" style="flex:1.4;font-size:12px">🪙 Đầu tư</button>
     </div>
     <div id="normal-form">
       <div class="form-group">
@@ -548,6 +548,29 @@ body.dark input::placeholder,body.dark select option{color:#7b8fa8}
       </div>
       <div class="form-group"><label class="form-label">Ngày</label><input class="form-input" type="date" id="f-date"></div>
       <div class="form-group"><label class="form-label">Ghi chú</label><input class="form-input" type="text" id="f-note" placeholder="Ghi chú thêm..."></div>
+      <div style="background:var(--light);border-radius:10px;padding:10px 12px;margin-top:2px">
+        <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;gap:10px">
+          <span style="font-size:13px;font-weight:500">🔁 Lặp lại tự động</span>
+          <input type="checkbox" id="f-recurring" onchange="toggleRecurringDay()" style="width:20px;height:20px;accent-color:var(--navy);cursor:pointer">
+        </label>
+        <div id="f-recurring-day-wrap" style="display:none;margin-top:10px">
+          <label class="form-label">Chu kỳ lặp lại</label>
+          <select class="form-input form-select" id="f-recurring-freq" onchange="toggleRecurringDay()">
+            <option value="weekly">📆 Hàng tuần</option>
+            <option value="monthly" selected>🗓️ Hàng tháng</option>
+            <option value="quarterly">🍂 Hàng quý (3 tháng)</option>
+            <option value="yearly">🎍 Hàng năm</option>
+          </select>
+          <div id="f-recurring-dayrow" style="margin-top:8px">
+            <label class="form-label">Vào ngày (trong tháng)</label>
+            <input class="form-input" type="number" id="f-recurring-day" min="1" max="31" placeholder="VD: 5">
+          </div>
+          <div style="margin-top:8px"><label class="form-label">Ngày kết thúc <span style="font-weight:400">(tuỳ chọn — bỏ trống = lặp mãi)</span></label>
+            <input class="form-input" type="date" id="f-recurring-end">
+          </div>
+          <div style="font-size:11px;color:var(--muted);margin-top:6px">Khoản này sẽ tự động thêm theo chu kỳ. Hàng tuần lặp đúng thứ trong tuần của ngày giao dịch. Quản lý trong Cài đặt → Định kỳ.</div>
+        </div>
+      </div>
     </div>
     <div id="crypto-form" style="display:none">
       <div class="type-toggle">
@@ -821,70 +844,19 @@ body.dark input::placeholder,body.dark select option{color:#7b8fa8}
   </div>
 </div>
 
-<!-- EDIT TRANSACTION MODAL -->
-<div class="modal-overlay" id="edit-tx-modal">
-  <div class="modal">
-    <div class="modal-handle"></div>
-    <div class="modal-title">✏️ Sửa giao dịch</div>
-    <div class="form-group">
-      <label class="form-label">Số tiền (₫)</label>
-      <input class="form-input money-input" type="text" inputmode="numeric" id="et-amount" placeholder="0">
-      <div class="money-display" id="et-amount-display"></div>
-    </div>
-    <div class="form-group"><label class="form-label">Mô tả</label><input class="form-input" type="text" id="et-desc" placeholder="Mô tả giao dịch"></div>
-    <div class="form-group"><label class="form-label">Danh mục</label>
-      <select class="form-input form-select" id="et-cat">
-        <optgroup label="Cá nhân/Gia đình">
-          <option value="Ăn uống|personal">🍜 Ăn uống</option>
-          <option value="Di chuyển|personal">🚗 Di chuyển</option>
-          <option value="Mua sắm|personal">🛒 Mua sắm</option>
-          <option value="Giáo dục|personal">📚 Giáo dục</option>
-          <option value="Y tế|personal">🏥 Y tế</option>
-          <option value="Giải trí|personal">🎮 Giải trí</option>
-          <option value="Gia đình|personal">🏠 Gia đình</option>
-          <option value="Khác|personal">📎 Khác cá nhân</option>
-        </optgroup>
-        <optgroup label="Công ty">
-          <option value="Phòng pháp chế|company">⚖️ Phòng pháp chế</option>
-          <option value="Vận hành|company">⚙️ Vận hành</option>
-          <option value="Marketing|company">📣 Marketing</option>
-          <option value="Khác|company">📎 Khác công ty</option>
-        </optgroup>
-        <optgroup label="Dự án đầu tư">
-          <option value="Trạm dừng chân|project">🛣️ Trạm dừng chân</option>
-          <option value="Trạm xăng|project">⛽ Trạm xăng</option>
-          <option value="Khác|project">📎 Khác dự án</option>
-        </optgroup>
-        <optgroup label="Thu nhập">
-          <option value="Lương|income">💼 Lương</option>
-          <option value="Thưởng|income">🎁 Thưởng</option>
-          <option value="Đầu tư|income">📈 Lợi nhuận đầu tư</option>
-          <option value="Online|income">💻 Thu nhập online</option>
-          <option value="Khác|income">💰 Khác</option>
-        </optgroup>
-      </select>
-    </div>
-    <div class="form-group"><label class="form-label">Ngày</label><input class="form-input" type="date" id="et-date"></div>
-    <div class="form-group"><label class="form-label">Ghi chú</label><input class="form-input" type="text" id="et-note" placeholder="Ghi chú..."></div>
-    <div class="btn-row">
-      <button class="btn btn-cancel" onclick="closeEditTx()">Hủy</button>
-      <button class="btn btn-primary" onclick="saveEditTx()">Lưu thay đổi</button>
-    </div>
-  </div>
-</div>
-
 <!-- IMAGE VIEWER -->
 <div class="img-viewer" id="img-viewer" onclick="this.classList.remove('open')">
   <div class="img-viewer-close" onclick="event.stopPropagation();document.getElementById('img-viewer').classList.remove('open')">✕</div>
-  <img id="img-viewer-src" src="" alt="Chứng từ">
+  <img id="img-viewer-src" alt="Chứng từ">
 </div>
 <div class="toast" id="toast"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
 // ── DATA ──
 const DB='fintrack_v3';
-let db={transactions:[],cryptoTrades:[],services:[],journals:[],goals:[],budgets:{personal:10000000,company:15000000,project:20000000}};
-function save(){localStorage.setItem(DB,JSON.stringify(db))}
+let db={transactions:[],cryptoTrades:[],services:[],journals:[],goals:[],recurring:[],budgets:{personal:10000000,company:15000000,project:20000000}};
+let localMtime=parseInt(localStorage.getItem(DB+'_mtime'))||0;
+function save(){localStorage.setItem(DB,JSON.stringify(db));localMtime=Date.now();localStorage.setItem(DB+'_mtime',String(localMtime))}
 function load(){try{const d=localStorage.getItem(DB);if(d)db=JSON.parse(d)}catch(e){}}
 
 // ── HELPERS ──
@@ -948,10 +920,62 @@ function handleFab(){
 }
 
 // ── INIT HEADER ──
-function initHeader(){const now=new Date();document.getElementById('cur-month').textContent=(now.getMonth()+1)+'/'+now.getFullYear()}
+function initHeader(){const now=new Date();const cm=document.getElementById('cur-month');if(cm)cm.textContent=(now.getMonth()+1)+'/'+now.getFullYear()}
+
+// ── TOPBAR THEO NGỮ CẢNH ──
+// Tổng quan: tổng hợp tất cả mục. Các tab khác: chỉ hiện số liệu của riêng tab đó.
+function renderTopbar(){
+  const now=new Date(); const my=(now.getMonth()+1)+'/'+now.getFullYear();
+  const m=curMonth();
+  const mTx=db.transactions.filter(t=>monthOf(t.date)===m);
+  const income=mTx.filter(t=>t.group==='income').reduce((s,t)=>s+t.amount,0);
+  const pChi=mTx.filter(t=>t.group==='personal').reduce((s,t)=>s+t.amount,0);
+  const coChi=mTx.filter(t=>t.group==='company').reduce((s,t)=>s+t.amount,0);
+  const prChi=mTx.filter(t=>t.group==='project').reduce((s,t)=>s+t.amount,0);
+  const totalChi=pChi+coChi+prChi;
+  const monthPnl=db.cryptoTrades.filter(t=>t.action==='sell'&&monthOf(t.date)===m).reduce((s,t)=>s+(t.pnlVnd||0),0);
+  const svThuT=db.services.reduce((s,sv)=>s+svcThu(sv),0);
+  const svChiT=db.services.reduce((s,sv)=>s+svcChi(sv),0);
+  const G='#7ee8a2',R='#ffb3ab',B='#b3d4ff',P='#d4b3ff',W='#fff';
+  const k=x=>fmtK(x)+' ₫';
+  const signed=n=>(n>=0?'+':'−')+fmt(Math.abs(n));
+  let cfg;
+  if(curTab==='personal'){
+    cfg={greet:'👤 Cá nhân · Tháng '+my,cap:'Số dư cá nhân tháng này',big:fmt(income-pChi),
+      meta:[['Thu nhập',k(income),G],['Chi tiêu',k(pChi),R]]};
+  }else if(curTab==='crypto'){
+    const pf=computePortfolio();
+    const held=pf.filter(p=>p.qHeld>0.0001).length;
+    const totalPnl=pf.reduce((s,p)=>s+p.rPnlVnd,0);
+    const tInv=db.cryptoTrades.filter(t=>t.action==='buy').reduce((s,t)=>s+t.qty*t.price*(t.rate||25400),0);
+    const tRec=db.cryptoTrades.filter(t=>t.action==='sell').reduce((s,t)=>s+t.qty*t.price*(t.rate||25400),0);
+    cfg={greet:'📈 Đầu tư · Crypto',cap:'Tổng P&L đã thực hiện',big:signed(totalPnl),bigColor:totalPnl>=0?G:R,
+      meta:[['Đang nắm',held+' coin',W],['Đã đầu tư',k(tInv),B],['Đã thu về',k(tRec),G]]};
+  }else if(curTab==='service'){
+    const openCount=db.services.filter(s=>s.status==='open'||isOverdue(s)).length;
+    const prof=svThuT-svChiT;
+    cfg={greet:'📋 Dịch vụ',cap:'Lợi nhuận dịch vụ',big:signed(prof),bigColor:prof>=0?G:R,
+      meta:[['Đang xử lý',openCount+' hồ sơ',W],['Tổng thu',k(svThuT),G],['Chi phí',k(svChiT),R]]};
+  }else if(curTab==='company'){
+    cfg={greet:'🏢 Công ty / Dự án · Tháng '+my,cap:'Tổng chi tháng này',big:fmt(coChi+prChi),
+      meta:[['Chi công ty',k(coChi),R],['Đầu tư dự án',k(prChi),B]]};
+  }else if(curTab==='settings'){
+    cfg={greet:'⚙️ Cài đặt',cap:'Số dư ròng tháng',big:fmt(income-totalChi),
+      meta:[['Thu',k(income),G],['Chi',k(totalChi),R]]};
+  }else{
+    cfg={greet:'Xin chào, Đức 👋 · Tháng '+my,cap:'Số dư ròng tháng này',big:fmt(income-totalChi),
+      meta:[['Thu',k(income),G],['Chi',k(totalChi),R],['Dịch vụ',k(svThuT),B],['Đầu tư P&L',signed(monthPnl),P]]};
+  }
+  const gEl=document.getElementById('top-greeting'); if(gEl)gEl.textContent=cfg.greet;
+  const cEl=document.getElementById('top-caption'); if(cEl)cEl.textContent=cfg.cap;
+  const tb=document.getElementById('top-balance'); if(tb){tb.textContent=cfg.big;tb.style.color=cfg.bigColor||'#fff';}
+  const mEl=document.getElementById('topbar-meta');
+  if(mEl)mEl.innerHTML=cfg.meta.map(it=>`<div class="topbar-stat">${it[0]} <span style="color:${it[2]}">${it[1]}</span></div>`).join('');
+}
 
 // ── RENDER ALL ──
 function renderAll(){
+  applyRecurring();
   const m=curMonth();
   const mTx=db.transactions.filter(t=>monthOf(t.date)===m);
   const thu=mTx.filter(t=>t.group==='income').reduce((s,t)=>s+t.amount,0);
@@ -959,11 +983,7 @@ function renderAll(){
   const cPnl=db.cryptoTrades.filter(t=>t.action==='sell'&&monthOf(t.date)===m).reduce((s,t)=>s+(t.pnlVnd||0),0);
   const svThu=db.services.reduce((s,sv)=>s+svcThu(sv),0);
   const balance=thu-chi;
-  document.getElementById('top-balance').textContent=fmt(balance);
-  document.getElementById('top-thu').textContent=fmtK(thu)+' ₫';
-  document.getElementById('top-chi').textContent=fmtK(chi)+' ₫';
-  document.getElementById('top-sv').textContent=fmtK(svThu)+' ₫';
-  const cpEl=document.getElementById('top-crypto');cpEl.textContent=fmtVnd(cPnl);
+  renderTopbar();
   document.getElementById('h-sodu').textContent=fmtK(balance)+' ₫';
   document.getElementById('h-thu').textContent=fmtK(thu)+' ₫';
   document.getElementById('h-chi').textContent=fmtK(chi)+' ₫';
@@ -1012,6 +1032,62 @@ function renderCompare(){
     </div>`;
 }
 function getPrevMonth(m){const[y,mo]=m.split('-').map(Number);return mo===1?`${y-1}-12`:`${y}-${String(mo-1).padStart(2,'0')}`}
+function nextMonth(ym){const[y,mo]=ym.split('-').map(Number);return mo===12?`${y+1}-01`:`${y}-${String(mo+1).padStart(2,'0')}`}
+function daysInMonth(ym){const[y,mo]=ym.split('-').map(Number);return new Date(y,mo,0).getDate()}
+function nextOccurrence(dateStr,freq,day){
+  const [Y,M,D]=dateStr.split('-').map(Number);
+  if(freq==='weekly'){const d=new Date(Y,M-1,D);d.setDate(d.getDate()+7);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
+  const step=freq==='quarterly'?3:freq==='yearly'?12:1;
+  let y=Y,m=(M-1)+step;
+  y+=Math.floor(m/12);m=((m%12)+12)%12;
+  const dim=new Date(y,m+1,0).getDate();
+  const dd=Math.min(day||D,dim);
+  return `${y}-${String(m+1).padStart(2,'0')}-${String(dd).padStart(2,'0')}`;
+}
+
+// ── GIAO DỌH ĐỌNH KỲ (tự động tạo mỗi tháng) ──
+function applyRecurring(){
+  if(!db.recurring||!db.recurring.length)return;
+  const td=today();let changed=false;
+  db.recurring.forEach(r=>{
+    if(!r.freq)r.freq='monthly';
+    // Mốc bắt đầu: lastDate → lastMonth (dữ liệu cũ) → anchorDate
+    let last=r.lastDate||(r.lastMonth?(r.lastMonth+'-'+String(Math.min(r.day||1,daysInMonth(r.lastMonth))).padStart(2,'0')):r.anchorDate);
+    if(!last){r.lastDate=td;return}
+    let guard=0;
+    while(guard<2000){
+      guard++;
+      const nx=nextOccurrence(last,r.freq,r.day);
+      if(nx>td)break;
+      if(r.endDate&&nx>r.endDate)break;
+      db.transactions.push({id:Date.now()+Math.floor(Math.random()*1e6),amount:r.amount,desc:r.desc,category:r.category,group:r.group,date:nx,note:r.note,recurringId:r.id});
+      last=nx;changed=true;
+    }
+    r.lastDate=last;delete r.lastMonth;
+  });
+  if(changed)save();
+}
+function toggleRecurringDay(){
+  const on=document.getElementById('f-recurring').checked;
+  document.getElementById('f-recurring-day-wrap').style.display=on?'':'none';
+  const freq=document.getElementById('f-recurring-freq')?document.getElementById('f-recurring-freq').value:'monthly';
+  const dayrow=document.getElementById('f-recurring-dayrow');
+  if(dayrow)dayrow.style.display=freq==='weekly'?'none':'';
+  if(on){const d=document.getElementById('f-date').value;const day=d?parseInt(d.split('-')[2]):1;const inp=document.getElementById('f-recurring-day');if(inp&&!inp.value)inp.value=day}
+}
+function renderRecurring(){
+  const el=document.getElementById('recurring-list');if(!el)return;
+  const list=db.recurring||[];
+  if(!list.length){el.innerHTML='<div class="empty"><div class="empty-icon">🔁</div>Chưa có giao dịch định kỳ</div>';return}
+  el.innerHTML=list.map(r=>{
+    const isIn=r.type==='income';const icon=CAT_ICONS[r.category]||'📎';const bg=isIn?'#e3f2fd':'#fdecea';
+    const FL={weekly:'Hàng tuần',monthly:'Hàng tháng',quarterly:'Hàng quý',yearly:'Hàng năm'};
+    const freq=r.freq||'monthly';
+    const cycle=FL[freq]+(freq==='weekly'?'':' · ngày '+r.day)+(r.endDate?' · đến '+r.endDate:'');
+    return`<div class="tx-item"><div class="tx-icon" style="background:${bg}">${icon}</div><div class="tx-meta"><div class="tx-name">${r.desc||r.category}</div><div class="tx-sub">${r.category} · 🔁 ${cycle}</div></div><div class="tx-right" style="display:flex;flex-direction:column;align-items:flex-end;gap:4px"><div class="tx-amt ${isIn?'g':'r'}">${isIn?'+':'−'}${fmtK(r.amount)} ₫</div><span style="font-size:11px;color:var(--red);cursor:pointer" onclick="deleteRecurring('${r.id}')">🗑️ Xoá</span></div></div>`;
+  }).join('');
+}
+function deleteRecurring(id){if(!confirm('Xoá khoản định kỳ này? (Các giao dịch đã tạo trước đó vẫn giữ nguyên)'))return;db.recurring=(db.recurring||[]).filter(r=>r.id!==id);save();renderRecurring();toast('Đã xoá khoản định kỳ')}
 
 // ── BUDGET ──
 function renderBudget(mTx){
@@ -1074,18 +1150,10 @@ function renderRecent(){
   const all=[...db.transactions].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,8);
   el.innerHTML=all.length?all.map(t=>txRow(t)).join(''):'<div class="empty"><div class="empty-icon">📭</div>Chưa có giao dịch</div>';
 }
-function txRow(t,showActions){
+function txRow(t){
   const isIn=t.group==='income';const icon=CAT_ICONS[t.category]||'📎';
   const bg=isIn?'#e3f2fd':'#fdecea';const sign=isIn?'+':'−';
-  const id=t.id||'';
-  const actions=showActions!==false?`<div class="tx-actions" style="display:none"><button class="tx-action-btn tx-action-edit" onclick="openEditTx(${id})">✏️ Sửa</button><button class="tx-action-btn tx-action-del" onclick="deleteTx(${id})">🗑️ Xóa</button></div>`:'';
-  return`<div class="tx-item" onclick="toggleTxActions(this)"><div class="tx-icon" style="background:${bg}">${icon}</div><div class="tx-meta"><div class="tx-name">${t.desc||t.category}</div><div class="tx-sub">${t.category}${t.note?' · '+t.note:''}</div></div><div class="tx-right"><div class="tx-amt ${isIn?'g':'r'}">${sign}${fmtK(t.amount)} ₫</div><div class="tx-date">${dateLabel(t.date)}</div></div></div>${actions}`;
-}
-function toggleTxActions(el){
-  const next=el.nextElementSibling;
-  if(next&&next.classList.contains('tx-actions')){
-    next.style.display=next.style.display==='none'?'flex':'none';
-  }
+  return`<div class="tx-item"><div class="tx-icon" style="background:${bg}">${icon}</div><div class="tx-meta"><div class="tx-name">${t.recurringId?'🔁 ':''}${t.desc||t.category}</div><div class="tx-sub">${t.category}${t.note?' · '+t.note:''}</div></div><div class="tx-right"><div class="tx-amt ${isIn?'g':'r'}">${sign}${fmtK(t.amount)} ₫</div><div class="tx-date">${dateLabel(t.date)}</div></div></div>`;
 }
 
 // ── PERSONAL ──
@@ -1159,8 +1227,6 @@ function renderCrypto(){
 function renderCryptoPortfolio(){
   const portfolio=computePortfolio();const held=portfolio.filter(p=>p.qHeld>0.0001);
   const totalPnl=portfolio.reduce((s,p)=>s+p.rPnlVnd,0);
-  document.getElementById('c-holding').textContent=held.length+' coin';
-  const pe=document.getElementById('c-pnl');pe.textContent=fmtVnd(totalPnl);pe.className='stat-val '+(totalPnl>=0?'g':'r');
   const el=document.getElementById('crypto-list');
   if(!portfolio.length){el.innerHTML='<div class="empty"><div class="empty-icon">🪙</div>Chưa có giao dịch crypto</div>';return}
   el.innerHTML=portfolio.map(p=>{
@@ -1178,7 +1244,7 @@ function renderCryptoHistory(){
   el.innerHTML=sorted.map(t=>{
     const isB=t.action==='buy';const bg=isB?'#e8f5e9':'#fdecea';const color=isB?'var(--green)':'var(--red)';
     const pnl=!isB&&t.pnlVnd!==undefined?`<div style="font-size:11px;font-weight:700;color:${t.pnlVnd>=0?'var(--green)':'var(--red)'}">${t.pnlVnd>=0?'+':''}${fmtK(t.pnlVnd)} ₫</div>`:'';
-    return`<div class="tx-item" onclick="toggleTxActions(this)"><div class="tx-icon" style="background:${bg};color:${color};font-size:12px;font-weight:700">${isB?'MUA':'BÁN'}</div><div class="tx-meta"><div class="tx-name">${t.coin}</div><div class="tx-sub">${t.qty} coin @ ${t.price} USDT${t.note?' · '+t.note:''}</div>${pnl}</div><div class="tx-right"><div class="tx-amt" style="color:${color}">${isB?'−':'+'}${fmtK(t.qty*t.price*(t.rate||25400))} ₫</div><div class="tx-date">${dateLabel(t.date)}</div></div></div><div class="tx-actions" style="display:none"><button class="tx-action-btn tx-action-del" onclick="deleteCryptoTx(${t.id})">🗑️ Xóa lệnh này</button></div>`;
+    return`<div class="tx-item"><div class="tx-icon" style="background:${bg};color:${color};font-size:12px;font-weight:700">${isB?'MUA':'BÁN'}</div><div class="tx-meta"><div class="tx-name">${t.coin}</div><div class="tx-sub">${t.qty} coin @ ${t.price} USDT${t.note?' · '+t.note:''}</div>${pnl}</div><div class="tx-right"><div class="tx-amt" style="color:${color}">${isB?'−':'+'}${fmtK(t.qty*t.price*(t.rate||25400))} ₫</div><div class="tx-date">${dateLabel(t.date)}</div></div></div>`;
   }).join('');
 }
 function renderCryptoSummary(){
@@ -1229,8 +1295,6 @@ function filterService(el,f){document.querySelectorAll('#screen-service .chip').
 function renderServiceTab(){
   const totalThu=db.services.reduce((s,sv)=>s+svcThu(sv),0);const totalChi=db.services.reduce((s,sv)=>s+svcChi(sv),0);const profit=totalThu-totalChi;
   const openCount=db.services.filter(sv=>sv.status==='open'||isOverdue(sv)).length;
-  document.getElementById('sv-open').textContent=openCount;document.getElementById('sv-thu').textContent=fmtK(totalThu)+' ₫';
-  const pe=document.getElementById('sv-profit');pe.textContent=(profit>=0?'+':'')+fmtK(profit)+' ₫';pe.className='stat-val '+(profit>=0?'g':'r');
   if(serviceSubTab==='list')renderServiceList();else renderServiceStats();
 }
 function renderServiceList(){
@@ -1324,7 +1388,7 @@ function renderServiceStats(){
 }
 
 // ── ADD MODAL ──
-function openAddModal(type){document.getElementById('add-modal').classList.add('open');document.getElementById('f-date').value=today();document.getElementById('f-cdate').value=today();setMoneyVal('f-rate',25400);setTxType(type||'income')}
+function openAddModal(type){document.getElementById('add-modal').classList.add('open');document.getElementById('f-date').value=today();document.getElementById('f-cdate').value=today();setMoneyVal('f-rate',25400);const rc=document.getElementById('f-recurring');if(rc){rc.checked=false;document.getElementById('f-recurring-day-wrap').style.display='none';document.getElementById('f-recurring-day').value='';const fe=document.getElementById('f-recurring-end');if(fe)fe.value='';const ff=document.getElementById('f-recurring-freq');if(ff)ff.value='monthly'}setTxType(type||'income')}
 function closeModal(){document.getElementById('add-modal').classList.remove('open')}
 function setTxType(type){txType=type;document.getElementById('btn-income').className='type-btn income'+(type==='income'?' active':'');document.getElementById('btn-expense').className='type-btn expense'+(type==='expense'?' active':'');document.getElementById('btn-crypto').className='type-btn'+(type==='crypto'?' active':'');document.getElementById('normal-form').style.display=type!=='crypto'?'':'none';document.getElementById('crypto-form').style.display=type==='crypto'?'':'none';if(type==='income')document.getElementById('f-cat').value='Lương|income';else if(type==='expense')document.getElementById('f-cat').value='Ăn uống|personal'}
 function setCryptoAction(action){cryptoAction=action;document.getElementById('btn-cbuy').className='type-btn income'+(action==='buy'?' active':'');document.getElementById('btn-csell').className='type-btn expense'+(action==='sell'?' active':'');document.getElementById('csell-extra').style.display=action==='sell'?'':'none'}
@@ -1342,17 +1406,28 @@ function saveTransaction(){
     const amount=getMoneyVal('f-amount');const desc=document.getElementById('f-desc').value;const catRaw=document.getElementById('f-cat').value;const[category,group]=catRaw.split('|');const date=document.getElementById('f-date').value;const note=document.getElementById('f-note').value;
     if(!amount){toast('Nhập số tiền!');return}
     db.transactions.push({id:Date.now(),amount,desc,category,group:txType==='income'?'income':group,date,note});
+    const rc=document.getElementById('f-recurring');
+    if(rc&&rc.checked){
+      db.recurring=db.recurring||[];
+      const day=parseInt(document.getElementById('f-recurring-day').value)||parseInt(date.split('-')[2])||1;
+      const freq=document.getElementById('f-recurring-freq')?document.getElementById('f-recurring-freq').value:'monthly';
+      const endDate=document.getElementById('f-recurring-end')?document.getElementById('f-recurring-end').value:'';
+      db.recurring.push({id:'rec_'+Date.now(),type:txType,amount,desc,category,group:(txType==='income'?'income':group),note,freq,day,anchorDate:date,endDate,lastDate:date});
+      const FL={weekly:'hàng tuần',monthly:'hàng tháng',quarterly:'hàng quý',yearly:'hàng năm'};
+      toast('Đã lưu · lặp lại '+FL[freq]+' 🔁');
+    }
   }
   save();closeModal();toast('Đã lưu ✓');renderAll();
 }
 
 // ── SETTINGS ──
-function switchSettingsTab(el,tab){document.querySelectorAll('#screen-settings .tab-item').forEach(t=>t.classList.remove('active'));el.classList.add('active');settingsSubTab=tab;['budget','goal','report','export'].forEach(t=>document.getElementById('settings-'+t).style.display=t===tab?'':'none');renderSettings()}
+function switchSettingsTab(el,tab){document.querySelectorAll('#screen-settings .tab-item').forEach(t=>t.classList.remove('active'));el.classList.add('active');settingsSubTab=tab;['budget','goal','recurring','report','export'].forEach(t=>document.getElementById('settings-'+t).style.display=t===tab?'':'none');renderSettings()}
 function renderSettings(){
   const ss = document.getElementById('sync-status-settings');
   if (ss) { const main = document.getElementById('sync-status'); ss.innerHTML = main ? main.innerHTML : '—'; }
   setMoneyVal('b-personal',db.budgets.personal||0);setMoneyVal('b-company',db.budgets.company||0);setMoneyVal('b-project',db.budgets.project||0);
   if(settingsSubTab==='goal')renderGoalSettings();
+  if(settingsSubTab==='recurring')renderRecurring();
   if(settingsSubTab==='report')renderSettingsReport();
 }
 function saveBudget(){db.budgets.personal=getMoneyVal('b-personal');db.budgets.company=getMoneyVal('b-company');db.budgets.project=getMoneyVal('b-project');save();toast('Đã lưu ngân sách ✓');renderAll()}
@@ -1425,60 +1500,8 @@ function seedDemo(){
   ];
   db.goals=[{name:'Tiết kiệm mua xe',type:'save',target:300000000,current:50000000,deadline:'2026-12-31'},{name:'Thu nhập tháng 10tr+',type:'income',target:10000000,current:0,deadline:''}];
   db.journals=[{coin:'SOL',signal:'RSI 28 - vùng quá bán mạnh',action:'buy',date:m+'-01',result:'win',note:'Đúng xu hướng, chốt lãi tốt'},{coin:'XRP',signal:'MACD cắt lên, breakout vùng 0.5',action:'buy',date:m+'-02',result:'',note:'Đang theo dõi'}];
-  save();
-}
-
-
-// ── EDIT / DELETE TRANSACTIONS ──
-let editTxId = null;
-
-function openEditTx(id) {
-  const t = db.transactions.find(tx => tx.id === id);
-  if (!t) return;
-  editTxId = id;
-  setMoneyVal('et-amount', t.amount);
-  document.getElementById('et-desc').value = t.desc || '';
-  document.getElementById('et-date').value = t.date || today();
-  document.getElementById('et-note').value = t.note || '';
-  // Set category select
-  const catEl = document.getElementById('et-cat');
-  const catVal = t.category + '|' + t.group;
-  for (let opt of catEl.options) { if (opt.value === catVal) { catEl.value = catVal; break; } }
-  document.getElementById('edit-tx-modal').classList.add('open');
-}
-
-function closeEditTx() {
-  document.getElementById('edit-tx-modal').classList.remove('open');
-  editTxId = null;
-}
-
-function saveEditTx() {
-  const t = db.transactions.find(tx => tx.id === editTxId);
-  if (!t) return;
-  const amount = getMoneyVal('et-amount');
-  if (!amount) { toast('Nhập số tiền!'); return; }
-  const catRaw = document.getElementById('et-cat').value;
-  const [category, group] = catRaw.split('|');
-  t.amount = amount;
-  t.desc = document.getElementById('et-desc').value;
-  t.category = category;
-  t.group = group;
-  t.date = document.getElementById('et-date').value;
-  t.note = document.getElementById('et-note').value;
-  save(); closeEditTx(); renderAll(); toast('Đã cập nhật ✓');
-}
-
-function deleteTx(id) {
-  if (!confirm('Xóa giao dịch này?')) return;
-  db.transactions = db.transactions.filter(tx => tx.id !== id);
-  save(); renderAll(); toast('Đã xóa ✓');
-}
-
-// Edit crypto trade
-function deleteCryptoTx(id) {
-  if (!confirm('Xóa lệnh crypto này?')) return;
-  db.cryptoTrades = db.cryptoTrades.filter(t => t.id !== id);
-  save(); renderAll(); toast('Đã xóa ✓');
+  // Seed demo: ghi local nhưng KHÔNG bump mtime, để dữ liệu cloud (nếu có) luôn được ưu tiên khi đồng bộ lần đầu
+  localStorage.setItem(DB,JSON.stringify(db));
 }
 
 // ── INIT ──
@@ -1520,18 +1543,21 @@ async function initFirebase() {
     onSnapshot(docRef, (snapshot) => {
       if (!snapshot.exists()) return;
       const data = snapshot.data();
-      // Chỉ cập nhật nếu thay đổi từ thiết bị KHÁC
+      // Bỏ qua thay đổi do CHÍNH thiết bị này tạo ra
       if (data._deviceId && data._deviceId === DEVICE_ID) return;
-      if (data._updatedAt && lastSyncTime && data._updatedAt <= lastSyncTime) return;
+      const cloudTime = data._updatedAt || 0;
+      // Last-write-wins: chỉ nhận cloud nếu cloud MỚI HƠN dữ liệu local
+      if (cloudTime <= localMtime) return;
       try {
         const parsed = JSON.parse(data.payload);
-        // Merge: giữ lại dữ liệu local nếu mới hơn
         if (parsed && parsed.transactions) {
           db = parsed;
-          save(); // lưu local
+          localStorage.setItem(DB, JSON.stringify(db));
+          localMtime = cloudTime;
+          localStorage.setItem(DB+'_mtime', String(localMtime));
+          lastSyncTime = cloudTime;
           renderAll();
           updateSyncUI('synced');
-          lastSyncTime = data._updatedAt;
           showSyncToast('📡 Đã nhận dữ liệu mới từ thiết bị khác');
         }
       } catch(e) { console.warn('Sync parse error', e); }
@@ -1562,17 +1588,18 @@ async function pullFromCloud(getDoc, doc) {
     if (!data.payload) return;
     const cloudDb = JSON.parse(data.payload);
     if (!cloudDb.transactions) return;
+    const cloudTime = data._updatedAt || 0;
 
-    // Merge: lấy cloud nếu có nhiều dữ liệu hơn local, hoặc local trống
-    const localCount = db.transactions.length + db.cryptoTrades.length + db.services.length;
-    const cloudCount = (cloudDb.transactions||[]).length + (cloudDb.cryptoTrades||[]).length + (cloudDb.services||[]).length;
-
-    if (cloudCount > localCount || localCount === 0) {
+    // Last-write-wins: chỉ lấy cloud khi cloud MỚI HƠN local.
+    // (Trước đây so sánh SỐ LƯỢNG bản ghi → khi xoá mục, cloud nhiều hơn nên khôi phục lại mục đã xoá.)
+    if (cloudTime > localMtime) {
       db = cloudDb;
       localStorage.setItem(DB, JSON.stringify(db));
+      localMtime = cloudTime;
+      localStorage.setItem(DB+'_mtime', String(localMtime));
       renderAll();
     }
-    lastSyncTime = data._updatedAt;
+    lastSyncTime = cloudTime;
   } catch(e) { console.warn('Pull error:', e); }
 }
 
@@ -1594,32 +1621,62 @@ async function pushToCloud(setDoc, doc, serverTimestamp) {
     }));
     const payload = JSON.stringify(dbToSync);
     const docRef = doc(firestoreDb, 'fintrack', 'main');
+    const ts = Date.now();
     await setDoc(docRef, {
       payload,
       _deviceId: DEVICE_ID,
-      _updatedAt: Date.now(),
+      _updatedAt: ts,
       _version: 3
     });
     updateSyncUI('synced');
-    lastSyncTime = Date.now();
+    lastSyncTime = ts;
+    // Đồng bộ mốc thời gian local với bản vừa đẩy lên để không bị kéo ngược lại
+    localMtime = ts;
+    localStorage.setItem(DB+'_mtime', String(localMtime));
   } catch(e) {
     console.warn('Push error:', e);
     updateSyncUI('offline');
   }
 }
 
+let _lastSyncedAt = null;
+function _relTime(ts){
+  if(!ts) return '';
+  const s = Math.round((Date.now()-ts)/1000);
+  if(s < 8) return 'vừa xong';
+  if(s < 60) return s+' giây trước';
+  const m = Math.round(s/60);
+  if(m < 60) return m+' phút trước';
+  const h = Math.round(m/60);
+  if(h < 24) return h+' giờ trước';
+  return Math.round(h/24)+' ngày trước';
+}
 function updateSyncUI(status) {
   const el = document.getElementById('sync-status');
   if (!el) return;
+  if (status === 'synced') _lastSyncedAt = Date.now();
   const map = {
-    pending:  { icon: '🔄', text: 'Đang chờ...', color: '#e67e22' },
-    syncing:  { icon: '⏳', text: 'Đang đồng bộ...', color: '#2980b9' },
+    pending:  { icon: '🔄', text: 'Đang chờ…', color: '#e67e22' },
+    syncing:  { icon: '⏳', text: 'Đang đồng bộ…', color: '#2980b9' },
     synced:   { icon: '✅', text: 'Đã đồng bộ', color: '#1a7a4a' },
     offline:  { icon: '📴', text: 'Offline', color: '#c0392b' },
   };
   const s = map[status] || map.offline;
-  el.innerHTML = `<span style="color:${s.color};font-size:11px;font-weight:600">${s.icon} ${s.text}</span>`;
+  let suffix = '';
+  if (status === 'synced' && _lastSyncedAt) suffix = ' · ' + _relTime(_lastSyncedAt);
+  el.dataset.status = status;
+  el.innerHTML = `<span style="color:${s.color};font-size:11px;font-weight:600">${s.icon} ${s.text}${suffix}</span>`;
+  const ss = document.getElementById('sync-status-settings');
+  if (ss) ss.innerHTML = el.innerHTML;
 }
+// Refresh "đã đồng bộ · X phút trước" mỗi 30s
+setInterval(() => {
+  const el = document.getElementById('sync-status');
+  if (el && el.dataset.status === 'synced') updateSyncUI('synced');
+}, 30000);
+// Theo dõi kết nối mạng
+window.addEventListener('offline', () => updateSyncUI('offline'));
+window.addEventListener('online', () => { if (firebaseReady) { updateSyncUI('syncing'); manualSync(); } });
 
 function showSyncToast(msg) {
   const el = document.getElementById('toast');
@@ -1641,6 +1698,11 @@ async function manualSync() {
 
 // Init Firebase sau khi app load
 setTimeout(initFirebase, 500);
+
+// Đăng ký Service Worker → cài được như app điện thoại + dùng offline
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); });
+}
 
 </script>
 </body>
