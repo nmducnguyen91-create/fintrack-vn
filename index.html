@@ -130,6 +130,10 @@ body.dark .stat-tile{border-color:rgba(255,255,255,.04)}
 .alert-item:last-child{border-bottom:none}
 .alert-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
 /* CRYPTO */
+.asset-class-row{display:flex;gap:6px;overflow-x:auto;padding:2px 0 12px;-webkit-overflow-scrolling:touch}
+.ac-btn{flex:0 0 auto;padding:7px 12px;border-radius:18px;border:1px solid var(--bdr);background:var(--card);color:var(--text);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .12s}
+.ac-btn.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+body.dark .ac-btn.active{background:#2a5480;border-color:#2a5480}
 .crypto-item{padding:12px 14px;border-bottom:1px solid #f2f4f9}
 .crypto-item:last-child{border-bottom:none}
 .crypto-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
@@ -322,6 +326,16 @@ body.dark .stat-tile{border-color:rgba(255,255,255,.04)}
     <button class="tab-item" onclick="switchCryptoTab(this,'summary')">💰 Tổng kết</button>
   </div>
   <div id="crypto-portfolio">
+    <div id="invest-summary"></div>
+    <div class="chip-row" style="padding-top:4px">
+      <div class="chip active" onclick="filterInvest(this,'all')">Tất cả</div>
+      <div class="chip" onclick="filterInvest(this,'crypto')">🪙 Crypto</div>
+      <div class="chip" onclick="filterInvest(this,'stock')">📈 Cổ phiếu</div>
+      <div class="chip" onclick="filterInvest(this,'fund')">📊 Quỹ</div>
+      <div class="chip" onclick="filterInvest(this,'gold')">🥇 Vàng</div>
+      <div class="chip" onclick="filterInvest(this,'silver')">🥈 Bạc</div>
+    </div>
+    <div id="asset-list"></div>
     <div id="crypto-list"></div>
   </div>
   <div id="crypto-journal" style="display:none">
@@ -548,7 +562,7 @@ body.dark .stat-tile{border-color:rgba(255,255,255,.04)}
       </div>
       <div class="form-group"><label class="form-label">Ngày</label><input class="form-input" type="date" id="f-date"></div>
       <div class="form-group"><label class="form-label">Ghi chú</label><input class="form-input" type="text" id="f-note" placeholder="Ghi chú thêm..."></div>
-      <div style="background:var(--light);border-radius:10px;padding:10px 12px;margin-top:2px">
+      <div id="recurring-block" style="background:var(--light);border-radius:10px;padding:10px 12px;margin-top:2px">
         <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;gap:10px">
           <span style="font-size:13px;font-weight:500">🔁 Lặp lại tự động</span>
           <input type="checkbox" id="f-recurring" onchange="toggleRecurringDay()" style="width:20px;height:20px;accent-color:var(--navy);cursor:pointer">
@@ -573,6 +587,14 @@ body.dark .stat-tile{border-color:rgba(255,255,255,.04)}
       </div>
     </div>
     <div id="crypto-form" style="display:none">
+      <div class="asset-class-row">
+        <button class="ac-btn active" id="ac-crypto" onclick="setAssetClass('crypto')">🪙 Crypto</button>
+        <button class="ac-btn" id="ac-stock" onclick="setAssetClass('stock')">📈 Cổ phiếu</button>
+        <button class="ac-btn" id="ac-fund" onclick="setAssetClass('fund')">📊 Quỹ</button>
+        <button class="ac-btn" id="ac-gold" onclick="setAssetClass('gold')">🥇 Vàng</button>
+        <button class="ac-btn" id="ac-silver" onclick="setAssetClass('silver')">🥈 Bạc</button>
+      </div>
+      <div id="crypto-fields">
       <div class="type-toggle">
         <button class="type-btn income active" id="btn-cbuy" onclick="setCryptoAction('buy')">🟢 Mua vào</button>
         <button class="type-btn expense" id="btn-csell" onclick="setCryptoAction('sell')">🔴 Bán ra</button>
@@ -610,8 +632,25 @@ body.dark .stat-tile{border-color:rgba(255,255,255,.04)}
       <div id="crypto-calc" style="background:var(--light);border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:12px;display:none"><div id="calc-text"></div></div>
       <div class="form-group"><label class="form-label">Ngày giao dịch</label><input class="form-input" type="date" id="f-cdate"></div>
       <div class="form-group"><label class="form-label">Tín hiệu / Ghi chú</label><input class="form-input" type="text" id="f-cnote" placeholder="RSI thấp, DCA lần 3..."></div>
+      </div>
+      <div id="asset-fields" style="display:none">
+        <div class="form-group"><label class="form-label" id="as-name-label">Mã / Tên</label><input class="form-input" type="text" id="as-name" placeholder="VD: FPT, VESAF, SJC 9999..."></div>
+        <div class="form-group">
+          <label class="form-label">Số lượng</label>
+          <div style="display:grid;grid-template-columns:2fr 1fr;gap:8px">
+            <input class="form-input" type="number" id="as-qty" placeholder="100" step="any" oninput="updateAssetCalc()">
+            <input class="form-input" type="text" id="as-unit" placeholder="đơn vị">
+          </div>
+        </div>
+        <div class="form-group"><label class="form-label">Giá vốn TB (₫ / đơn vị)</label><input class="form-input money-input" type="text" inputmode="numeric" id="as-avg" placeholder="0" oninput="updateAssetCalc()"><div class="money-display" id="as-avg-display"></div></div>
+        <div class="form-group"><label class="form-label">Giá hiện tại (₫ / đơn vị)</label><input class="form-input money-input" type="text" inputmode="numeric" id="as-cur" placeholder="0" oninput="updateAssetCalc()"><div class="money-display" id="as-cur-display"></div></div>
+        <div id="asset-calc" style="background:var(--light);border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:12px;display:none"><div id="asset-calc-text"></div></div>
+        <div class="form-group"><label class="form-label">Ngày cập nhật</label><input class="form-input" type="date" id="as-date"></div>
+        <div class="form-group"><label class="form-label">Ghi chú</label><input class="form-input" type="text" id="as-note" placeholder="Ghi chú thêm..."></div>
+      </div>
     </div>
     <div class="btn-row">
+      <button class="btn" id="tx-delete-btn" onclick="deleteCurrentTx()" style="display:none;flex:0 0 auto;background:var(--dbg);color:var(--red);border:1px solid #f5c6cb;font-size:16px">🗑️</button>
       <button class="btn btn-cancel" onclick="closeModal()">Hủy</button>
       <button class="btn btn-primary" onclick="saveTransaction()">Lưu lại</button>
     </div>
@@ -854,7 +893,7 @@ body.dark .stat-tile{border-color:rgba(255,255,255,.04)}
 <script>
 // ── DATA ──
 const DB='fintrack_v3';
-let db={transactions:[],cryptoTrades:[],services:[],journals:[],goals:[],recurring:[],budgets:{personal:10000000,company:15000000,project:20000000}};
+let db={transactions:[],cryptoTrades:[],assets:[],services:[],journals:[],goals:[],recurring:[],budgets:{personal:10000000,company:15000000,project:20000000}};
 let localMtime=parseInt(localStorage.getItem(DB+'_mtime'))||0;
 function save(){localStorage.setItem(DB,JSON.stringify(db));localMtime=Date.now();localStorage.setItem(DB+'_mtime',String(localMtime))}
 function load(){try{const d=localStorage.getItem(DB);if(d)db=JSON.parse(d)}catch(e){}}
@@ -897,6 +936,14 @@ function setMoneyVal(id,n){const el=document.getElementById(id);if(!el)return;el
 let curTab='home',txType='income',cryptoAction='buy',svcTxType='income';
 let personalFilter='all',companyFilter='all',projectFilter='all',svcStatusFilter='all';
 let personalSubTab='daily',cryptoSubTab='portfolio',companySubTab='company',settingsSubTab='budget',serviceSubTab='list';
+let investFilter='all',assetClass='crypto',editAssetId=null;
+const ASSET_META={
+  stock:{icon:'📈',label:'Cổ phiếu',unit:'CP',nameLabel:'Mã cổ phiếu',ph:'VD: FPT, HPG, VNM...'},
+  fund:{icon:'📊',label:'Chứng chỉ quỹ',unit:'CCQ',nameLabel:'Mã / Tên quỹ',ph:'VD: VESAF, DCDS, VFMVF4...'},
+  gold:{icon:'🥇',label:'Vàng',unit:'chỉ',nameLabel:'Loại vàng',ph:'VD: SJC, nhẫn 9999, PNJ...'},
+  silver:{icon:'🥈',label:'Bạc',unit:'lượng',nameLabel:'Loại bạc',ph:'VD: bạc miếng, Phú Quý...'}
+};
+const fmtQty=n=>{const v=+n||0;return Number.isInteger(v)?v.toLocaleString('vi-VN'):v.toLocaleString('vi-VN',{maximumFractionDigits:4})};
 let svcDetailId=null,svcEditId=null;
 let charts={};
 
@@ -945,12 +992,13 @@ function renderTopbar(){
       meta:[['Thu nhập',k(income),G],['Chi tiêu',k(pChi),R]]};
   }else if(curTab==='crypto'){
     const pf=computePortfolio();
-    const held=pf.filter(p=>p.qHeld>0.0001).length;
     const totalPnl=pf.reduce((s,p)=>s+p.rPnlVnd,0);
-    const tInv=db.cryptoTrades.filter(t=>t.action==='buy').reduce((s,t)=>s+t.qty*t.price*(t.rate||25400),0);
-    const tRec=db.cryptoTrades.filter(t=>t.action==='sell').reduce((s,t)=>s+t.qty*t.price*(t.rate||25400),0);
-    cfg={greet:'📈 Đầu tư · Crypto',cap:'Tổng P&L đã thực hiện',big:signed(totalPnl),bigColor:totalPnl>=0?G:R,
-      meta:[['Đang nắm',held+' coin',W],['Đã đầu tư',k(tInv),B],['Đã thu về',k(tRec),G]]};
+    const assets=db.assets||[];
+    const aVal=assets.reduce((s,a)=>s+a.qty*a.cur,0);
+    const aCost=assets.reduce((s,a)=>s+a.qty*a.avg,0);
+    const aPnl=aVal-aCost;
+    cfg={greet:'📈 Đầu tư',cap:'Giá trị danh mục (CK/Quỹ/Vàng/Bạc)',big:fmt(aVal),
+      meta:[['Lãi/lỗ TS',signed(aPnl),aPnl>=0?G:R],['Crypto P&L',signed(totalPnl),totalPnl>=0?G:R],['Vốn',k(aCost),B]]};
   }else if(curTab==='service'){
     const openCount=db.services.filter(s=>s.status==='open'||isOverdue(s)).length;
     const prof=svThuT-svChiT;
@@ -1153,7 +1201,7 @@ function renderRecent(){
 function txRow(t){
   const isIn=t.group==='income';const icon=CAT_ICONS[t.category]||'📎';
   const bg=isIn?'#e3f2fd':'#fdecea';const sign=isIn?'+':'−';
-  return`<div class="tx-item"><div class="tx-icon" style="background:${bg}">${icon}</div><div class="tx-meta"><div class="tx-name">${t.recurringId?'🔁 ':''}${t.desc||t.category}</div><div class="tx-sub">${t.category}${t.note?' · '+t.note:''}</div></div><div class="tx-right"><div class="tx-amt ${isIn?'g':'r'}">${sign}${fmtK(t.amount)} ₫</div><div class="tx-date">${dateLabel(t.date)}</div></div></div>`;
+  return`<div class="tx-item" onclick="openEditTx('${t.id}')" style="cursor:pointer"><div class="tx-icon" style="background:${bg}">${icon}</div><div class="tx-meta"><div class="tx-name">${t.recurringId?'🔁 ':''}${t.desc||t.category}</div><div class="tx-sub">${t.category}${t.note?' · '+t.note:''}</div></div><div class="tx-right"><div class="tx-amt ${isIn?'g':'r'}">${sign}${fmtK(t.amount)} ₫</div><div class="tx-date">${dateLabel(t.date)}</div></div></div>`;
 }
 
 // ── PERSONAL ──
@@ -1218,8 +1266,82 @@ function computePortfolio(){
     return{coin:c.coin,tQB,tQS,qHeld,avgBuy,rPnl,rPnlVnd,buys:c.buys,sells:c.sells};
   });
 }
+function filterInvest(el,cls){document.querySelectorAll('#crypto-portfolio .chip').forEach(c=>c.classList.remove('active'));el.classList.add('active');investFilter=cls;renderInvestPortfolio()}
+function assetTotals(list){const value=list.reduce((s,a)=>s+a.qty*a.cur,0);const cost=list.reduce((s,a)=>s+a.qty*a.avg,0);const pnl=value-cost;return{value,cost,pnl,pct:cost?pnl/cost*100:0}}
+function renderInvestSummary(){
+  const f=investFilter;const el=document.getElementById('invest-summary');
+  const cryptoPf=computePortfolio();
+  const cPnl=cryptoPf.reduce((s,p)=>s+p.rPnlVnd,0);
+  const cInv=db.cryptoTrades.filter(t=>t.action==='buy').reduce((s,t)=>s+t.qty*t.price*(t.rate||25400),0);
+  const cRec=db.cryptoTrades.filter(t=>t.action==='sell').reduce((s,t)=>s+t.qty*t.price*(t.rate||25400),0);
+  if(f==='crypto'){
+    const c=cPnl>=0?'var(--green)':'var(--red)';
+    el.innerHTML=`<div class="card" style="margin-top:6px"><div style="padding:13px 15px"><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">\ud83e\ude99 Crypto \u2014 P&L \u0111\u00e3 th\u1ef1c hi\u1ec7n</div><div style="font-size:25px;font-weight:800;color:${c};margin-top:2px">${cPnl>=0?'+':'\u2212'}${fmtK(Math.abs(cPnl))} \u20ab</div><div style="display:flex;gap:18px;margin-top:6px;font-size:12px;color:var(--muted)"><span>\u0110\u00e3 \u0111\u1ea7u t\u01b0: <b style="color:var(--text)">${fmtK(cInv)} \u20ab</b></span><span>\u0110\u00e3 thu v\u1ec1: <b style="color:var(--text)">${fmtK(cRec)} \u20ab</b></span></div></div></div>`;
+    return;
+  }
+  const list=f==='all'?(db.assets||[]):(db.assets||[]).filter(a=>a.type===f);
+  const t=assetTotals(list);const c=t.pnl>=0?'var(--green)':'var(--red)';
+  const title=f==='all'?'\ud83d\udcbc T\u1ed5ng gi\u00e1 tr\u1ecb danh m\u1ee5c':ASSET_META[f].icon+' '+ASSET_META[f].label;
+  const cryptoLine=f==='all'?`<div style="margin-top:9px;padding-top:9px;border-top:1px solid var(--bdr);font-size:12px;display:flex;justify-content:space-between;align-items:center"><span style="color:var(--muted)">\ud83e\ude99 Crypto P&L th\u1ef1c hi\u1ec7n</span><b style="color:${cPnl>=0?'var(--green)':'var(--red)'}">${cPnl>=0?'+':'\u2212'}${fmtK(Math.abs(cPnl))} \u20ab</b></div>`:'';
+  el.innerHTML=`<div class="card" style="margin-top:6px"><div style="padding:13px 15px"><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">${title}</div><div style="font-size:25px;font-weight:800;margin-top:2px">${fmtK(t.value)} \u20ab</div><div style="display:flex;gap:18px;margin-top:6px;font-size:12px;color:var(--muted)"><span>V\u1ed1n: <b style="color:var(--text)">${fmtK(t.cost)} \u20ab</b></span><span>L\u00e3i/l\u1ed7: <b style="color:${c}">${t.pnl>=0?'+':'\u2212'}${fmtK(Math.abs(t.pnl))} \u20ab (${t.pct>=0?'+':''}${t.pct.toFixed(1)}%)</b></span></div>${cryptoLine}</div></div>`;
+}
+function assetCard(a){
+  const m=ASSET_META[a.type]||{icon:'\ud83d\udce6',label:'Kh\u00e1c',unit:''};
+  const value=a.qty*a.cur,cost=a.qty*a.avg,pnl=value-cost,pct=cost?pnl/cost*100:0;
+  const pb=pnl>=0?'badge-profit':'badge-loss';const pcol=pnl>=0?'var(--green)':'var(--red)';
+  return`<div class="crypto-item" onclick="openEditAsset('${a.id}')" style="cursor:pointer"><div class="crypto-header"><div class="crypto-name">${m.icon} ${a.name||m.label}</div><span class="c-badge ${pb}">${pnl>=0?'+':'\u2212'}${fmtK(Math.abs(pnl))} \u20ab</span></div><div class="crypto-grid"><div class="cg-item"><div class="cg-label">S\u1ed1 l\u01b0\u1ee3ng</div><div class="cg-val">${fmtQty(a.qty)} ${a.unit||m.unit}</div></div><div class="cg-item"><div class="cg-label">Gi\u00e1 v\u1ed1n TB</div><div class="cg-val">${fmtK(a.avg)}</div></div><div class="cg-item"><div class="cg-label">Gi\u00e1 hi\u1ec7n t\u1ea1i</div><div class="cg-val">${fmtK(a.cur)}</div></div><div class="cg-item"><div class="cg-label">V\u1ed1n</div><div class="cg-val">${fmtK(cost)} \u20ab</div></div><div class="cg-item"><div class="cg-label">Gi\u00e1 tr\u1ecb</div><div class="cg-val">${fmtK(value)} \u20ab</div></div><div class="cg-item"><div class="cg-label">% L\u00e3i/l\u1ed7</div><div class="cg-val" style="color:${pcol}">${pct>=0?'+':''}${pct.toFixed(1)}%</div></div></div>${a.note?`<div style="font-size:11px;color:var(--muted);margin-top:6px">\ud83d\udcdd ${a.note}</div>`:''}</div>`;
+}
+function renderInvestPortfolio(){
+  renderInvestSummary();
+  const f=investFilter;const cryptoPf=computePortfolio();const hasCrypto=cryptoPf.length>0;
+  const assetsAll=db.assets||[];
+  const assetsShown=f==='crypto'?[]:(f==='all'?assetsAll:assetsAll.filter(a=>a.type===f));
+  const al=document.getElementById('asset-list');
+  if(assetsShown.length)al.innerHTML=assetsShown.map(assetCard).join('');
+  else if(f!=='crypto'&&f!=='all')al.innerHTML='<div class="empty"><div class="empty-icon">'+ASSET_META[f].icon+'</div>Ch\u01b0a c\u00f3 '+ASSET_META[f].label.toLowerCase()+'<div style="font-size:11px;margin-top:4px;color:var(--muted)">B\u1ea5m + \u2192 \u0110\u1ea7u t\u01b0 \u2192 ch\u1ecdn lo\u1ea1i</div></div>';
+  else if(f==='all'&&!hasCrypto&&!assetsAll.length)al.innerHTML='<div class="empty"><div class="empty-icon">\ud83d\udcbc</div>Ch\u01b0a c\u00f3 kho\u1ea3n \u0111\u1ea7u t\u01b0 n\u00e0o<div style="font-size:11px;margin-top:4px;color:var(--muted)">B\u1ea5m + \u0111\u1ec3 th\u00eam crypto, c\u1ed5 phi\u1ebfu, qu\u1ef9, v\u00e0ng, b\u1ea1c</div></div>';
+  else al.innerHTML='';
+  const cl=document.getElementById('crypto-list');
+  if((f==='all'||f==='crypto')&&(hasCrypto||f==='crypto')){cl.style.display='';renderCryptoPortfolio();}
+  else{cl.style.display='none';cl.innerHTML='';}
+}
+function setAssetClass(cls){
+  assetClass=cls;
+  ['crypto','stock','fund','gold','silver'].forEach(c=>{const b=document.getElementById('ac-'+c);if(b)b.className='ac-btn'+(c===cls?' active':'')});
+  const isC=cls==='crypto';
+  document.getElementById('crypto-fields').style.display=isC?'':'none';
+  document.getElementById('asset-fields').style.display=isC?'none':'';
+  if(!isC){const m=ASSET_META[cls];document.getElementById('as-name-label').textContent=m.nameLabel;document.getElementById('as-name').placeholder=m.ph;const u=document.getElementById('as-unit');if(u&&!editAssetId&&!u.value)u.value=m.unit;}
+}
+function updateAssetCalc(){
+  const qty=+document.getElementById('as-qty').value||0;const avg=getMoneyVal('as-avg')||0;const cur=getMoneyVal('as-cur')||0;
+  const box=document.getElementById('asset-calc');
+  if(!qty||(!avg&&!cur)){box.style.display='none';return}
+  const value=qty*cur,cost=qty*avg,pnl=value-cost,pct=cost?pnl/cost*100:0;const c=pnl>=0?'var(--green)':'var(--red)';
+  document.getElementById('asset-calc-text').innerHTML=`Gi\u00e1 tr\u1ecb: <b>${fmtK(value)} \u20ab</b> \u00b7 V\u1ed1n: <b>${fmtK(cost)} \u20ab</b><br>L\u00e3i/l\u1ed7: <b style="color:${c}">${pnl>=0?'+':''}${fmtK(pnl)} \u20ab (${pct>=0?'+':''}${pct.toFixed(1)}%)</b>`;
+  box.style.display='';
+}
+function openEditAsset(id){
+  const a=(db.assets||[]).find(x=>String(x.id)===String(id));if(!a)return;
+  editAssetId=a.id;editTxId=null;
+  document.getElementById('add-modal').classList.add('open');
+  document.getElementById('modal-title-text').textContent='S\u1eeda kho\u1ea3n \u0111\u1ea7u t\u01b0';
+  document.getElementById('recurring-block').style.display='none';
+  document.getElementById('tx-delete-btn').style.display='';
+  setTxType('crypto');
+  document.querySelector('.asset-class-row').style.display='none';
+  setAssetClass(a.type);
+  document.getElementById('as-name').value=a.name||'';
+  document.getElementById('as-qty').value=a.qty;
+  document.getElementById('as-unit').value=a.unit||'';
+  setMoneyVal('as-avg',a.avg);setMoneyVal('as-cur',a.cur);
+  document.getElementById('as-date').value=a.date||today();
+  document.getElementById('as-note').value=a.note||'';
+  updateAssetCalc();
+}
+function deleteCurrentAsset(){if(editAssetId==null)return;if(!confirm('Xo\u00e1 kho\u1ea3n \u0111\u1ea7u t\u01b0 n\u00e0y?'))return;db.assets=(db.assets||[]).filter(x=>String(x.id)!==String(editAssetId));editAssetId=null;save();closeModal();renderAll();toast('\u0110\u00e3 xo\u00e1 \u2713')}
 function renderCrypto(){
-  if(cryptoSubTab==='portfolio')renderCryptoPortfolio();
+  if(cryptoSubTab==='portfolio')renderInvestPortfolio();
   if(cryptoSubTab==='journal')renderJournal();
   if(cryptoSubTab==='history')renderCryptoHistory();
   if(cryptoSubTab==='summary')renderCryptoSummary();
@@ -1388,13 +1510,44 @@ function renderServiceStats(){
 }
 
 // ── ADD MODAL ──
-function openAddModal(type){document.getElementById('add-modal').classList.add('open');document.getElementById('f-date').value=today();document.getElementById('f-cdate').value=today();setMoneyVal('f-rate',25400);const rc=document.getElementById('f-recurring');if(rc){rc.checked=false;document.getElementById('f-recurring-day-wrap').style.display='none';document.getElementById('f-recurring-day').value='';const fe=document.getElementById('f-recurring-end');if(fe)fe.value='';const ff=document.getElementById('f-recurring-freq');if(ff)ff.value='monthly'}setTxType(type||'income')}
-function closeModal(){document.getElementById('add-modal').classList.remove('open')}
+let editTxId=null;
+function openAddModal(type){editTxId=null;editAssetId=null;document.getElementById('modal-title-text').textContent='Thêm giao dịch';document.getElementById('tx-delete-btn').style.display='none';document.getElementById('btn-crypto').style.display='';document.getElementById('recurring-block').style.display='';document.getElementById('add-modal').classList.add('open');document.getElementById('f-amount').value='';document.getElementById('f-amount-display').textContent='';document.getElementById('f-desc').value='';document.getElementById('f-note').value='';document.getElementById('f-date').value=today();document.getElementById('f-cdate').value=today();setMoneyVal('f-rate',25400);const acr=document.querySelector('.asset-class-row');if(acr)acr.style.display='';setAssetClass('crypto');['as-name','as-qty','as-unit','as-note'].forEach(id=>{const e=document.getElementById(id);if(e)e.value=''});setMoneyVal('as-avg',0);setMoneyVal('as-cur',0);const asd=document.getElementById('as-date');if(asd)asd.value=today();const ac=document.getElementById('asset-calc');if(ac)ac.style.display='none';const rc=document.getElementById('f-recurring');if(rc){rc.checked=false;document.getElementById('f-recurring-day-wrap').style.display='none';document.getElementById('f-recurring-day').value='';const fe=document.getElementById('f-recurring-end');if(fe)fe.value='';const ff=document.getElementById('f-recurring-freq');if(ff)ff.value='monthly'}setTxType(type||'income')}
+function openEditTx(id){
+  const t=db.transactions.find(x=>String(x.id)===String(id));if(!t)return;
+  editTxId=t.id;editAssetId=null;
+  document.getElementById('add-modal').classList.add('open');
+  document.getElementById('modal-title-text').textContent='Sửa giao dịch';
+  document.getElementById('btn-crypto').style.display='none';
+  document.getElementById('recurring-block').style.display='none';
+  document.getElementById('tx-delete-btn').style.display='';
+  setTxType(t.group==='income'?'income':'expense');
+  setMoneyVal('f-amount',t.amount);
+  document.getElementById('f-desc').value=t.desc||'';
+  const opt=t.category+'|'+t.group;const sel=document.getElementById('f-cat');
+  if([...sel.options].some(o=>o.value===opt))sel.value=opt;
+  document.getElementById('f-date').value=t.date;
+  document.getElementById('f-note').value=t.note||'';
+}
+function deleteCurrentTx(){if(editAssetId!=null){deleteCurrentAsset();return}if(editTxId==null)return;if(!confirm('Xoá giao dịch này?'))return;db.transactions=db.transactions.filter(x=>String(x.id)!==String(editTxId));editTxId=null;save();closeModal();renderAll();toast('Đã xoá ✓')}
+function closeModal(){document.getElementById('add-modal').classList.remove('open');editTxId=null;editAssetId=null;const acr=document.querySelector('.asset-class-row');if(acr)acr.style.display=''}
 function setTxType(type){txType=type;document.getElementById('btn-income').className='type-btn income'+(type==='income'?' active':'');document.getElementById('btn-expense').className='type-btn expense'+(type==='expense'?' active':'');document.getElementById('btn-crypto').className='type-btn'+(type==='crypto'?' active':'');document.getElementById('normal-form').style.display=type!=='crypto'?'':'none';document.getElementById('crypto-form').style.display=type==='crypto'?'':'none';if(type==='income')document.getElementById('f-cat').value='Lương|income';else if(type==='expense')document.getElementById('f-cat').value='Ăn uống|personal'}
 function setCryptoAction(action){cryptoAction=action;document.getElementById('btn-cbuy').className='type-btn income'+(action==='buy'?' active':'');document.getElementById('btn-csell').className='type-btn expense'+(action==='sell'?' active':'');document.getElementById('csell-extra').style.display=action==='sell'?'':'none'}
 function updateCryptoCalc(){const qty=+document.getElementById('f-qty').value||0;const price=+document.getElementById('f-price').value||0;const rate=getMoneyVal('f-rate')||25400;const avgcost=+document.getElementById('f-avgcost').value||0;if(!qty||!price){document.getElementById('crypto-calc').style.display='none';return};const totalUSDT=qty*price;const totalVnd=totalUSDT*rate;let html=`Tổng: <b>${totalUSDT.toFixed(2)} USDT</b> = <b>${fmtK(totalVnd)} ₫</b>`;if(cryptoAction==='sell'&&avgcost){const pnlU=(price-avgcost)*qty;const pnlV=pnlU*rate;const c=pnlU>=0?'var(--green)':'var(--red)';html+=`<br>P&L: <b style="color:${c}">${pnlU>=0?'+':''}${pnlU.toFixed(2)} USDT (${pnlV>=0?'+':''}${fmtK(pnlV)} ₫)</b>`}document.getElementById('calc-text').innerHTML=html;document.getElementById('crypto-calc').style.display=''}
 function saveTransaction(){
   if(txType==='crypto'){
+    if(assetClass!=='crypto'){
+      const name=document.getElementById('as-name').value.trim();
+      const qty=+document.getElementById('as-qty').value||0;
+      const unit=document.getElementById('as-unit').value.trim()||ASSET_META[assetClass].unit;
+      const avg=getMoneyVal('as-avg')||0;const cur=getMoneyVal('as-cur')||0;
+      const date=document.getElementById('as-date').value||today();const note=document.getElementById('as-note').value;
+      if(!qty){toast('Nhập số lượng!');return}
+      if(!cur&&!avg){toast('Nhập giá vốn hoặc giá hiện tại!');return}
+      const curF=cur||avg;db.assets=db.assets||[];
+      if(editAssetId!=null){const i=db.assets.findIndex(x=>String(x.id)===String(editAssetId));if(i>=0)db.assets[i]={...db.assets[i],type:assetClass,name,qty,unit,avg,cur:curF,date,note};editAssetId=null;save();closeModal();renderAll();toast('Đã cập nhật ✓');return;}
+      db.assets.push({id:'as_'+Date.now(),type:assetClass,name,qty,unit,avg,cur:curF,date,note});
+      save();closeModal();renderAll();toast('Đã lưu khoản đầu tư ✓');return;
+    }
     const coin=document.getElementById('f-coin').value;const custom=document.getElementById('f-coin-custom').value;const finalCoin=coin==='Khác'?(custom||'Khác'):coin;
     const qty=+document.getElementById('f-qty').value;const price=+document.getElementById('f-price').value;const rate=getMoneyVal('f-rate')||25400;const avgCost=+document.getElementById('f-avgcost').value||0;
     if(!qty||!price){toast('Nhập số lượng và giá!');return}
@@ -1405,6 +1558,11 @@ function saveTransaction(){
   }else{
     const amount=getMoneyVal('f-amount');const desc=document.getElementById('f-desc').value;const catRaw=document.getElementById('f-cat').value;const[category,group]=catRaw.split('|');const date=document.getElementById('f-date').value;const note=document.getElementById('f-note').value;
     if(!amount){toast('Nhập số tiền!');return}
+    if(editTxId!=null){
+      const idx=db.transactions.findIndex(x=>String(x.id)===String(editTxId));
+      if(idx>=0)db.transactions[idx]={...db.transactions[idx],amount,desc,category,group:txType==='income'?'income':group,date,note};
+      editTxId=null;save();closeModal();renderAll();toast('Đã cập nhật ✓');return;
+    }
     db.transactions.push({id:Date.now(),amount,desc,category,group:txType==='income'?'income':group,date,note});
     const rc=document.getElementById('f-recurring');
     if(rc&&rc.checked){
