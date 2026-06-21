@@ -232,7 +232,7 @@ body.dark .ac-btn.active{background:#2a5480;border-color:#2a5480}
     </div>
     <div style="display:flex;gap:8px;margin-top:4px">
       <button onclick="toggleDark()" id="dark-btn" style="background:rgba(255,255,255,.15);border:none;border-radius:8px;padding:6px 10px;color:#fff;font-size:14px;cursor:pointer">🌙</button>
-      <button onclick="showTab('settings');switchSettingsTab(document.querySelector(\'#screen-settings .tab-item\'),\'export\')" style="background:rgba(255,255,255,.15);border:none;border-radius:8px;padding:6px 10px;color:#fff;font-size:13px;cursor:pointer">⚙️</button>
+      <button onclick="toggleLang()" id="lang-btn" style="background:rgba(255,255,255,.15);border:none;border-radius:8px;padding:6px 10px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:.3px">EN</button>
     </div>
   </div>
   <div class="topbar-meta" id="topbar-meta"></div>
@@ -245,32 +245,58 @@ body.dark .ac-btn.active{background:#2a5480;border-color:#2a5480}
 <!-- ① TỔNG QUAN -->
 <div class="screen active" id="screen-home">
   <div id="overdue-section" style="display:none"></div>
+  <div id="smart-alerts"></div>
   <div id="alert-section" style="margin:10px 12px 0;border-radius:14px;border:1px solid var(--bdr);background:var(--card);overflow:hidden;display:none">
-    <div class="sec-head"><span class="sec-head-title">⚠️ Cảnh báo</span></div>
+    <div class="sec-head"><span class="sec-head-title">⚠️ Cảnh báo ngân sách</span></div>
     <div id="alert-list"></div>
   </div>
-  <div class="stat-grid">
-    <div class="stat-tile"><div class="stat-label">💰 Số dư</div><div class="stat-val b" id="h-sodu">—</div></div>
-    <div class="stat-tile"><div class="stat-label">📈 Thu tháng</div><div class="stat-val g" id="h-thu">—</div></div>
-    <div class="stat-tile"><div class="stat-label">📉 Chi tháng</div><div class="stat-val r" id="h-chi">—</div></div>
-    <div class="stat-tile"><div class="stat-label">🪙 Đầu tư P&L</div><div class="stat-val p" id="h-crypto">—</div></div>
-    <div class="stat-tile"><div class="stat-label">📋 DV tháng</div><div class="stat-val t" id="h-sv">—</div></div>
-    <div class="stat-tile"><div class="stat-label">🎯 Mục tiêu</div><div class="stat-val b" id="h-goal-pct">—</div></div>
-  </div>
-  <!-- So sánh tháng trước -->
-  <div class="sec-head"><span class="sec-head-title">So sánh tháng trước</span></div>
-  <div class="card">
-    <div style="padding:12px 14px" id="compare-section"></div>
-  </div>
-  <!-- Ngân sách -->
+
+  <!-- 1. Tài sản ròng -->
+  <div class="sec-head"><span class="sec-head-title">💎 Tài sản ròng</span><span class="sec-head-action" onclick="showTab('settings');switchSettingsTab(document.querySelectorAll('#screen-settings .tab-item')[2],'debt')">Quản lý nợ</span></div>
+  <div class="card"><div id="networth-card"></div></div>
+
+  <!-- 2. Tháng này -->
+  <div class="sec-head"><span class="sec-head-title">📅 Tháng này</span></div>
+  <div class="card"><div id="month-overview"></div></div>
+
+  <!-- 3. Sức khỏe tài chính -->
+  <div class="sec-head"><span class="sec-head-title">🛡️ Sức khỏe tài chính</span></div>
+  <div class="card"><div id="health-card"></div></div>
+
+  <!-- 4. Ngân sách -->
   <div class="sec-head"><span class="sec-head-title">Ngân sách tháng</span><span class="sec-head-action" onclick="showTab('settings')">Chỉnh sửa</span></div>
   <div class="card"><div id="budget-list"></div></div>
-  <!-- Mục tiêu -->
-  <div class="sec-head"><span class="sec-head-title">Mục tiêu tài chính</span><span class="sec-head-action" onclick="showTab('settings');switchSettingsTab(document.querySelectorAll('#screen-settings .tab-item')[1],'goal')">+ Thêm</span></div>
+
+  <!-- 5. Báo cáo năm -->
+  <div class="sec-head" id="annual-sec-head">
+    <span class="sec-head-title">📊 Báo cáo năm <span id="report-year"></span></span>
+    <span style="display:flex;gap:2px">
+      <button onclick="changeReportYear(-1)" style="background:none;border:none;font-size:16px;color:var(--muted);cursor:pointer;padding:0 4px">◀</button>
+      <button onclick="changeReportYear(1)" style="background:none;border:none;font-size:16px;color:var(--muted);cursor:pointer;padding:0 4px">▶</button>
+    </span>
+  </div>
+  <div class="card">
+    <div id="home-annual-stats"></div>
+    <div class="chart-wrap" style="padding:4px 8px 8px"><canvas id="annual-chart" role="img" aria-label="Thu chi 12 tháng"></canvas></div>
+  </div>
+  <div class="card" style="margin-top:0">
+    <div style="padding:12px 14px 0;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">Tỷ lệ tiết kiệm theo tháng</div>
+    <div class="chart-wrap" style="padding:4px 8px 8px"><canvas id="savings-chart" role="img" aria-label="Tỷ lệ tiết kiệm"></canvas></div>
+  </div>
+  <div class="card" style="margin-top:0">
+    <div style="padding:12px 14px 0;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">Chi tiêu theo danh mục — cả năm</div>
+    <div class="chart-wrap" style="padding:8px"><canvas id="annual-cat-chart" role="img" aria-label="Chi tiêu danh mục"></canvas></div>
+    <div class="pie-legend" id="annual-cat-legend" style="padding:0 14px 12px"></div>
+  </div>
+
+  <!-- 6. Mục tiêu -->
+  <div class="sec-head"><span class="sec-head-title">🎯 Mục tiêu tài chính</span><span class="sec-head-action" onclick="showTab('settings');switchSettingsTab(document.querySelectorAll('#screen-settings .tab-item')[1],'goal')">+ Thêm</span></div>
   <div class="card"><div id="goal-list-home"></div></div>
-  <!-- Giao dịch gần đây -->
+
+  <!-- 7. Giao dịch gần đây -->
   <div class="sec-head"><span class="sec-head-title">Giao dịch gần đây</span><span class="sec-head-action" onclick="showTab('personal')">Xem tất cả</span></div>
   <div class="card"><div id="recent-list"></div></div>
+  <div style="height:20px"></div>
 </div>
 
 <!-- ② CÁ NHÂN -->
@@ -426,6 +452,7 @@ body.dark .ac-btn.active{background:#2a5480;border-color:#2a5480}
     <button class="tab-item active" onclick="switchSettingsTab(this,'budget')">💼 Ngân sách</button>
     <button class="tab-item" onclick="switchSettingsTab(this,'goal')">🎯 Mục tiêu</button>
     <button class="tab-item" onclick="switchSettingsTab(this,'recurring')">🔁 Định kỳ</button>
+    <button class="tab-item" onclick="switchSettingsTab(this,'debt')">💳 Nợ</button>
     <button class="tab-item" onclick="switchSettingsTab(this,'report')">📊 Báo cáo</button>
     <button class="tab-item" onclick="switchSettingsTab(this,'export')">📤 Dữ liệu</button>
   </div>
@@ -455,6 +482,11 @@ body.dark .ac-btn.active{background:#2a5480;border-color:#2a5480}
     <div class="sec-head" style="padding-top:14px"><span class="sec-head-title">🔁 Giao dịch định kỳ</span></div>
     <div style="padding:0 14px 6px;font-size:11px;color:var(--muted);line-height:1.5">Các khoản tự động tạo theo chu kỳ tuần / tháng / quý / năm (tiền thuê nhà, lương, internet...). Để tạo: bấm <b>+</b>, nhập giao dịch rồi bật <b>“Lặp lại tự động”</b>.</div>
     <div class="card"><div id="recurring-list"></div></div>
+  </div>
+  <div id="settings-debt" style="display:none">
+    <div class="sec-head" style="padding-top:14px"><span class="sec-head-title">💳 Khoản nợ / vay</span><span class="sec-head-action" onclick="openDebtForm()">+ Thêm</span></div>
+    <div style="padding:0 14px 6px;font-size:11px;color:var(--muted);line-height:1.5">Theo dõi nợ vay (ngân hàng, thẻ tín dụng, vay cá nhân) để tính tài sản ròng và gánh nặng nợ.</div>
+    <div class="card"><div id="debt-list"></div></div>
   </div>
   <div id="settings-report" style="display:none">
     <div class="card" style="margin-top:10px">
@@ -883,6 +915,37 @@ body.dark .ac-btn.active{background:#2a5480;border-color:#2a5480}
   </div>
 </div>
 
+<!-- DEBT FORM -->
+<div class="modal-overlay" id="debt-modal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">💳 Khoản nợ / vay</div>
+    <div class="form-group"><label class="form-label">Tên khoản nợ</label><input class="form-input" id="d-name" placeholder="Vay mua nhà, thẻ VISA, vay bạn..."></div>
+    <div class="form-group"><label class="form-label">Loại</label>
+      <select class="form-input form-select" id="d-type">
+        <option value="bank">🏦 Vay ngân hàng</option>
+        <option value="card">💳 Thẻ tín dụng</option>
+        <option value="personal">🤝 Vay cá nhân</option>
+        <option value="other">📄 Khác</option>
+      </select>
+    </div>
+    <div class="form-group"><label class="form-label">Số dư nợ còn lại (VND)</label>
+      <input class="form-input money-input" type="text" inputmode="numeric" id="d-remaining" placeholder="100,000,000">
+      <div class="money-display" id="d-remaining-display"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Trả hàng tháng (VND) — tùy chọn</label>
+      <input class="form-input money-input" type="text" inputmode="numeric" id="d-monthly" placeholder="5,000,000">
+      <div class="money-display" id="d-monthly-display"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Lãi suất %/năm — tùy chọn</label><input class="form-input" type="number" id="d-rate" step="any" placeholder="8.5"></div>
+    <div class="form-group"><label class="form-label">Ghi chú</label><input class="form-input" id="d-note" placeholder="Ghi chú thêm..."></div>
+    <div class="btn-row">
+      <button class="btn btn-cancel" onclick="closeDebtForm()">Hủy</button>
+      <button class="btn btn-primary" onclick="saveDebt()">Lưu khoản nợ</button>
+    </div>
+  </div>
+</div>
+
 <!-- IMAGE VIEWER -->
 <div class="img-viewer" id="img-viewer" onclick="this.classList.remove('open')">
   <div class="img-viewer-close" onclick="event.stopPropagation();document.getElementById('img-viewer').classList.remove('open')">✕</div>
@@ -893,7 +956,7 @@ body.dark .ac-btn.active{background:#2a5480;border-color:#2a5480}
 <script>
 // ── DATA ──
 const DB='fintrack_v3';
-let db={transactions:[],cryptoTrades:[],assets:[],services:[],journals:[],goals:[],recurring:[],budgets:{personal:10000000,company:15000000,project:20000000}};
+let db={transactions:[],cryptoTrades:[],assets:[],debts:[],services:[],journals:[],goals:[],recurring:[],budgets:{personal:10000000,company:15000000,project:20000000}};
 let localMtime=parseInt(localStorage.getItem(DB+'_mtime'))||0;
 function save(){localStorage.setItem(DB,JSON.stringify(db));localMtime=Date.now();localStorage.setItem(DB+'_mtime',String(localMtime))}
 function load(){try{const d=localStorage.getItem(DB);if(d)db=JSON.parse(d)}catch(e){}}
@@ -1032,13 +1095,11 @@ function renderAll(){
   const svThu=db.services.reduce((s,sv)=>s+svcThu(sv),0);
   const balance=thu-chi;
   renderTopbar();
-  document.getElementById('h-sodu').textContent=fmtK(balance)+' VND';
-  document.getElementById('h-thu').textContent=fmtK(thu)+' VND';
-  document.getElementById('h-chi').textContent=fmtK(chi)+' VND';
-  const hc=document.getElementById('h-crypto');hc.textContent=fmtVnd(cPnl);hc.className='stat-val '+(cPnl>=0?'g':'r');
-  document.getElementById('h-sv').textContent=fmtK(svThu)+' VND';
+  renderNetWorth();
+  renderMonthOverview(mTx,thu,chi);
+  renderHealth();
   renderGoalHome();
-  renderBudget(mTx);renderAlerts(mTx);renderRecent();renderCompare();
+  renderBudget(mTx);renderAlerts(mTx);renderSmartAlerts(mTx,thu,chi);renderRecent();renderAnnualReport();
   renderOverdueBadge();
   if(curTab==='personal')renderPersonal();
   if(curTab==='crypto')renderCrypto();
@@ -1056,6 +1117,192 @@ function renderOverdueBadge(){
   const sec=document.getElementById('overdue-section');
   if(n>0){sec.style.display='';sec.innerHTML=`<div class="overdue-banner">⚠️ Có <b>${n} hồ sơ quá hạn</b> cần xử lý <span style="margin-left:auto;cursor:pointer;text-decoration:underline" onclick="showTab('service');filterService(document.querySelector('#screen-service .chip:nth-child(3)'),'overdue')">Xem ngay</span></div>`}
   else sec.style.display='none';
+}
+
+let reportYear=new Date().getFullYear();
+function changeReportYear(d){reportYear+=d;const el=document.getElementById('report-year');if(el)el.textContent=reportYear;renderAnnualReport()}
+function renderAnnualReport(){
+  if(typeof Chart==='undefined'){setTimeout(renderAnnualReport,300);return}
+  const y=reportYear;
+  const el=document.getElementById('report-year');if(el)el.textContent=y;
+  const months=Array.from({length:12},(_,i)=>`${y}-${String(i+1).padStart(2,'0')}`);
+  const data=months.map(m=>{const tx=db.transactions.filter(t=>monthOf(t.date)===m);
+    const thu=tx.filter(t=>t.group==='income').reduce((s,t)=>s+t.amount,0);
+    const chi=tx.filter(t=>t.group!=='income').reduce((s,t)=>s+t.amount,0);
+    return{m,thu,chi,net:thu-chi};
+  });
+  const totalThu=data.reduce((s,d)=>s+d.thu,0);
+  const totalChi=data.reduce((s,d)=>s+d.chi,0);
+  const totalNet=totalThu-totalChi;
+  const rate=totalThu?Math.round(totalNet/totalThu*100):0;
+  const sg=document.getElementById('home-annual-stats');
+  if(sg)sg.innerHTML=`<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;padding:12px 14px 0">
+    <div class="stat-tile"><div class="stat-label">📈 Tổng thu</div><div class="stat-val g">${fmtK(totalThu)} VND</div></div>
+    <div class="stat-tile"><div class="stat-label">📉 Tổng chi</div><div class="stat-val r">${fmtK(totalChi)} VND</div></div>
+    <div class="stat-tile"><div class="stat-label">💰 Tiết kiệm</div><div class="stat-val ${totalNet>=0?'g':'r'}">${fmtK(Math.abs(totalNet))} VND</div></div>
+    <div class="stat-tile"><div class="stat-label">📊 Tỷ lệ TK</div><div class="stat-val ${rate>=0?'g':'r'}">${rate}%</div></div>
+  </div>`;
+  // Chart combo: cột thu/chi + đường số dư
+  const isDark=document.body.classList.contains('dark');
+  const gridC=isDark?'rgba(255,255,255,.06)':'rgba(0,0,0,.05)';
+  const tickC=isDark?'#7b8fa8':'#999';
+  if(charts.annual)charts.annual.destroy();
+  const ctx=document.getElementById('annual-chart');if(!ctx)return;
+  charts.annual=new Chart(ctx.getContext('2d'),{
+    data:{
+      labels:['T1','T2','T3','T4','T5','T6','T7','T8','T9','T10','T11','T12'],
+      datasets:[
+        {type:'bar',label:'Thu',data:data.map(d=>Math.round(d.thu)),backgroundColor:'rgba(39,174,96,.55)',borderRadius:4,order:2},
+        {type:'bar',label:'Chi',data:data.map(d=>Math.round(d.chi)),backgroundColor:'rgba(231,76,60,.55)',borderRadius:4,order:2},
+        {type:'line',label:'Số dư',data:data.map(d=>Math.round(d.net)),borderColor:'#2980b9',backgroundColor:'rgba(41,128,185,.12)',borderWidth:2,pointRadius:3,fill:true,tension:.35,order:1,yAxisID:'y1'}
+      ]
+    },
+    options:{responsive:true,maintainAspectRatio:true,interaction:{mode:'index',intersect:false},
+      plugins:{legend:{labels:{font:{size:10},color:tickC,boxWidth:12}},tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': '+fmtK(ctx.raw)+' VND'}}},
+      scales:{
+        x:{ticks:{color:tickC,font:{size:10}},grid:{color:gridC}},
+        y:{ticks:{callback:v=>fmtK(v),color:tickC,font:{size:9}},grid:{color:gridC}},
+        y1:{position:'right',ticks:{callback:v=>fmtK(v),color:'#2980b9',font:{size:9}},grid:{display:false}}
+      }
+    }
+  });
+  // Biểu đồ tỷ lệ tiết kiệm theo tháng
+  if(charts.savings)charts.savings.destroy();
+  const ctxS=document.getElementById('savings-chart');
+  if(ctxS){
+    const rates=data.map(d=>d.thu>0?Math.round(d.net/d.thu*100):0);
+    charts.savings=new Chart(ctxS.getContext('2d'),{type:'bar',
+      data:{labels:['T1','T2','T3','T4','T5','T6','T7','T8','T9','T10','T11','T12'],
+        datasets:[{label:'Tỷ lệ TK %',data:rates,backgroundColor:rates.map(r=>r>=20?'rgba(39,174,96,.6)':r>=0?'rgba(243,156,18,.6)':'rgba(231,76,60,.6)'),borderRadius:4}]},
+      options:{responsive:true,maintainAspectRatio:true,
+        plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'Tiết kiệm '+c.raw+'% thu nhập'}}},
+        scales:{x:{ticks:{color:tickC,font:{size:10}},grid:{color:gridC}},y:{ticks:{callback:v=>v+'%',color:tickC,font:{size:9}},grid:{color:gridC}}}}
+    });
+  }
+  // Biểu đồ tròn danh mục
+  const yearTx=db.transactions.filter(t=>t.date.startsWith(String(y))&&t.group!=='income');
+  const catMap={};yearTx.forEach(t=>{catMap[t.category]=(catMap[t.category]||0)+t.amount});
+  const sorted=Object.entries(catMap).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  const PALETTE=['#3498db','#e74c3c','#f39c12','#27ae60','#9b59b6','#1abc9c','#e67e22','#e91e63'];
+  if(charts.annualCat)charts.annualCat.destroy();
+  const ctx2=document.getElementById('annual-cat-chart');if(!ctx2)return;
+  if(sorted.length){
+    charts.annualCat=new Chart(ctx2.getContext('2d'),{type:'doughnut',
+      data:{labels:sorted.map(e=>e[0]),datasets:[{data:sorted.map(e=>Math.round(e[1])),backgroundColor:PALETTE,borderWidth:2,borderColor:isDark?'#1a2636':'#fff'}]},
+      options:{responsive:true,maintainAspectRatio:true,cutout:'62%',plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.label+': '+fmtK(c.raw)+' VND'}}}}
+    });
+    const leg=document.getElementById('annual-cat-legend');
+    if(leg)leg.innerHTML=sorted.map((e,i)=>`<div class="legend-item"><div class="legend-dot" style="background:${PALETTE[i]}"></div>${e[0]}: <b>${fmtK(e[1])} VND</b></div>`).join('');
+  } else {
+    ctx2.getContext('2d').clearRect(0,0,ctx2.width,ctx2.height);
+    const leg=document.getElementById('annual-cat-legend');
+    if(leg)leg.innerHTML='<div style="color:var(--muted);font-size:12px;padding:8px 0">Chưa có dữ liệu chi tiêu năm '+y+'</div>';
+  }
+}
+
+// ── TÀI SẢN RÒNG / SỨC KHỎE / THÁNG NÀY / CẢNH BÁO ──
+function liquidCash(){return db.transactions.reduce((s,t)=>s+(t.group==='income'?t.amount:-t.amount),0)}
+function investValue(){return (db.assets||[]).reduce((s,a)=>s+a.qty*a.cur,0)}
+function investCost(){return (db.assets||[]).reduce((s,a)=>s+a.qty*a.avg,0)}
+function totalDebt(){return (db.debts||[]).reduce((s,d)=>s+(+d.remaining||0),0)}
+function avgMonthlyExpense(){
+  const now=new Date();const months=[];
+  for(let i=0;i<6;i++){const d=new Date(now.getFullYear(),now.getMonth()-i,1);months.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`)}
+  const vals=months.map(m=>db.transactions.filter(t=>monthOf(t.date)===m&&t.group!=='income').reduce((s,t)=>s+t.amount,0));
+  const active=vals.filter(v=>v>0);return active.length?active.reduce((a,b)=>a+b,0)/active.length:0;
+}
+function renderNetWorth(){
+  const el=document.getElementById('networth-card');if(!el)return;
+  const cash=liquidCash(),inv=investValue(),debt=totalDebt();
+  const nw=cash+inv-debt;
+  const bar=(label,val,color,icon)=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0"><span style="font-size:13px;color:var(--muted)">${icon} ${label}</span><span style="font-size:14px;font-weight:700;color:${color}">${fmtK(Math.abs(val))} VND</span></div>`;
+  el.innerHTML=`<div style="padding:14px 15px">
+    <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">Tổng tài sản ròng</div>
+    <div style="font-size:28px;font-weight:800;margin:2px 0 4px;color:${nw>=0?'var(--text)':'var(--red)'}">${nw<0?'−':''}${fmtK(Math.abs(nw))} VND</div>
+    <div style="border-top:1px solid var(--bdr);margin-top:6px;padding-top:4px">
+      ${bar('Tiền mặt (ròng GD)',cash,cash>=0?'var(--green)':'var(--red)','💵')}
+      ${bar('Đầu tư (CK/Quỹ/Vàng/Bạc)',inv,'var(--text)','📈')}
+      ${bar('Nợ phải trả',-debt,debt>0?'var(--red)':'var(--muted)','💳')}
+    </div>
+  </div>`;
+}
+function renderMonthOverview(mTx,thu,chi){
+  const el=document.getElementById('month-overview');if(!el)return;
+  const net=thu-chi;const rate=thu?Math.round(net/thu*100):0;
+  const prev=getPrevMonth(curMonth());
+  const pTx=db.transactions.filter(t=>monthOf(t.date)===prev);
+  const pThu=pTx.filter(t=>t.group==='income').reduce((s,t)=>s+t.amount,0);
+  const pChi=pTx.filter(t=>t.group!=='income').reduce((s,t)=>s+t.amount,0);
+  const arr=(a,b)=>{if(!b)return'';const p=Math.round((a-b)/b*100);const up=a>=b;return`<span style="font-size:10px;color:${up?'var(--green)':'var(--red)'}">${up?'▲':'▼'}${Math.abs(p)}%</span>`};
+  // Chi/ngày + dự báo
+  const now=new Date();const m=curMonth();const isCurMonth=m===`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  const dim=daysInMonth(m);const dayNow=isCurMonth?now.getDate():dim;
+  const perDay=dayNow?chi/dayNow:0;const forecast=perDay*dim;
+  const budget=Object.values(db.budgets).reduce((a,b)=>a+(+b||0),0);
+  const fcColor=budget&&forecast>budget?'var(--red)':'var(--green)';
+  const tile=(label,val,cls,arrHtml)=>`<div class="stat-tile"><div class="stat-label">${label}</div><div class="stat-val ${cls}">${val}</div>${arrHtml?`<div style="margin-top:2px">${arrHtml} vs tháng trước</div>`:''}</div>`;
+  el.innerHTML=`<div style="padding:12px 12px 4px">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      ${tile('📈 Thu nhập',fmtK(thu)+' VND','g',arr(thu,pThu))}
+      ${tile('📉 Chi tiêu',fmtK(chi)+' VND','r',arr(chi,pChi))}
+      ${tile('💰 Tiết kiệm',(net>=0?'':'−')+fmtK(Math.abs(net))+' VND',net>=0?'g':'r','')}
+      ${tile('📊 Tỷ lệ tiết kiệm',rate+'%',rate>=20?'g':rate>=0?'t':'r','')}
+    </div>
+    ${isCurMonth?`<div style="margin-top:10px;background:var(--light);border-radius:10px;padding:10px 12px;font-size:12px;line-height:1.7">
+      <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Đã qua</span><b>${dayNow}/${dim} ngày</b></div>
+      <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Chi trung bình/ngày</span><b>${fmtK(perDay)} VND</b></div>
+      <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Dự báo chi cuối tháng</span><b style="color:${fcColor}">${fmtK(forecast)} VND</b></div>
+    </div>`:''}
+  </div>`;
+}
+function renderHealth(){
+  const el=document.getElementById('health-card');if(!el)return;
+  const cash=liquidCash();const avgExp=avgMonthlyExpense();
+  const months=avgExp>0?cash/avgExp:0;
+  const efPct=Math.max(0,Math.min(100,months/6*100));
+  const efColor=months>=6?'#27ae60':months>=3?'#e67e22':'#c0392b';
+  const efLabel=months>=6?'An toàn':months>=3?'Tạm ổn':'Cần củng cố';
+  // Nợ / thu nhập (DTI) — dùng thu nhập TB
+  const now=new Date();const mm=[];for(let i=0;i<6;i++){const d=new Date(now.getFullYear(),now.getMonth()-i,1);mm.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`)}
+  const incVals=mm.map(m=>db.transactions.filter(t=>monthOf(t.date)===m&&t.group==='income').reduce((s,t)=>s+t.amount,0)).filter(v=>v>0);
+  const avgInc=incVals.length?incVals.reduce((a,b)=>a+b,0)/incVals.length:0;
+  const monthlyPay=(db.debts||[]).reduce((s,d)=>s+(+d.monthlyPayment||0),0);
+  const dti=avgInc>0?Math.round(monthlyPay/avgInc*100):0;
+  const dtiColor=dti<=35?'#27ae60':dti<=43?'#e67e22':'#c0392b';
+  // ROI đầu tư
+  const cost=investCost(),val=investValue();const roi=cost>0?(val-cost)/cost*100:0;
+  const roiColor=roi>=0?'var(--green)':'var(--red)';
+  const metric=(label,big,sub,color,pct,barColor)=>`<div style="padding:11px 14px;border-bottom:1px solid var(--bdr)">
+    <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:13px;font-weight:500">${label}</span><span style="font-size:15px;font-weight:700;color:${color}">${big}</span></div>
+    <div style="font-size:11px;color:var(--muted);margin-top:1px">${sub}</div>
+    ${pct!=null?`<div class="bar-bg" style="margin-top:6px"><div class="bar-fill" style="width:${pct}%;background:${barColor}"></div></div>`:''}
+  </div>`;
+  el.innerHTML=`
+    ${metric('🛟 Quỹ dự phòng',(months>=10?'10+':months.toFixed(1))+' tháng',`${efLabel} · khuyến nghị 3–6 tháng chi tiêu`,efColor,efPct,efColor)}
+    ${metric('💳 Gánh nặng nợ (DTI)',dti+'%',dti<=35?'Tốt · trả nợ ≤35% thu nhập':dti<=43?'Cảnh giác · nợ hơi cao':'Rủi ro · nợ quá cao',dtiColor,Math.min(100,dti),dtiColor)}
+    <div style="padding:11px 14px"><div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:13px;font-weight:500">📈 Hiệu suất đầu tư (ROI)</span><span style="font-size:15px;font-weight:700;color:${roiColor}">${roi>=0?'+':''}${roi.toFixed(1)}%</span></div><div style="font-size:11px;color:var(--muted);margin-top:1px">${cost>0?`Vốn ${fmtK(cost)} → hiện ${fmtK(val)} VND`:'Chưa có tài sản đầu tư'}</div></div>`;
+}
+function renderSmartAlerts(mTx,thu,chi){
+  const el=document.getElementById('smart-alerts');if(!el)return;
+  const out=[];const net=thu-chi;const rate=thu?net/thu*100:0;
+  const prev=getPrevMonth(curMonth());
+  const pChi=db.transactions.filter(t=>monthOf(t.date)===prev&&t.group!=='income').reduce((s,t)=>s+t.amount,0);
+  const now=new Date();const isCur=curMonth()===`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  // Chi nhanh hơn tháng trước
+  if(isCur&&pChi>0){const dim=daysInMonth(curMonth());const projected=chi/now.getDate()*dim;const diff=Math.round((projected-pChi)/pChi*100);
+    if(diff>=15)out.push(['🟡',`Đang chi nhanh hơn tháng trước ~${diff}% (dự báo ${fmtK(projected)} VND)`,'#e67e22']);
+  }
+  // Tỷ lệ tiết kiệm tốt
+  if(rate>=30&&thu>0)out.push(['🟢',`Tuyệt vời! Tiết kiệm ${Math.round(rate)}% thu nhập tháng này`,'#27ae60']);
+  else if(thu>0&&rate<0)out.push(['🔴',`Tháng này chi vượt thu ${fmtK(Math.abs(net))} VND`,'#c0392b']);
+  // Quỹ dự phòng thấp
+  const cash=liquidCash();const avgExp=avgMonthlyExpense();const months=avgExp>0?cash/avgExp:99;
+  if(months<3&&avgExp>0)out.push(['🟠',`Quỹ dự phòng chỉ ${months.toFixed(1)} tháng — nên tích lũy thêm`,'#e67e22']);
+  // Mục tiêu chưa đóng góp
+  // (giữ ngắn gọn — chỉ hiển thị tối đa 3)
+  if(!out.length){el.style.display='none';el.innerHTML='';return}
+  el.style.display='';
+  el.innerHTML=`<div style="margin:10px 12px 0;display:flex;flex-direction:column;gap:7px">`+out.slice(0,3).map(a=>`<div style="display:flex;gap:9px;align-items:center;background:var(--card);border:1px solid var(--bdr);border-left:3px solid ${a[2]};border-radius:10px;padding:10px 12px"><span style="font-size:15px">${a[0]}</span><span style="font-size:12.5px;line-height:1.4">${a[1]}</span></div>`).join('')+`</div>`;
 }
 
 // ── COMPARE ──
@@ -1162,7 +1409,6 @@ function renderGoalHome(){
   const el=document.getElementById('goal-list-home');
   if(!db.goals.length){el.innerHTML='<div class="empty" style="padding:16px">Chưa có mục tiêu — <span style="color:var(--navy);cursor:pointer" onclick="showTab(\'settings\');switchSettingsTab(document.querySelectorAll(\'#screen-settings .tab-item\')[1],\'goal\')">Thêm ngay</span></div>';const pct=document.getElementById('h-goal-pct');pct.textContent='—';return}
   const done=db.goals.filter(g=>goalProgress(g)>=100).length;
-  document.getElementById('h-goal-pct').textContent=Math.round(done/db.goals.length*100)+'%';
   el.innerHTML=db.goals.slice(0,3).map(g=>goalRow(g)).join('');
 }
 function goalProgress(g){
@@ -1185,6 +1431,38 @@ function renderGoalSettings(){
 }
 function openGoalForm(){document.getElementById('goal-modal').classList.add('open');document.getElementById('g-date').value=today();setMoneyVal('g-target',0);setMoneyVal('g-current',0)}
 function closeGoalForm(){document.getElementById('goal-modal').classList.remove('open')}
+let editDebtIdx=null;
+function renderDebts(){
+  const el=document.getElementById('debt-list');if(!el)return;
+  const list=db.debts||[];
+  if(!list.length){el.innerHTML='<div class="empty"><div class="empty-icon">💳</div>Chưa có khoản nợ nào</div>';return}
+  const TL={bank:'🏦 Ngân hàng',card:'💳 Thẻ tín dụng',personal:'🤝 Vay cá nhân',other:'📄 Khác'};
+  const total=list.reduce((s,d)=>s+(+d.remaining||0),0);
+  el.innerHTML=`<div style="padding:11px 14px;border-bottom:1px solid var(--bdr);display:flex;justify-content:space-between"><span style="font-size:12px;color:var(--muted)">Tổng nợ</span><b style="color:var(--red)">${fmtK(total)} VND</b></div>`+list.map((d,i)=>{
+    const sub=[TL[d.type]||TL.other];if(d.monthlyPayment)sub.push('trả '+fmtK(d.monthlyPayment)+'/th');if(d.rate)sub.push(d.rate+'%/năm');
+    return`<div class="tx-item"><div class="tx-icon" style="background:#fdecea">💳</div><div class="tx-meta"><div class="tx-name">${d.name||'Khoản nợ'}</div><div class="tx-sub">${sub.join(' · ')}${d.note?' · '+d.note:''}</div></div><div class="tx-right" style="display:flex;flex-direction:column;align-items:flex-end;gap:4px"><div class="tx-amt r">${fmtK(d.remaining)} VND</div><span style="font-size:11px;color:var(--navy);cursor:pointer" onclick="openDebtForm(${i})">✏️ Sửa</span> <span style="font-size:11px;color:var(--red);cursor:pointer" onclick="deleteDebt(${i})">🗑️</span></div></div>`;
+  }).join('');
+}
+function openDebtForm(idx){
+  editDebtIdx=(typeof idx==='number')?idx:null;
+  document.getElementById('debt-modal').classList.add('open');
+  const d=editDebtIdx!=null?db.debts[editDebtIdx]:{};
+  document.getElementById('d-name').value=d.name||'';
+  document.getElementById('d-type').value=d.type||'bank';
+  setMoneyVal('d-remaining',d.remaining||0);
+  setMoneyVal('d-monthly',d.monthlyPayment||0);
+  document.getElementById('d-rate').value=d.rate||'';
+  document.getElementById('d-note').value=d.note||'';
+}
+function closeDebtForm(){document.getElementById('debt-modal').classList.remove('open');editDebtIdx=null}
+function saveDebt(){
+  const name=document.getElementById('d-name').value.trim();if(!name){toast('Nhập tên khoản nợ!');return}
+  const obj={name,type:document.getElementById('d-type').value,remaining:getMoneyVal('d-remaining'),monthlyPayment:getMoneyVal('d-monthly'),rate:parseFloat(document.getElementById('d-rate').value)||0,note:document.getElementById('d-note').value};
+  db.debts=db.debts||[];
+  if(editDebtIdx!=null)db.debts[editDebtIdx]={...db.debts[editDebtIdx],...obj};else db.debts.push(obj);
+  save();closeDebtForm();renderAll();renderDebts();toast('Đã lưu khoản nợ ✓');
+}
+function deleteDebt(i){if(!confirm('Xoá khoản nợ này?'))return;db.debts.splice(i,1);save();closeDebtForm();renderAll();renderDebts();toast('Đã xoá ✓')}
 function saveGoal(){
   const name=document.getElementById('g-name').value;if(!name){toast('Nhập tên mục tiêu!');return}
   db.goals.push({name,type:document.getElementById('g-type').value,target:getMoneyVal('g-target'),current:getMoneyVal('g-current'),deadline:document.getElementById('g-deadline').value});
@@ -1579,13 +1857,14 @@ function saveTransaction(){
 }
 
 // ── SETTINGS ──
-function switchSettingsTab(el,tab){document.querySelectorAll('#screen-settings .tab-item').forEach(t=>t.classList.remove('active'));el.classList.add('active');settingsSubTab=tab;['budget','goal','recurring','report','export'].forEach(t=>document.getElementById('settings-'+t).style.display=t===tab?'':'none');renderSettings()}
+function switchSettingsTab(el,tab){document.querySelectorAll('#screen-settings .tab-item').forEach(t=>t.classList.remove('active'));el.classList.add('active');settingsSubTab=tab;['budget','goal','recurring','debt','report','export'].forEach(t=>document.getElementById('settings-'+t).style.display=t===tab?'':'none');renderSettings()}
 function renderSettings(){
   const ss = document.getElementById('sync-status-settings');
   if (ss) { const main = document.getElementById('sync-status'); ss.innerHTML = main ? main.innerHTML : '—'; }
   setMoneyVal('b-personal',db.budgets.personal||0);setMoneyVal('b-company',db.budgets.company||0);setMoneyVal('b-project',db.budgets.project||0);
   if(settingsSubTab==='goal')renderGoalSettings();
   if(settingsSubTab==='recurring')renderRecurring();
+  if(settingsSubTab==='debt')renderDebts();
   if(settingsSubTab==='report')renderSettingsReport();
 }
 function saveBudget(){db.budgets.personal=getMoneyVal('b-personal');db.budgets.company=getMoneyVal('b-company');db.budgets.project=getMoneyVal('b-project');save();toast('Đã lưu ngân sách ✓');renderAll()}
