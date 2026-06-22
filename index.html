@@ -1,6 +1,7 @@
 <!DOCTYPE html>
-<html lang="vi">
-<head>
+<html lang="vi"><head>
+
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -314,6 +315,14 @@ body.dark .ac-btn.active{background:#2a5480;border-color:#2a5480}
       <div class="chip" onclick="filterPersonal(this,'Giáo dục')">📚 Giáo dục</div>
       <div class="chip" onclick="filterPersonal(this,'Y tế')">🏥 Y tế</div>
       <div class="chip" onclick="filterPersonal(this,'Gia đình')">🏠 Gia đình</div>
+      <div class="chip" onclick="filterPersonal(this,'Điện')">⚡ Điện</div>
+      <div class="chip" onclick="filterPersonal(this,'Nước')">💧 Nước</div>
+      <div class="chip" onclick="filterPersonal(this,'Internet')">🌐 Internet</div>
+      <div class="chip" onclick="filterPersonal(this,'Truyền hình')">📺 Truyền hình</div>
+      <div class="chip" onclick="filterPersonal(this,'Điện thoại')">📱 Điện thoại</div>
+      <div class="chip" onclick="filterPersonal(this,'Thuê nhà')">🏘️ Thuê nhà</div>
+      <div class="chip" onclick="filterPersonal(this,'Bảo hiểm')">🛡️ Bảo hiểm</div>
+      <div class="chip" onclick="filterPersonal(this,'Hiếu hỉ')">💐 Hiếu hỉ</div>
       <div class="chip" onclick="filterPersonal(this,'Giải trí')">🎮 Giải trí</div>
     </div>
     <div id="daily-log-list"></div>
@@ -369,7 +378,7 @@ body.dark .ac-btn.active{background:#2a5480;border-color:#2a5480}
   <div id="crypto-history" style="display:none"><div class="card"><div id="crypto-history-list"></div></div></div>
   <div id="crypto-summary" style="display:none">
     <div class="card" style="margin-top:10px">
-      <div class="chart-wrap"><canvas id="crypto-chart" role="img" aria-label="P&L theo coin"></canvas></div>
+      <div class="chart-wrap"><canvas id="crypto-chart" role="img" aria-label="P&amp;L theo coin"></canvas></div>
     </div>
     <div class="stat-grid">
       <div class="stat-tile"><div class="stat-label">✅ Lệnh thắng</div><div class="stat-val g" id="c-wins">—</div></div>
@@ -522,22 +531,22 @@ body.dark .ac-btn.active{background:#2a5480;border-color:#2a5480}
 <!-- BOTTOM NAV -->
 <nav class="bottom-nav">
   <button class="nav-btn active" onclick="showTab('home')" id="nav-home" style="font-size:9px">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>Tổng quan
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"></path><polyline points="9,22 9,12 15,12 15,22"></polyline></svg>Tổng quan
   </button>
   <button class="nav-btn" onclick="showTab('personal')" id="nav-personal" style="font-size:9px">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Cá nhân
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>Cá nhân
   </button>
   <button class="nav-btn" onclick="showTab('crypto')" id="nav-crypto" style="font-size:9px">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="3,17 9,11 13,15 21,7"/><polyline points="15,7 21,7 21,13"/></svg>Đầu tư
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="3,17 9,11 13,15 21,7"></polyline><polyline points="15,7 21,7 21,13"></polyline></svg>Đầu tư
   </button>
   <button class="nav-btn" onclick="showTab('service')" id="nav-service" style="font-size:9px">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Dịch vụ<span class="nav-badge" id="overdue-badge" style="display:none">0</span>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"></path><polyline points="14,2 14,8 20,8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>Dịch vụ<span class="nav-badge" id="overdue-badge" style="display:none">0</span>
   </button>
   <button class="nav-btn" onclick="showTab('company')" id="nav-company" style="font-size:9px">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg>Công ty
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="7" width="20" height="14" rx="2"></rect><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"></path></svg>Công ty
   </button>
   <button class="nav-btn" onclick="showTab('settings')" id="nav-settings" style="font-size:9px">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>Cài đặt
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"></path></svg>Cài đặt
   </button>
 </nav>
 <button class="fab" id="fab-btn" onclick="handleFab()">+</button>
@@ -566,8 +575,16 @@ body.dark .ac-btn.active{background:#2a5480;border-color:#2a5480}
             <option value="Mua sắm|personal">🛒 Mua sắm</option>
             <option value="Giáo dục|personal">📚 Giáo dục</option>
             <option value="Y tế|personal">🏥 Y tế</option>
-            <option value="Giải trí|personal">🎮 Giải trí</option>
             <option value="Gia đình|personal">🏠 Gia đình</option>
+            <option value="Điện|personal">⚡ Hóa đơn điện</option>
+            <option value="Nước|personal">💧 Hóa đơn nước</option>
+            <option value="Internet|personal">🌐 Internet (Wifi/cáp quang)</option>
+            <option value="Truyền hình|personal">📺 Truyền hình / Netflix</option>
+            <option value="Điện thoại|personal">📱 Cước điện thoại</option>
+            <option value="Thuê nhà|personal">🏘️ Tiền thuê nhà</option>
+            <option value="Bảo hiểm|personal">🛡️ Bảo hiểm</option>
+            <option value="Hiếu hỉ|personal">💐 Hiếu hỉ (cưới, tang, lễ)</option>
+            <option value="Giải trí|personal">🎮 Giải trí</option>
             <option value="Khác|personal">📎 Khác cá nhân</option>
           </optgroup>
           <optgroup label="Công ty">
@@ -601,7 +618,7 @@ body.dark .ac-btn.active{background:#2a5480;border-color:#2a5480}
           <label class="form-label">Chu kỳ lặp lại</label>
           <select class="form-input form-select" id="f-recurring-freq" onchange="toggleRecurringDay()">
             <option value="weekly">📆 Hàng tuần</option>
-            <option value="monthly" selected>🗓️ Hàng tháng</option>
+            <option value="monthly" selected="">🗓️ Hàng tháng</option>
             <option value="quarterly">🍂 Hàng quý (3 tháng)</option>
             <option value="yearly">🎍 Hàng năm</option>
           </select>
@@ -651,7 +668,7 @@ body.dark .ac-btn.active{background:#2a5480;border-color:#2a5480}
         <div class="money-display" id="f-rate-display"></div>
       </div>
       <div id="csell-extra" style="display:none">
-        <div class="form-group"><label class="form-label">Giá vốn TB (USDT) — để tính P&L</label><input class="form-input" type="number" id="f-avgcost" placeholder="120" step="any" oninput="updateCryptoCalc()"></div>
+        <div class="form-group"><label class="form-label">Giá vốn TB (USDT) — để tính P&amp;L</label><input class="form-input" type="number" id="f-avgcost" placeholder="120" step="any" oninput="updateCryptoCalc()"></div>
         <div class="form-group"><label class="form-label">TP / SL (USDT) — tuỳ chọn</label>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
             <input class="form-input" type="number" id="f-tp" placeholder="TP: 180" step="any">
@@ -775,7 +792,7 @@ body.dark .ac-btn.active{background:#2a5480;border-color:#2a5480}
     <!-- IMAGES -->
     <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">📷 Ảnh chuyển khoản / chứng từ</div>
     <div class="img-thumb-row" id="svc-img-row"><div class="img-thumb-add" onclick="document.getElementById('svc-img-input').click()">📷</div></div>
-    <input type="file" id="svc-img-input" accept="image/*" multiple style="display:none" onchange="handleSvcImages(event)">
+    <input type="file" id="svc-img-input" accept="image/*" multiple="" style="display:none" onchange="handleSvcImages(event)">
     <button class="btn btn-cancel" style="width:100%;margin-top:8px" onclick="closeSvcDetail()">Đóng</button>
   </div>
 </div>
@@ -967,8 +984,8 @@ const today=()=>new Date().toISOString().slice(0,10);
 const monthOf=d=>d?d.slice(0,7):'';
 const curMonth=()=>new Date().toISOString().slice(0,7);
 const dateLabel=d=>{const dt=new Date(d+'T00:00:00');return dt.toLocaleDateString('vi-VN',{weekday:'short',day:'2-digit',month:'2-digit'})};
-const CAT_ICONS={'Ăn uống':'🍜','Di chuyển':'🚗','Mua sắm':'🛒','Giáo dục':'📚','Y tế':'🏥','Giải trí':'🎮','Gia đình':'🏠','Lương':'💼','Thưởng':'🎁','Đầu tư':'📈','Online':'💻','Phòng pháp chế':'⚖️','Vận hành':'⚙️','Marketing':'📣','Trạm dừng chân':'🛣️','Trạm xăng':'⛽','Khác':'📎'};
-const CAT_COLORS=['#1a3c5e','#2980b9','#16a085','#8e44ad','#d35400','#c0392b','#27ae60','#f39c12','#7f8c8d','#e91e63'];
+const CAT_ICONS={'Ăn uống':'🍜','Di chuyển':'🚗','Mua sắm':'🛒','Giáo dục':'📚','Y tế':'🏥','Giải trí':'🎮','Gia đình':'🏠','Điện':'⚡','Nước':'💧','Internet':'🌐','Truyền hình':'📺','Điện thoại':'📱','Thuê nhà':'🏘️','Bảo hiểm':'🛡️','Hiếu hỉ':'💐','Lương':'💼','Thưởng':'🎁','Đầu tư':'📈','Online':'💻','Phòng pháp chế':'⚖️','Vận hành':'⚙️','Marketing':'📣','Trạm dừng chân':'🛣️','Trạm xăng':'⛽','Khác':'📎'};
+const CAT_COLORS=['#1a3c5e','#2980b9','#16a085','#8e44ad','#d35400','#c0392b','#27ae60','#f39c12','#7f8c8d','#e91e63','#0e7490','#6a1b9a','#b7791f','#2c3e50','#00897b','#5e35b1','#ef6c00','#3949ab'];
 
 // ── MONEY INPUT: tự thêm dấu chấm ──
 function parseMoney(s){return parseInt((s||'').replace(/\./g,'').replace(/[^\d]/g,''))||0}
@@ -1915,6 +1932,14 @@ function seedDemo(){
     {id:4,amount:800000,desc:'Xăng xe',category:'Di chuyển',group:'personal',date:m+'-03',note:''},
     {id:5,amount:3200000,desc:'Sinh hoạt gia đình',category:'Gia đình',group:'personal',date:m+'-05',note:''},
     {id:6,amount:500000,desc:'Sách pháp luật',category:'Giáo dục',group:'personal',date:m+'-06',note:''},
+    {id:31,amount:780000,desc:'Tiền điện tháng 6',category:'Điện',group:'personal',date:m+'-05',note:'EVN'},
+    {id:36,amount:470000,desc:'Tiền nước tháng 6',category:'Nước',group:'personal',date:m+'-05',note:'Nước sạch'},
+    {id:32,amount:250000,desc:'Internet FPT cáp quang',category:'Internet',group:'personal',date:m+'-04',note:''},
+    {id:37,amount:180000,desc:'Truyền hình + Netflix',category:'Truyền hình',group:'personal',date:m+'-04',note:''},
+    {id:38,amount:150000,desc:'Cước điện thoại',category:'Điện thoại',group:'personal',date:m+'-04',note:''},
+    {id:33,amount:6000000,desc:'Tiền thuê nhà tháng 6',category:'Thuê nhà',group:'personal',date:m+'-01',note:''},
+    {id:34,amount:1000000,desc:'Mừng cưới bạn đồng nghiệp',category:'Hiếu hỉ',group:'personal',date:m+'-07',note:''},
+    {id:35,amount:850000,desc:'Bảo hiểm sức khỏe',category:'Bảo hiểm',group:'personal',date:m+'-08',note:'Đóng hàng tháng'},
     {id:7,amount:2500000,desc:'Văn phòng phẩm pháp chế',category:'Phòng pháp chế',group:'company',date:m+'-02',note:''},
     {id:8,amount:5000000,desc:'Góp vốn trạm dừng chân HN',category:'Trạm dừng chân',group:'project',date:m+'-01',note:'Đợt 2'},
     {id:9,amount:22000000,desc:'Lương tháng 5',category:'Lương',group:'income',date:pm+'-01',note:''},
@@ -2140,5 +2165,6 @@ if ('serviceWorker' in navigator) {
 }
 
 </script>
-</body>
-</html>
+
+
+</body></html>
