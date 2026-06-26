@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<html lang="vi"><head>
+<html lang="vi">
+<head>
 
 
 <meta charset="UTF-8">
@@ -378,7 +379,7 @@ body.dark .ac-btn.active{background:#2a5480;border-color:#2a5480}
   <div id="crypto-history" style="display:none"><div class="card"><div id="crypto-history-list"></div></div></div>
   <div id="crypto-summary" style="display:none">
     <div class="card" style="margin-top:10px">
-      <div class="chart-wrap"><canvas id="crypto-chart" role="img" aria-label="P&amp;L theo coin"></canvas></div>
+      <div class="chart-wrap"><canvas id="crypto-chart" role="img" aria-label="P&L theo coin"></canvas></div>
     </div>
     <div class="stat-grid">
       <div class="stat-tile"><div class="stat-label">✅ Lệnh thắng</div><div class="stat-val g" id="c-wins">—</div></div>
@@ -531,22 +532,22 @@ body.dark .ac-btn.active{background:#2a5480;border-color:#2a5480}
 <!-- BOTTOM NAV -->
 <nav class="bottom-nav">
   <button class="nav-btn active" onclick="showTab('home')" id="nav-home" style="font-size:9px">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"></path><polyline points="9,22 9,12 15,12 15,22"></polyline></svg>Tổng quan
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>Tổng quan
   </button>
   <button class="nav-btn" onclick="showTab('personal')" id="nav-personal" style="font-size:9px">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>Cá nhân
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Cá nhân
   </button>
   <button class="nav-btn" onclick="showTab('crypto')" id="nav-crypto" style="font-size:9px">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="3,17 9,11 13,15 21,7"></polyline><polyline points="15,7 21,7 21,13"></polyline></svg>Đầu tư
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="3,17 9,11 13,15 21,7"/><polyline points="15,7 21,7 21,13"/></svg>Đầu tư
   </button>
   <button class="nav-btn" onclick="showTab('service')" id="nav-service" style="font-size:9px">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"></path><polyline points="14,2 14,8 20,8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>Dịch vụ<span class="nav-badge" id="overdue-badge" style="display:none">0</span>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Dịch vụ<span class="nav-badge" id="overdue-badge" style="display:none">0</span>
   </button>
   <button class="nav-btn" onclick="showTab('company')" id="nav-company" style="font-size:9px">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="7" width="20" height="14" rx="2"></rect><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"></path></svg>Công ty
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg>Công ty
   </button>
   <button class="nav-btn" onclick="showTab('settings')" id="nav-settings" style="font-size:9px">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"></path></svg>Cài đặt
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>Cài đặt
   </button>
 </nav>
 <button class="fab" id="fab-btn" onclick="handleFab()">+</button>
@@ -618,7 +619,7 @@ body.dark .ac-btn.active{background:#2a5480;border-color:#2a5480}
           <label class="form-label">Chu kỳ lặp lại</label>
           <select class="form-input form-select" id="f-recurring-freq" onchange="toggleRecurringDay()">
             <option value="weekly">📆 Hàng tuần</option>
-            <option value="monthly" selected="">🗓️ Hàng tháng</option>
+            <option value="monthly" selected>🗓️ Hàng tháng</option>
             <option value="quarterly">🍂 Hàng quý (3 tháng)</option>
             <option value="yearly">🎍 Hàng năm</option>
           </select>
@@ -668,7 +669,7 @@ body.dark .ac-btn.active{background:#2a5480;border-color:#2a5480}
         <div class="money-display" id="f-rate-display"></div>
       </div>
       <div id="csell-extra" style="display:none">
-        <div class="form-group"><label class="form-label">Giá vốn TB (USDT) — để tính P&amp;L</label><input class="form-input" type="number" id="f-avgcost" placeholder="120" step="any" oninput="updateCryptoCalc()"></div>
+        <div class="form-group"><label class="form-label">Giá vốn TB (USDT) — để tính P&L</label><input class="form-input" type="number" id="f-avgcost" placeholder="120" step="any" oninput="updateCryptoCalc()"></div>
         <div class="form-group"><label class="form-label">TP / SL (USDT) — tuỳ chọn</label>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
             <input class="form-input" type="number" id="f-tp" placeholder="TP: 180" step="any">
@@ -715,10 +716,23 @@ body.dark .ac-btn.active{background:#2a5480;border-color:#2a5480}
         <button onclick="deleteCurrentService()" style="font-size:12px;padding:5px 10px;border-radius:8px;border:1px solid #f5c6cb;background:var(--dbg);color:var(--red);cursor:pointer">🗑️</button>
       </div>
     </div>
-    <div style="display:flex;gap:6px;margin-bottom:12px">
+    <div style="display:flex;gap:6px;margin-bottom:10px">
       <button onclick="setDetailStatus('open')" class="chip" id="ds-open">🔵 Đang xử lý</button>
       <button onclick="setDetailStatus('done')" class="chip" id="ds-done">✅ Hoàn thành</button>
       <button onclick="setDetailStatus('cancel')" class="chip" id="ds-cancel">❌ Huỷ</button>
+    </div>
+    <div style="background:var(--light);border:1px solid var(--bdr);border-radius:12px;padding:12px;margin-bottom:12px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <span style="font-size:12px;font-weight:700;color:var(--navy)">📅 Gia hạn hồ sơ</span>
+        <span id="ds-deadline-current" style="font-size:11px;font-weight:600"></span>
+      </div>
+      <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">Chọn ngày gia hạn mới</label>
+      <input class="form-input" type="date" id="ds-deadline" style="width:100%;padding:8px 10px;font-size:13px;margin-bottom:8px" onchange="updateDetailDeadline(this.value)">
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button onclick="extendDeadline(7)" style="flex:1;min-width:72px;font-size:11px;padding:7px 6px;border-radius:8px;border:1px solid var(--bdr);background:var(--card);color:var(--navy);cursor:pointer;white-space:nowrap;font-weight:600">+7 ngày</button>
+        <button onclick="extendDeadline(15)" style="flex:1;min-width:72px;font-size:11px;padding:7px 6px;border-radius:8px;border:1px solid var(--bdr);background:var(--card);color:var(--navy);cursor:pointer;white-space:nowrap;font-weight:600">+15 ngày</button>
+        <button onclick="extendDeadline(30)" style="flex:1;min-width:72px;font-size:11px;padding:7px 6px;border-radius:8px;border:1px solid var(--bdr);background:var(--card);color:var(--navy);cursor:pointer;white-space:nowrap;font-weight:600">+30 ngày</button>
+      </div>
     </div>
     <div id="svc-detail-info" style="background:var(--light);border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:12px"></div>
     <!-- MONEY PANEL -->
@@ -792,7 +806,7 @@ body.dark .ac-btn.active{background:#2a5480;border-color:#2a5480}
     <!-- IMAGES -->
     <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">📷 Ảnh chuyển khoản / chứng từ</div>
     <div class="img-thumb-row" id="svc-img-row"><div class="img-thumb-add" onclick="document.getElementById('svc-img-input').click()">📷</div></div>
-    <input type="file" id="svc-img-input" accept="image/*" multiple="" style="display:none" onchange="handleSvcImages(event)">
+    <input type="file" id="svc-img-input" accept="image/*" multiple style="display:none" onchange="handleSvcImages(event)">
     <button class="btn btn-cancel" style="width:100%;margin-top:8px" onclick="closeSvcDetail()">Đóng</button>
   </div>
 </div>
@@ -845,6 +859,7 @@ body.dark .ac-btn.active{background:#2a5480;border-color:#2a5480}
         </div>
       </div>
     </div>
+    <div id="sf-firstpay-section">
     <div style="height:1px;background:var(--bdr);margin:4px 0 12px"></div>
     <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">💵 Khoản thu đầu tiên <span style="font-weight:400;text-transform:none;font-size:11px">(tuỳ chọn)</span></div>
     <div style="background:var(--sbg);border-radius:10px;padding:12px;margin-bottom:14px;border:1px solid #c8e6c9">
@@ -858,9 +873,10 @@ body.dark .ac-btn.active{background:#2a5480;border-color:#2a5480}
         <input class="form-input" type="text" id="sf-firstnote" placeholder="Ghi chú: cọc 50%, TT lần 1...">
       </div>
     </div>
+    </div>
     <div class="btn-row">
       <button class="btn btn-cancel" onclick="closeSvcForm()">Hủy</button>
-      <button class="btn btn-primary" onclick="saveService()">Lưu hồ sơ</button>
+      <button class="btn btn-primary" id="sf-save-btn" onclick="saveService()">Lưu hồ sơ</button>
     </div>
   </div>
 </div>
@@ -973,8 +989,44 @@ body.dark .ac-btn.active{background:#2a5480;border-color:#2a5480}
 const DB='fintrack_v3';
 let db={transactions:[],cryptoTrades:[],assets:[],debts:[],services:[],journals:[],goals:[],recurring:[],budgets:{personal:10000000,company:15000000,project:20000000}};
 let localMtime=parseInt(localStorage.getItem(DB+'_mtime'))||0;
-function save(){localStorage.setItem(DB,JSON.stringify(db));localMtime=Date.now();localStorage.setItem(DB+'_mtime',String(localMtime))}
-function load(){try{const d=localStorage.getItem(DB);if(d)db=JSON.parse(d)}catch(e){}}
+// Logical clock (seq) — KHÔNG phụ thuộc đồng hồ máy. Mỗi thay đổi cục bộ tăng seq lên.
+// Tránh lỗi: trước đây so sánh thời gian thực, nếu một thiết bị có đồng hồ sai/nhanh
+// thì bản cloud luôn "mới hơn" → mọi thao tác xóa/thêm/sửa bị kéo ngược về bản cũ.
+let localSeq=parseInt(localStorage.getItem(DB+'_seq'));
+if(isNaN(localSeq)){localSeq=localStorage.getItem(DB)?1:0;localStorage.setItem(DB+'_seq',String(localSeq));}
+let lastCloudSeq=0;
+// Ảnh chứng từ (base64) được lưu RIÊNG khỏi blob dữ liệu chính.
+// Nhờ vậy phần dữ liệu cốt lõi (giao dịch, hồ sơ, hạn xử lý...) luôn nhỏ gọn
+// và LUÔN lưu thành công — không bị lỗi tràn bộ nhớ làm hỏng việc xoá/thêm/sửa.
+function leanDbForLocal(){
+  const c={...db};
+  c.services=(db.services||[]).map(sv=>{const{images,...rest}=sv;return rest;});
+  return c;
+}
+function saveServiceImages(){
+  const map={};
+  (db.services||[]).forEach(sv=>{if(sv.images&&sv.images.length)map[sv.id]=sv.images;});
+  try{localStorage.setItem(DB+'_images',JSON.stringify(map));}
+  catch(e){console.warn('Image store full',e);toast('⚠️ Bộ nhớ ảnh đầy — hãy xoá bớt ảnh cũ');}
+}
+function loadServiceImages(){
+  let map={};
+  try{const raw=localStorage.getItem(DB+'_images');if(raw)map=JSON.parse(raw)||{};}catch(e){}
+  (db.services||[]).forEach(sv=>{
+    if(map[sv.id])sv.images=map[sv.id];
+    else if(Array.isArray(sv.images))sv.images=sv.images.filter(s=>typeof s==='string'&&s.startsWith('data:'));
+  });
+}
+function save(){
+  try{
+    localSeq=Math.max(localSeq,lastCloudSeq)+1;
+    localStorage.setItem(DB+'_seq',String(localSeq));
+    localStorage.setItem(DB,JSON.stringify(leanDbForLocal()));
+    localMtime=Date.now();localStorage.setItem(DB+'_mtime',String(localMtime));
+  }catch(e){console.warn('Save error',e);toast('⚠️ Lỗi lưu dữ liệu: '+((e&&e.name)||e));}
+  saveServiceImages();
+}
+function load(){try{const d=localStorage.getItem(DB);if(d)db=JSON.parse(d)}catch(e){}loadServiceImages();}
 
 // ── HELPERS ──
 const fmt=n=>new Intl.NumberFormat('vi-VN').format(Math.round(n))+' VND';
@@ -1745,6 +1797,8 @@ function openSvcDetail(id){
   renderSvcDetailTx(sv);
   document.getElementById('svtx-date').value=today();setMoneyVal('svtx-amount',0);document.getElementById('svtx-note').value='';setSvcTxType('income');
   setMoneyVal('qr-amount',0);document.getElementById('qr-date').value=today();document.getElementById('qr-note').value='';document.getElementById('qr-calc').style.display='none';
+  const ddl=document.getElementById('ds-deadline');if(ddl)ddl.value=sv.deadline||'';
+  const dcur=document.getElementById('ds-deadline-current');if(dcur){if(sv.deadline){const od=isOverdue(sv);dcur.textContent=(od?'⚠️ Quá hạn · ':'Hạn: ')+sv.deadline;dcur.style.color=od?'var(--red)':'var(--green)';}else{dcur.textContent='Chưa đặt hạn';dcur.style.color='var(--muted)';}}
   renderSvcImages(sv);document.getElementById('svc-detail-modal').classList.add('open');
 }
 function renderSvcDetailTx(sv){
@@ -1754,6 +1808,8 @@ function renderSvcDetailTx(sv){
 }
 function renderSvcImages(sv){const row=document.getElementById('svc-img-row');const imgs=sv.images||[];row.innerHTML=imgs.map((src,i)=>`<img class="img-thumb" src="${src}" onclick="viewImg('${src}')" title="Ảnh ${i+1}">`).join('')+'<div class="img-thumb-add" onclick="document.getElementById(\'svc-img-input\').click()">📷</div>'}
 function viewImg(src){document.getElementById('img-viewer-src').src=src;document.getElementById('img-viewer').classList.add('open')}
+function updateDetailDeadline(val){const sv=db.services.find(s=>s.id===svcDetailId);if(!sv)return;sv.deadline=val||'';save();openSvcDetail(svcDetailId);renderOverdueBadge();toast(val?'Đã cập nhật hạn xử lý ✓':'Đã xoá hạn xử lý');}
+function extendDeadline(days){const sv=db.services.find(s=>s.id===svcDetailId);if(!sv)return;const base=(sv.deadline&&sv.deadline>=today())?new Date(sv.deadline+'T00:00:00'):new Date();base.setDate(base.getDate()+days);const y=base.getFullYear(),mo=String(base.getMonth()+1).padStart(2,'0'),d=String(base.getDate()).padStart(2,'0');sv.deadline=y+'-'+mo+'-'+d;save();openSvcDetail(svcDetailId);renderOverdueBadge();toast('Đã gia hạn +'+days+' ngày ✓');}
 function setDetailStatus(status){const sv=db.services.find(s=>s.id===svcDetailId);if(!sv)return;sv.status=status;['open','done','cancel'].forEach(s=>document.getElementById('ds-'+s).className='chip'+(s===status?' active':''));save();renderAll();toast('Cập nhật: '+{open:'Đang xử lý',done:'Hoàn thành',cancel:'Huỷ'}[status])}
 function setSvcTxType(type){svcTxType=type;document.getElementById('svtx-in').className='type-btn income'+(type==='income'?' active':'');document.getElementById('svtx-out').className='type-btn expense'+(type==='expense'?' active':'')}
 function addSvcTransaction(){
@@ -1764,16 +1820,21 @@ function addSvcTransaction(){
   save();openSvcDetail(svcDetailId);toast('Đã thêm khoản '+(svcTxType==='income'?'thu':'chi')+' ✓');
 }
 function deleteSvcTx(svId,idx){const sv=db.services.find(s=>s.id===svId);if(!sv)return;if(!confirm('Xoá khoản này?'))return;sv.transactions.splice(idx,1);save();openSvcDetail(svId);toast('Đã xoá')}
-function handleSvcImages(e){const sv=db.services.find(s=>s.id===svcDetailId);if(!sv)return;if(!sv.images)sv.images=[];const files=Array.from(e.target.files);let loaded=0;files.forEach(file=>{const reader=new FileReader();reader.onload=ev=>{sv.images.push(ev.target.result);loaded++;if(loaded===files.length){save();renderSvcImages(sv);toast(files.length+' ảnh đã thêm ✓')}};reader.readAsDataURL(file)});e.target.value=''}
+function compressImage(file,maxDim,quality){return new Promise(res=>{const reader=new FileReader();reader.onload=ev=>{const img=new Image();img.onload=()=>{let w=img.width,h=img.height;if(w>maxDim||h>maxDim){if(w>=h){h=Math.round(h*maxDim/w);w=maxDim;}else{w=Math.round(w*maxDim/h);h=maxDim;}}const cv=document.createElement('canvas');cv.width=w;cv.height=h;cv.getContext('2d').drawImage(img,0,0,w,h);try{res(cv.toDataURL('image/jpeg',quality));}catch(e){res(ev.target.result);}};img.onerror=()=>res(ev.target.result);img.src=ev.target.result;};reader.readAsDataURL(file);});}
+async function handleSvcImages(e){const sv=db.services.find(s=>s.id===svcDetailId);if(!sv)return;if(!sv.images)sv.images=[];const files=Array.from(e.target.files);e.target.value='';if(!files.length)return;toast('⏳ Đang xử lý ảnh...');for(const file of files){try{const data=await compressImage(file,1280,0.72);sv.images.push(data);}catch(err){console.warn('img err',err);}}save();renderSvcImages(sv);toast(files.length+' ảnh đã thêm ✓');}
 function showQuickReceive(){document.getElementById('quick-receive-panel').style.display='';document.getElementById('btn-quick-receive').style.display='none';document.getElementById('qr-date').value=today();document.getElementById('qr-amount').focus()}
 function hideQuickReceive(){document.getElementById('quick-receive-panel').style.display='none';const sv=db.services.find(s=>s.id===svcDetailId);if(sv){const r=(sv.fee||0)-svcThu(sv);document.getElementById('btn-quick-receive').style.display=r<=0?'none':''}}
 function updateQrCalc(){const sv=db.services.find(s=>s.id===svcDetailId);if(!sv)return;const amt=getMoneyVal('qr-amount');if(!amt){document.getElementById('qr-calc').style.display='none';return};const newThu=svcThu(sv)+amt;const remain=Math.max(0,(sv.fee||0)-newThu);document.getElementById('qr-after').textContent=fmtK(newThu)+' VND';document.getElementById('qr-left').textContent=remain<=0?'✓ Thu đủ!':fmtK(remain)+' VND';document.getElementById('qr-left').style.color=remain<=0?'var(--green)':'var(--amber)';document.getElementById('qr-calc').style.display=''}
 function saveQuickReceive(){const sv=db.services.find(s=>s.id===svcDetailId);if(!sv)return;const amt=getMoneyVal('qr-amount');if(!amt){toast('Nhập số tiền!');return};if(!sv.transactions)sv.transactions=[];sv.transactions.push({type:'income',amount:amt,date:document.getElementById('qr-date').value,note:document.getElementById('qr-note').value||'Nhận tiền từ khách'});save();toast('✓ Đã ghi nhận '+fmtK(amt)+' VND');openSvcDetail(svcDetailId)}
 function closeSvcDetail(){document.getElementById('svc-detail-modal').classList.remove('open');svcDetailId=null;renderAll()}
-function editCurrentService(){if(!svcDetailId)return;closeSvcDetail();openSvcForm(svcDetailId)}
+function editCurrentService(){if(!svcDetailId)return;const id=svcDetailId;closeSvcDetail();openSvcForm(id)}
 function deleteCurrentService(){if(!confirm('Xoá hồ sơ? Không thể hoàn tác!'))return;db.services=db.services.filter(s=>s.id!==svcDetailId);save();closeSvcDetail();toast('Đã xoá hồ sơ')}
 function openSvcForm(editId){
-  svcEditId=editId||null;document.getElementById('svc-form-title').textContent=editId?'Chỉnh sửa hồ sơ':'Tạo hồ sơ dịch vụ';
+  svcEditId=editId||null;
+  const isEdit=!!editId;
+  document.getElementById('svc-form-title').textContent=isEdit?'✏️ Chỉnh sửa hồ sơ':'Tạo hồ sơ dịch vụ';
+  const fps=document.getElementById('sf-firstpay-section');if(fps)fps.style.display=isEdit?'none':'';
+  const sbtn=document.getElementById('sf-save-btn');if(sbtn)sbtn.textContent=isEdit?'Cập nhật hồ sơ':'Lưu hồ sơ';
   if(editId){const sv=db.services.find(s=>s.id===editId);if(sv){document.getElementById('sf-name').value=sv.name||'';document.getElementById('sf-client').value=sv.client||'';document.getElementById('sf-phone').value=sv.phone||'';document.getElementById('sf-type').value=sv.type||'⚖️ Tư vấn pháp lý';document.getElementById('sf-date').value=sv.date||today();document.getElementById('sf-deadline').value=sv.deadline||'';setMoneyVal('sf-fee',sv.fee||0);setMoneyVal('sf-cost',sv.cost||0);document.getElementById('sf-note').value=sv.note||'';updateSfCalc()}}
   else{['sf-name','sf-client','sf-phone','sf-note'].forEach(id=>document.getElementById(id).value='');document.getElementById('sf-date').value=today();document.getElementById('sf-deadline').value='';setMoneyVal('sf-fee',0);setMoneyVal('sf-cost',0);setMoneyVal('sf-firstpay',0);document.getElementById('sf-firstdate').value=today();document.getElementById('sf-firstnote').value='';document.getElementById('sf-calc').style.display='none'}
   document.getElementById('svc-form-modal').classList.add('open');
@@ -1997,6 +2058,8 @@ async function initFirebase() {
     // Pull dữ liệu từ cloud lần đầu
     await pullFromCloud(getDoc, doc);
     updateSyncUI('synced');
+    // Nếu thiết bị này đang giữ dữ liệu mới hơn cloud (vừa sửa / dữ liệu cũ chưa có seq) → đẩy lên ngay
+    if (localSeq > lastCloudSeq) scheduleSync(setDoc, doc, serverTimestamp);
 
     // Lắng nghe thay đổi realtime từ thiết bị khác
     const docRef = doc(firestoreDb, 'fintrack', 'main');
@@ -2005,17 +2068,20 @@ async function initFirebase() {
       const data = snapshot.data();
       // Bỏ qua thay đổi do CHÍNH thiết bị này tạo ra
       if (data._deviceId && data._deviceId === DEVICE_ID) return;
-      const cloudTime = data._updatedAt || 0;
-      // Last-write-wins: chỉ nhận cloud nếu cloud MỚI HƠN dữ liệu local
-      if (cloudTime <= localMtime) return;
+      const cloudSeq = data._seq || 0;
+      // Last-write-wins theo seq logic (không dùng đồng hồ máy): chỉ nhận nếu cloud mới hơn
+      if (cloudSeq <= localSeq) { lastCloudSeq = Math.max(lastCloudSeq, cloudSeq); return; }
       try {
         const parsed = JSON.parse(data.payload);
         if (parsed && parsed.transactions) {
           db = parsed;
-          localStorage.setItem(DB, JSON.stringify(db));
-          localMtime = cloudTime;
+          loadServiceImages();
+          localStorage.setItem(DB, JSON.stringify(leanDbForLocal()));
+          localSeq = cloudSeq; lastCloudSeq = cloudSeq;
+          localStorage.setItem(DB+'_seq', String(localSeq));
+          localMtime = data._updatedAt || Date.now();
           localStorage.setItem(DB+'_mtime', String(localMtime));
-          lastSyncTime = cloudTime;
+          lastSyncTime = localMtime;
           renderAll();
           updateSyncUI('synced');
           showSyncToast('📡 Đã nhận dữ liệu mới từ thiết bị khác');
@@ -2048,18 +2114,23 @@ async function pullFromCloud(getDoc, doc) {
     if (!data.payload) return;
     const cloudDb = JSON.parse(data.payload);
     if (!cloudDb.transactions) return;
-    const cloudTime = data._updatedAt || 0;
+    const cloudSeq = data._seq || 0;
+    lastCloudSeq = Math.max(lastCloudSeq, cloudSeq);
 
-    // Last-write-wins: chỉ lấy cloud khi cloud MỚI HƠN local.
-    // (Trước đây so sánh SỐ LƯỢNG bản ghi → khi xoá mục, cloud nhiều hơn nên khôi phục lại mục đã xoá.)
-    if (cloudTime > localMtime) {
+    // Lần đầu trên thiết bị này (chưa có thay đổi cục bộ) → lấy bản cloud.
+    // Sau đó chỉ lấy cloud nếu cloud có phiên bản MỚI HƠN (theo seq, không dùng đồng hồ).
+    const adopt = (localSeq === 0) || (cloudSeq > localSeq);
+    if (adopt) {
       db = cloudDb;
-      localStorage.setItem(DB, JSON.stringify(db));
-      localMtime = cloudTime;
+      loadServiceImages();
+      localStorage.setItem(DB, JSON.stringify(leanDbForLocal()));
+      localSeq = Math.max(cloudSeq, localSeq);
+      localStorage.setItem(DB+'_seq', String(localSeq));
+      localMtime = data._updatedAt || Date.now();
       localStorage.setItem(DB+'_mtime', String(localMtime));
       renderAll();
     }
-    lastSyncTime = cloudTime;
+    lastSyncTime = data._updatedAt || Date.now();
   } catch(e) { console.warn('Pull error:', e); }
 }
 
@@ -2086,10 +2157,12 @@ async function pushToCloud(setDoc, doc, serverTimestamp) {
       payload,
       _deviceId: DEVICE_ID,
       _updatedAt: ts,
-      _version: 3
+      _seq: localSeq,
+      _version: 4
     });
     updateSyncUI('synced');
     lastSyncTime = ts;
+    lastCloudSeq = localSeq;
     // Đồng bộ mốc thời gian local với bản vừa đẩy lên để không bị kéo ngược lại
     localMtime = ts;
     localStorage.setItem(DB+'_mtime', String(localMtime));
@@ -2161,10 +2234,25 @@ setTimeout(initFirebase, 500);
 
 // Đăng ký Service Worker → cài được như app điện thoại + dùng offline
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); });
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').then(reg => {
+      // Chủ động kiểm tra bản mới mỗi khi mở app
+      reg.update().catch(() => {});
+      // Khi service worker mới đã cài xong và sẵn sàng → tự tải lại để lấy bản mới nhất
+      reg.addEventListener('updatefound', () => {
+        const nw = reg.installing;
+        if (!nw) return;
+        nw.addEventListener('statechange', () => {
+          if (nw.state === 'installed' && navigator.serviceWorker.controller) {
+            // Đã có bản mới → reload một lần để áp dụng
+            window.location.reload();
+          }
+        });
+      });
+    }).catch(() => {});
+  });
 }
 
 </script>
-
-
-</body></html>
+</body>
+</html>
