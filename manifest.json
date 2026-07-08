@@ -2,7 +2,7 @@
   "name": "FinTrack VN",
   "short_name": "FinTrack",
   "description": "Quản lý thu chi, đầu tư crypto & dịch vụ",
-  "start_url": "./index.html",
+  "start_url": "./fintrack-vn.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
