@@ -1,8 +1,6 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-
-
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -841,45 +839,38 @@ body.dark .set-row{border-color:#243244}
         </div>
       </div>
     </div>
-    <!-- QUICK RECEIVE -->
-    <button onclick="showQuickReceive()" id="btn-quick-receive" style="width:100%;padding:10px;border-radius:10px;border:2px solid var(--green);background:var(--sbg);color:var(--green);font-size:13px;font-weight:600;cursor:pointer;margin-bottom:10px">💰 Cập nhật nhận tiền từ khách</button>
-    <div id="quick-receive-panel" style="display:none;background:#f0faf4;border:1px solid #c8e6c9;border-radius:12px;padding:12px;margin-bottom:10px">
-      <div style="font-size:12px;font-weight:600;color:var(--green);margin-bottom:8px">💵 Nhận tiền từ khách</div>
-      <div style="display:flex;flex-direction:column;gap:8px">
-        <div>
-          <input class="form-input money-input" type="text" inputmode="numeric" id="qr-amount" placeholder="Số tiền nhận (VND)" oninput="updateQrCalc()">
-          <div class="money-display" id="qr-amount-display"></div>
-        </div>
-        <input class="form-input" type="date" id="qr-date">
-        <input class="form-input" type="text" id="qr-note" placeholder="Ghi chú: TT lần 2, thanh toán đủ...">
-        <div id="qr-calc" style="background:#fff;border-radius:8px;padding:8px 10px;font-size:11px;display:none;border:1px solid #c8e6c9">
-          <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Tổng đã nhận:</span><span style="font-weight:700;color:var(--green)" id="qr-after">—</span></div>
-          <div style="display:flex;justify-content:space-between;margin-top:3px"><span style="color:var(--muted)">Còn phải thu:</span><span style="font-weight:700;color:var(--amber)" id="qr-left">—</span></div>
-        </div>
-        <div style="display:flex;gap:8px">
-          <button class="btn btn-cancel" style="flex:1" onclick="hideQuickReceive()">Huỷ</button>
-          <button class="btn btn-primary" style="flex:2" onclick="saveQuickReceive()">✓ Xác nhận</button>
-        </div>
-      </div>
-    </div>
     <!-- TX LIST -->
     <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">Lịch sử thu / chi</div>
     <div style="background:var(--card);border:1px solid var(--bdr);border-radius:12px;margin-bottom:10px;overflow:hidden" id="svc-detail-txlist"></div>
-    <!-- ADD TX -->
+    <!-- ADD / EDIT TX -->
     <div style="background:var(--light);border-radius:12px;padding:12px;margin-bottom:10px">
-      <div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:8px">+ Ghi khoản thu / chi</div>
+      <div id="svtx-form-title" style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:8px">+ Ghi khoản thu / chi</div>
       <div class="type-toggle" style="margin-bottom:8px">
         <button class="type-btn income active" id="svtx-in" onclick="setSvcTxType('income')">💰 Thu từ khách</button>
         <button class="type-btn expense" id="svtx-out" onclick="setSvcTxType('expense')">💸 Chi phí</button>
       </div>
       <div style="display:flex;flex-direction:column;gap:8px">
         <div>
+          <label id="svtx-lbl-desc" style="font-size:11px;color:var(--muted);display:block;margin-bottom:3px">Nội dung thu</label>
+          <input class="form-input" type="text" id="svtx-desc" placeholder="VD: TT lần 1, tạm ứng...">
+        </div>
+        <div>
+          <label id="svtx-lbl-amount" style="font-size:11px;color:var(--muted);display:block;margin-bottom:3px">Số tiền thu</label>
           <input class="form-input money-input" type="text" inputmode="numeric" id="svtx-amount" placeholder="Số tiền (VND)">
           <div class="money-display" id="svtx-amount-display"></div>
         </div>
-        <input class="form-input" type="date" id="svtx-date">
-        <input class="form-input" type="text" id="svtx-note" placeholder="Chi cho ai / mục đích: nộp Sở, công chứng...">
-        <button class="btn btn-primary" style="padding:9px" onclick="addSvcTransaction()">Thêm khoản</button>
+        <div>
+          <label id="svtx-lbl-date" style="font-size:11px;color:var(--muted);display:block;margin-bottom:3px">Ngày thu</label>
+          <input class="form-input" type="date" id="svtx-date">
+        </div>
+        <div>
+          <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:3px">Ghi chú</label>
+          <input class="form-input" type="text" id="svtx-note" placeholder="Ghi chú thêm (không bắt buộc)">
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-cancel" id="svtx-cancel-btn" style="flex:1;display:none" onclick="cancelSvcTxEdit()">Huỷ</button>
+          <button class="btn btn-primary" id="svtx-save-btn" style="padding:9px;flex:2" onclick="addSvcTransaction()">Thêm khoản</button>
+        </div>
       </div>
     </div>
     <!-- IMAGES -->
@@ -1212,7 +1203,7 @@ const ASSET_META={
   silver:{icon:'🥈',label:'Bạc',unit:'lượng',nameLabel:'Loại bạc',ph:'VD: bạc miếng, Phú Quý...'}
 };
 const fmtQty=n=>{const v=+n||0;return Number.isInteger(v)?v.toLocaleString('vi-VN'):v.toLocaleString('vi-VN',{maximumFractionDigits:4})};
-let svcDetailId=null,svcEditId=null;
+let svcDetailId=null,svcEditId=null,svcTxEditId=null;
 let charts={};
 
 // ── DARK MODE ──
@@ -2299,41 +2290,41 @@ function openSvcDetail(id){
   const re=document.getElementById('mp-remain');re.textContent=remain<=0?'✓ Thu đủ':fmtK(remain)+' VND';re.style.color=remain<=0?'var(--green)':'var(--amber)';
   document.getElementById('mp-chi').textContent=fmtK(chi)+' VND';
   const pe=document.getElementById('mp-profit');pe.textContent=(profit>=0?'+':'')+fmtK(profit)+' VND';pe.style.color=profit>=0?'var(--green)':'var(--red)';
-  document.getElementById('btn-quick-receive').style.display=remain<=0?'none':'';
-  hideQuickReceive();
   document.getElementById('svc-detail-info').innerHTML=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 12px"><div><span style="color:var(--muted)">Khách hàng</span><br><b>${sv.client||'—'}</b></div><div><span style="color:var(--muted)">SĐT</span><br><b>${sv.phone||'—'}</b></div><div><span style="color:var(--muted)">Loại DV</span><br><b>${sv.type||'—'}</b></div><div><span style="color:var(--muted)">Ngày nhận</span><br><b>${sv.date?fmtDMY(sv.date):'—'}</b></div>${sv.deadline?`<div><span style="color:var(--muted)">Hạn xử lý</span><br><b style="color:${isOverdue(sv)?'var(--red)':'var(--text)'}">${fmtDMY(sv.deadline)}${isOverdue(sv)?' ⚠️ Quá hạn!':''}</b></div>`:''}</div>${sv.note?`<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--bdr);color:var(--muted)">📝 ${sv.note}</div>`:''}`;
   renderSvcDetailTx(sv);
-  document.getElementById('svtx-date').value=today();setMoneyVal('svtx-amount',0);document.getElementById('svtx-note').value='';setSvcTxType('income');
-  setMoneyVal('qr-amount',0);document.getElementById('qr-date').value=today();document.getElementById('qr-note').value='';document.getElementById('qr-calc').style.display='none';
+  resetSvcTxForm();
   const ddl=document.getElementById('ds-deadline');if(ddl)ddl.value=sv.deadline||'';
   const dcur=document.getElementById('ds-deadline-current');if(dcur){if(sv.deadline){const od=isOverdue(sv);dcur.textContent=(od?'⚠️ Quá hạn · ':'Hạn: ')+fmtDMY(sv.deadline);dcur.style.color=od?'var(--red)':'var(--green)';}else{dcur.textContent='Chưa đặt hạn';dcur.style.color='var(--muted)';}}
   renderSvcImages(sv);document.getElementById('svc-detail-modal').classList.add('open');
 }
 function renderSvcDetailTx(sv){
-  const el=document.getElementById('svc-detail-txlist');const txs=[...(sv.transactions||[])].sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  const el=document.getElementById('svc-detail-txlist');
+  (sv.transactions||[]).forEach(t=>{if(!t.id)t.id='tx'+Date.now().toString(36)+Math.random().toString(36).slice(2,7)});
+  const txs=[...(sv.transactions||[])].sort((a,b)=>(b.date||'').localeCompare(a.date||''));
   if(!txs.length){el.innerHTML='<div class="empty" style="padding:18px">Chưa có khoản thu/chi</div>';return}
-  el.innerHTML=txs.map((t,i)=>{const isIn=t.type==='income';const bg=isIn?'#e8f5e9':'#fdecea';return`<div class="svc-tx-item"><div class="svc-tx-dot" style="background:${bg}">${isIn?'💰':'💸'}</div><div class="svc-tx-meta"><div class="svc-tx-name">${t.note||'—'}</div><div class="svc-tx-sub">📅 ${fmtDMY(t.date)}</div></div><div class="svc-tx-right"><div class="svc-tx-amt" style="color:${isIn?'var(--green)':'var(--red)'}">${isIn?'+':'-'}${fmtK(t.amount)} VND</div><div style="font-size:10px;color:var(--red);cursor:pointer;margin-top:2px" onclick="deleteSvcTx('${sv.id}',${i})">🗑️</div></div></div>`}).join('');
+  el.innerHTML=txs.map(t=>{const isIn=t.type==='income';const bg=isIn?'#e8f5e9':'#fdecea';const name=t.desc||t.note||(isIn?'Khoản thu':'Khoản chi');const extra=(t.desc&&t.note)?' · '+t.note:'';return`<div class="svc-tx-item"><div class="svc-tx-dot" style="background:${bg}">${isIn?'💰':'💸'}</div><div class="svc-tx-meta"><div class="svc-tx-name">${name}</div><div class="svc-tx-sub">📅 ${fmtDMY(t.date)}${extra}</div></div><div class="svc-tx-right"><div class="svc-tx-amt" style="color:${isIn?'var(--green)':'var(--red)'}">${isIn?'+':'-'}${fmtK(t.amount)} VND</div><div style="display:flex;gap:10px;justify-content:flex-end;margin-top:3px"><span style="font-size:12px;cursor:pointer" onclick="editSvcTx('${sv.id}','${t.id}')">✏️</span><span style="font-size:12px;cursor:pointer" onclick="deleteSvcTx('${sv.id}','${t.id}')">🗑️</span></div></div></div>`}).join('');
 }
 function renderSvcImages(sv){const row=document.getElementById('svc-img-row');const imgs=sv.images||[];row.innerHTML=imgs.map((src,i)=>`<img class="img-thumb" src="${src}" onclick="viewImg('${src}')" title="Ảnh ${i+1}">`).join('')+'<div class="img-thumb-add" onclick="document.getElementById(\'svc-img-input\').click()">📷</div>'}
 function viewImg(src){document.getElementById('img-viewer-src').src=src;document.getElementById('img-viewer').classList.add('open')}
 function updateDetailDeadline(val){const sv=db.services.find(s=>s.id===svcDetailId);if(!sv)return;sv.deadline=val||'';save();openSvcDetail(svcDetailId);renderOverdueBadge();toast(val?'Đã cập nhật hạn xử lý ✓':'Đã xoá hạn xử lý');}
 function extendDeadline(days){const sv=db.services.find(s=>s.id===svcDetailId);if(!sv)return;const base=(sv.deadline&&sv.deadline>=today())?new Date(sv.deadline+'T00:00:00'):new Date();base.setDate(base.getDate()+days);const y=base.getFullYear(),mo=String(base.getMonth()+1).padStart(2,'0'),d=String(base.getDate()).padStart(2,'0');sv.deadline=y+'-'+mo+'-'+d;save();openSvcDetail(svcDetailId);renderOverdueBadge();toast('Đã gia hạn +'+days+' ngày ✓');}
 function setDetailStatus(status){const sv=db.services.find(s=>s.id===svcDetailId);if(!sv)return;sv.status=status;['open','done','cancel'].forEach(s=>document.getElementById('ds-'+s).className='chip'+(s===status?' active':''));save();renderAll();toast('Cập nhật: '+{open:'Đang xử lý',done:'Hoàn thành',cancel:'Huỷ'}[status])}
-function setSvcTxType(type){svcTxType=type;document.getElementById('svtx-in').className='type-btn income'+(type==='income'?' active':'');document.getElementById('svtx-out').className='type-btn expense'+(type==='expense'?' active':'')}
+function setSvcTxType(type){svcTxType=type;document.getElementById('svtx-in').className='type-btn income'+(type==='income'?' active':'');document.getElementById('svtx-out').className='type-btn expense'+(type==='expense'?' active':'');const isIn=type==='income';const w=isIn?'thu':'chi';document.getElementById('svtx-lbl-desc').textContent='Nội dung '+w;document.getElementById('svtx-lbl-amount').textContent='Số tiền '+w;document.getElementById('svtx-lbl-date').textContent='Ngày '+w;document.getElementById('svtx-desc').placeholder=isIn?'VD: TT lần 1, tạm ứng...':'VD: nộp Sở, công chứng, phí...';document.getElementById('svtx-amount').placeholder=isIn?'Số tiền thu (VND)':'Số tiền chi (VND)';}
+function resetSvcTxForm(){svcTxEditId=null;document.getElementById('svtx-desc').value='';setMoneyVal('svtx-amount',0);document.getElementById('svtx-note').value='';document.getElementById('svtx-date').value=today();setSvcTxType('income');document.getElementById('svtx-form-title').textContent='+ Ghi khoản thu / chi';document.getElementById('svtx-save-btn').textContent='Thêm khoản';document.getElementById('svtx-cancel-btn').style.display='none';}
+function cancelSvcTxEdit(){resetSvcTxForm()}
+function editSvcTx(svId,id){const sv=db.services.find(s=>s.id===svId);if(!sv)return;const t=(sv.transactions||[]).find(x=>x.id===id);if(!t)return;svcTxEditId=id;setSvcTxType(t.type||'income');document.getElementById('svtx-desc').value=t.desc||'';setMoneyVal('svtx-amount',t.amount||0);document.getElementById('svtx-date').value=t.date||today();document.getElementById('svtx-note').value=t.note||'';document.getElementById('svtx-form-title').textContent='✏️ Sửa khoản thu / chi';document.getElementById('svtx-save-btn').textContent='Cập nhật';document.getElementById('svtx-cancel-btn').style.display='';document.getElementById('svtx-desc').focus();}
 function addSvcTransaction(){
   const sv=db.services.find(s=>s.id===svcDetailId);if(!sv)return;
-  const amount=getMoneyVal('svtx-amount');const date=document.getElementById('svtx-date').value;const note=document.getElementById('svtx-note').value;
+  const desc=document.getElementById('svtx-desc').value.trim();const amount=getMoneyVal('svtx-amount');const date=document.getElementById('svtx-date').value;const note=document.getElementById('svtx-note').value.trim();
   if(!amount){toast('Nhập số tiền!');return}
-  if(!sv.transactions)sv.transactions=[];sv.transactions.push({type:svcTxType,amount,date,note});
+  if(!sv.transactions)sv.transactions=[];
+  if(svcTxEditId){const t=sv.transactions.find(x=>x.id===svcTxEditId);if(t){t.type=svcTxType;t.amount=amount;t.date=date;t.note=note;t.desc=desc;}svcTxEditId=null;save();openSvcDetail(svcDetailId);toast('Đã cập nhật khoản ✓');return;}
+  sv.transactions.push({id:'tx'+Date.now().toString(36)+Math.random().toString(36).slice(2,7),type:svcTxType,amount,date,note,desc});
   save();openSvcDetail(svcDetailId);toast('Đã thêm khoản '+(svcTxType==='income'?'thu':'chi')+' ✓');
 }
-function deleteSvcTx(svId,idx){const sv=db.services.find(s=>s.id===svId);if(!sv)return;if(!confirm('Xoá khoản này?'))return;sv.transactions.splice(idx,1);save();openSvcDetail(svId);toast('Đã xoá')}
+function deleteSvcTx(svId,id){const sv=db.services.find(s=>s.id===svId);if(!sv)return;if(!confirm('Xoá khoản này?'))return;sv.transactions=(sv.transactions||[]).filter(x=>x.id!==id);save();openSvcDetail(svId);toast('Đã xoá')}
 function compressImage(file,maxDim,quality){return new Promise(res=>{const reader=new FileReader();reader.onload=ev=>{const img=new Image();img.onload=()=>{let w=img.width,h=img.height;if(w>maxDim||h>maxDim){if(w>=h){h=Math.round(h*maxDim/w);w=maxDim;}else{w=Math.round(w*maxDim/h);h=maxDim;}}const cv=document.createElement('canvas');cv.width=w;cv.height=h;cv.getContext('2d').drawImage(img,0,0,w,h);try{res(cv.toDataURL('image/jpeg',quality));}catch(e){res(ev.target.result);}};img.onerror=()=>res(ev.target.result);img.src=ev.target.result;};reader.readAsDataURL(file);});}
 async function handleSvcImages(e){const sv=db.services.find(s=>s.id===svcDetailId);if(!sv)return;if(!sv.images)sv.images=[];const files=Array.from(e.target.files);e.target.value='';if(!files.length)return;toast('⏳ Đang xử lý ảnh...');for(const file of files){try{const data=await compressImage(file,1280,0.72);sv.images.push(data);}catch(err){console.warn('img err',err);}}save();renderSvcImages(sv);toast(files.length+' ảnh đã thêm ✓');}
-function showQuickReceive(){document.getElementById('quick-receive-panel').style.display='';document.getElementById('btn-quick-receive').style.display='none';document.getElementById('qr-date').value=today();document.getElementById('qr-amount').focus()}
-function hideQuickReceive(){document.getElementById('quick-receive-panel').style.display='none';const sv=db.services.find(s=>s.id===svcDetailId);if(sv){const r=(sv.fee||0)-svcThu(sv);document.getElementById('btn-quick-receive').style.display=r<=0?'none':''}}
-function updateQrCalc(){const sv=db.services.find(s=>s.id===svcDetailId);if(!sv)return;const amt=getMoneyVal('qr-amount');if(!amt){document.getElementById('qr-calc').style.display='none';return};const newThu=svcThu(sv)+amt;const remain=Math.max(0,(sv.fee||0)-newThu);document.getElementById('qr-after').textContent=fmtK(newThu)+' VND';document.getElementById('qr-left').textContent=remain<=0?'✓ Thu đủ!':fmtK(remain)+' VND';document.getElementById('qr-left').style.color=remain<=0?'var(--green)':'var(--amber)';document.getElementById('qr-calc').style.display=''}
-function saveQuickReceive(){const sv=db.services.find(s=>s.id===svcDetailId);if(!sv)return;const amt=getMoneyVal('qr-amount');if(!amt){toast('Nhập số tiền!');return};if(!sv.transactions)sv.transactions=[];sv.transactions.push({type:'income',amount:amt,date:document.getElementById('qr-date').value,note:document.getElementById('qr-note').value||'Nhận tiền từ khách'});save();toast('✓ Đã ghi nhận '+fmtK(amt)+' VND');openSvcDetail(svcDetailId)}
 function closeSvcDetail(){document.getElementById('svc-detail-modal').classList.remove('open');svcDetailId=null;renderAll()}
 function editCurrentService(){if(!svcDetailId)return;const id=svcDetailId;closeSvcDetail();openSvcForm(id)}
 function deleteCurrentService(){if(!confirm('Xoá hồ sơ? Không thể hoàn tác!'))return;db.services=db.services.filter(s=>s.id!==svcDetailId);save();closeSvcDetail();toast('Đã xoá hồ sơ')}
