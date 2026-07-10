@@ -1,8 +1,8 @@
 // FinTrack VN — service worker (offline app shell)
-const CACHE = 'fintrack-shell-v12';
+const CACHE = 'fintrack-shell-v13';
 const ASSETS = [
   './',
-  'fintrack-vn.html',
+  'index.html',
   'manifest.json',
   'icon-192.png',
   'icon-512.png',
@@ -45,7 +45,7 @@ self.addEventListener('fetch', e => {
         const copy = res.clone();
         caches.open(CACHE).then(c => c.put(req, copy)).catch(() => {});
         return res;
-      }).catch(() => caches.match(req).then(c => c || caches.match('fintrack-vn.html')))
+      }).catch(() => caches.match(req).then(c => c || caches.match('index.html')))
     );
     return;
   }
