@@ -40,6 +40,7 @@
   const mkNav=(id,label,svg,fn)=>{const b=document.createElement('button');b.className='nav-btn';b.id='nav-'+id;b.innerHTML=svg+label;b.onclick=fn;nav.appendChild(b)};
   mkNav('report','Báo cáo','<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="4" y1="20" x2="20" y2="20"/><rect x="5" y="11" width="3" height="7"/><rect x="10.5" y="6" width="3" height="12"/><rect x="16" y="9" width="3" height="9"/></svg>',()=>{showTab('report');renderReport()});
   mkNav('cal','Lịch','<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="5" width="18" height="16" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg>',()=>{showTab('cal');renderCal()});
+  mkNav('settings','Cài đặt','<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',()=>showTab('settings'));
 
   // Screens
   const tableScr=document.getElementById('screen-table');
@@ -548,16 +549,15 @@
   const _ra=window.renderAll;
   window.renderAll=function(){_ra.apply(this,arguments);refreshCur()};
 
-  // Công tắc chuyển về bản điện thoại (cuối sidebar + trong Cài đặt)
+  // Công tắc chuyển về bản điện thoại (thanh icon đầu trang + trong Cài đặt)
   const sw=document.createElement('button');
-  sw.className='dx-btn2';sw.style.cssText='margin:14px 12px 0;display:flex;align-items:center;gap:9px;justify-content:center';
-  sw.innerHTML='<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="7" y="2" width="10" height="20" rx="2"/><line x1="11" y1="18" x2="13" y2="18"/></svg>Bản điện thoại';
+  sw.id='phone-btn';sw.title='Chuyển sang bản điện thoại';
+  sw.style.cssText='background:rgba(255,255,255,.15);border:none;border-radius:8px;padding:6px 10px;color:#fff;font-size:14px;cursor:pointer;line-height:0';
+  sw.innerHTML='<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="7" y="2" width="10" height="20" rx="2"/><line x1="11" y1="18" x2="13" y2="18"/></svg>';
   sw.onclick=()=>{if(confirm('Chuyển sang bản điện thoại? Dữ liệu vẫn đồng bộ chung.'))location.href='fintrack-vn.html'};
-  nav.appendChild(sw);
-  const setScr=document.getElementById('screen-settings');
-  if(setScr){const c=document.createElement('div');c.className='card';c.style.cssText='padding:14px 16px;display:flex;align-items:center;gap:12px';
-    c.innerHTML='<div style="flex:1"><div style="font-size:13.5px;font-weight:700">Chế độ hiển thị</div><div style="font-size:12px;color:var(--muted)">Đang dùng bản Desktop — dữ liệu đồng bộ chung với bản điện thoại</div></div><button class="dx-btn" onclick="location.href=\'fintrack-vn.html\'">Chuyển sang bản App</button>';
-    setScr.insertBefore(c,setScr.firstChild)}
+  const searchBtn=document.getElementById('search-btn');
+  if(searchBtn)searchBtn.parentNode.insertBefore(sw,searchBtn);else nav.appendChild(sw);
+  const gearBtn=document.getElementById('gear-btn');if(gearBtn)gearBtn.style.display='none';
 
   // Gợi ý phím tắt ở cuối sidebar
   const hint=document.createElement('div');
