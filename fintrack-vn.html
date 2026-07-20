@@ -392,6 +392,136 @@ body.dark .type-btn.active{background:#1e3450;color:#8fc2f0;border-color:#3d6a99
 body.dark .set-ic,body.dark .tcat-ic,body.dark .kpi-ic{color:#8fb4e0}
 .tx-name svg{width:11px;height:11px;color:var(--muted)}
 .smart-dot{padding-top:4px}
+
+/* ═══════════════════════════════════════════════
+   REDESIGN 2026 · iOS 26 · Glassmorphism · Material 3
+   (override layer — không đổi class/JS, chỉ đổi look)
+   ═══════════════════════════════════════════════ */
+:root{
+  --r-lg:16px;--r-md:11px;--r-sm:9px;
+  --ease-spring:cubic-bezier(.34,1.56,.64,1);
+  --ease-soft:cubic-bezier(.22,.61,.36,1);
+  --glass-lite:rgba(255,255,255,.82);
+  --glass-brd:rgba(255,255,255,.7);
+  --elev-1:0 2px 10px rgba(22,42,70,.05),0 8px 30px rgba(22,42,70,.06);
+  --elev-2:0 4px 16px rgba(22,42,70,.08),0 16px 44px rgba(22,42,70,.10);
+}
+body{
+  background:
+    radial-gradient(125% 85% at 100% -5%, #e6eefb 0%, transparent 55%),
+    radial-gradient(120% 80% at -10% 12%, #e7f5ef 0%, transparent 52%),
+    radial-gradient(130% 70% at 50% 108%, #f0eafb 0%, transparent 55%),
+    linear-gradient(180deg,#f4f6fc 0%,#eef1f8 100%);
+}
+body.dark{
+  --glass-lite:rgba(24,34,50,.82);
+  --glass-brd:rgba(255,255,255,.09);
+  --elev-1:0 2px 12px rgba(0,0,0,.3);
+  --elev-2:0 8px 30px rgba(0,0,0,.45);
+  background:
+    radial-gradient(125% 85% at 100% -5%, #16253c 0%, transparent 55%),
+    radial-gradient(120% 80% at -10% 12%, #122032 0%, transparent 52%),
+    radial-gradient(130% 70% at 50% 108%, #1a1730 0%, transparent 55%),
+    linear-gradient(180deg,#0b1119 0%,#080d14 100%);
+}
+
+/* ── Topbar: bo đáy + đổ bóng mềm ── */
+.topbar{border-radius:0 0 18px 18px;box-shadow:0 8px 30px rgba(16,40,64,.22),inset 0 -1px 0 rgba(255,255,255,.08)}
+.topbar-balance{letter-spacing:-1.2px}
+.topbar-stat{border-radius:11px}
+
+/* ── Cards: nền bán trong suốt ĐẶC, KHÔNG blur (thẻ nhiều nhất → tránh lag) ── */
+.card{
+  background:var(--glass-lite);
+  border:1px solid var(--glass-brd);
+  border-radius:var(--r-lg);
+  box-shadow:var(--elev-1);
+  transition:transform .28s var(--ease-soft),box-shadow .28s var(--ease-soft);
+}
+body.dark .card{
+  background:var(--glass-lite);
+  border-color:var(--glass-brd);
+  box-shadow:var(--elev-1);
+}
+.svc-card{
+  background:var(--glass-lite);
+  border:1px solid var(--glass-brd);
+  border-radius:var(--r-lg);
+  box-shadow:var(--elev-1);
+}
+
+/* ── Stat / KPI / crypto tiles ── */
+.stat-tile{border-radius:var(--r-md);border:1px solid var(--glass-brd);background:color-mix(in srgb,var(--light) 70%,transparent)}
+.kpi-card{border-radius:var(--r-md);border:1px solid var(--glass-brd);background:var(--glass-lite);box-shadow:var(--elev-1);transition:transform .18s var(--ease-spring),box-shadow .2s var(--ease-soft)}
+.kpi-card:active{transform:scale(.96)}
+.cg-item{border-radius:9px}
+.crypto-grid{gap:5px}
+
+/* ── Bottom nav: kính đậm hơn, bo tròn hơn ── */
+.bottom-nav{
+  border-radius:22px;
+  -webkit-backdrop-filter:blur(16px);
+  backdrop-filter:blur(16px);
+  box-shadow:0 12px 40px rgba(16,40,64,.2),inset 0 1px 0 rgba(255,255,255,.7);
+}
+.nav-btn{transition:color .2s var(--ease-soft),transform .18s var(--ease-spring)}
+.nav-btn:active{transform:scale(.9)}
+.nav-btn.active::before{transition:background .25s var(--ease-soft)}
+
+/* ── FAB: viên thuốc kính, bóng nổi ── */
+.fab{box-shadow:0 12px 30px rgba(26,60,94,.45),inset 0 1px 0 rgba(255,255,255,.4);transition:transform .18s var(--ease-spring),box-shadow .2s}
+.fab:active{transform:scale(.9)}
+
+/* ── Tabs: pill tonal (Material 3) ── */
+.tab-item{transition:background .22s var(--ease-soft),color .2s,border-color .2s}
+.tab-item.active{background:color-mix(in srgb,var(--nav-accent,var(--navy)) 12%,transparent);border-color:transparent;color:var(--nav-accent,var(--navy))}
+body.dark .tab-item.active{background:color-mix(in srgb,var(--nav-accent-dark,#8fc2f0) 18%,transparent);border-color:transparent;color:var(--nav-accent-dark,#8fc2f0)}
+
+/* ── Chips / segments: mượt + state layer ── */
+.chip,.acct-chip,.proj-seg,.ac-btn{transition:all .2s var(--ease-soft)}
+.chip:active,.acct-chip:active,.ac-btn:active{transform:scale(.94)}
+
+/* ── Buttons: bo M3, hiệu ứng nhấn ── */
+.btn{border-radius:11px;transition:transform .16s var(--ease-spring),filter .2s,box-shadow .2s}
+.btn:active{transform:scale(.96)}
+.btn-primary{background:linear-gradient(150deg,#2f5e8f,var(--navy));box-shadow:0 6px 18px rgba(26,60,94,.32)}
+.type-btn{border-radius:11px;transition:all .18s var(--ease-soft)}
+
+/* ── Inputs: bo mềm + focus ring M3 ── */
+.form-input{border-radius:11px;transition:border-color .18s,box-shadow .18s}
+.form-input:focus{border-color:var(--navy);box-shadow:0 0 0 4px color-mix(in srgb,var(--navy) 15%,transparent)}
+.svc-search{border-radius:11px}
+
+/* ── Modal: kính sâu, bo đỉnh lớn ── */
+.modal{border-radius:20px 20px 0 0;background:var(--card)}
+.modal-overlay{background:rgba(10,20,32,.42)}
+
+/* ── Calculator keys ── */
+.calc-k{border-radius:11px;transition:transform .1s var(--ease-spring),background .15s}
+
+/* ── Switch bo tròn iOS ── */
+.switch .slider{box-shadow:inset 0 0 0 1px rgba(0,0,0,.04)}
+
+/* ── Collapsible chevron ── */
+.clps-chev{border-radius:9px;transition:transform .22s var(--ease-spring),background .2s}
+
+/* ── Chuyển cảnh mượt (fade + rise + scale nhẹ) ── */
+.screen.active{animation:screenIn .42s var(--ease-soft)}
+@keyframes screenIn{from{opacity:0;transform:translateY(14px) scale(.99)}to{opacity:1;transform:none}}
+
+/* ── Responsive: khung cột trên màn hình lớn (không phá scroll) ── */
+@media (min-width:520px){
+  body{
+    max-width:440px;
+    box-shadow:0 0 0 1px rgba(255,255,255,.55),-40px 0 80px rgba(20,42,74,.06),40px 0 80px rgba(20,42,74,.06);
+  }
+  body.dark{box-shadow:0 0 0 1px rgba(255,255,255,.06),-40px 0 80px rgba(0,0,0,.5),40px 0 80px rgba(0,0,0,.5)}
+  .fab{right:calc(50% - 220px + 18px)}
+}
+@media (prefers-reduced-motion:reduce){
+  .screen.active{animation:none}
+  .card,.kpi-card,.nav-btn,.fab,.btn,.chip{transition:none}
+}
 </style>
 </head>
 <body>
@@ -405,7 +535,6 @@ body.dark .set-ic,body.dark .tcat-ic,body.dark .kpi-ic{color:#8fb4e0}
     </div>
     <div style="display:flex;gap:8px;margin-top:4px;align-items:center">
       <div id="sync-status" style="display:flex;align-items:center"><span title="Đang kết nối" style="display:inline-flex;align-items:center"><span style="width:9px;height:9px;border-radius:50%;background:#94a3b8;box-shadow:0 0 0 3px #94a3b833"></span></span></div>
-      <button onclick="if(confirm('Chuyển sang bản Desktop? Dữ liệu vẫn đồng bộ chung.'))location.href='fintrack-desktop.html'" id="desk-btn" title="Chuyển sang bản Desktop" style="background:rgba(255,255,255,.15);border:none;border-radius:8px;padding:6px 10px;color:#fff;font-size:14px;cursor:pointer;line-height:0"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="13" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></button>
       <button onclick="openSearch()" id="search-btn" title="Tìm kiếm" style="background:rgba(255,255,255,.15);border:none;border-radius:8px;padding:6px 10px;color:#fff;font-size:14px;cursor:pointer;line-height:0"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg></button>
       <button onclick="showTab('settings')" id="gear-btn" title="Cài đặt" style="background:rgba(255,255,255,.15);border:none;border-radius:8px;padding:6px 10px;color:#fff;font-size:14px;cursor:pointer;line-height:0"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06a1.65 1.65 0 001.82.33h0a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51h0a1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82v0a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg></button>
       <button onclick="toggleDark()" id="dark-btn" style="background:rgba(255,255,255,.15);border:none;border-radius:8px;padding:6px 10px;color:#fff;font-size:14px;cursor:pointer;line-height:0"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg></button>
