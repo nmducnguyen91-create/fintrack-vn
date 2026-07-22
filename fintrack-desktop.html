@@ -514,8 +514,22 @@ body.dark .tt-table td{border-bottom-color:#22304a}
   .tt-table th{position:static;color:#333}
 }
 </style>
+<style>
+/* ── Field validation + boot splash ── */
+.form-input.field-invalid{border-color:var(--red)!important;box-shadow:0 0 0 4px color-mix(in srgb,var(--red) 15%,transparent)!important}
+.field-err{color:var(--red);font-size:12px;font-weight:500;margin-top:5px;display:flex;align-items:center;gap:5px;line-height:1.4;animation:fieldErrIn .18s ease}
+.field-err::before{content:'!';display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;border-radius:50%;background:var(--red);color:#fff;font-size:10px;font-weight:800;flex-shrink:0}
+@keyframes fieldErrIn{from{opacity:0;transform:translateY(-3px)}to{opacity:1;transform:none}}
+#boot-splash{position:fixed;inset:0;z-index:9999;background:var(--bg,#f3f5f9);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;transition:opacity .35s ease}
+#boot-splash .bs-mark{width:64px;height:64px;border-radius:18px;background:linear-gradient(150deg,#2f6fb0,#1c4a77);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:30px;box-shadow:0 12px 30px -8px rgba(28,74,119,.5)}
+#boot-splash .bs-name{font-size:17px;font-weight:700;color:var(--text,#1a2433);letter-spacing:.3px}
+#boot-splash .bs-spin{width:26px;height:26px;border-radius:50%;border:3px solid color-mix(in srgb,var(--navy,#1c4a77) 22%,transparent);border-top-color:var(--navy,#1c4a77);animation:bsSpin .7s linear infinite}
+@keyframes bsSpin{to{transform:rotate(360deg)}}
+body.dark #boot-splash{background:#0f1622}
+</style>
 </head>
 <body>
+<div id="boot-splash"><div class="bs-mark">₫</div><div class="bs-name">FinTrack</div><div class="bs-spin"></div></div>
 <!-- TOPBAR -->
 <div class="topbar" id="topbar">
   <div style="display:flex;justify-content:space-between;align-items:flex-start">
@@ -2910,7 +2924,7 @@ function toggleRecDayRow(){
 }
 function saveRecurringForm(){
   const amount=parseMoney(document.getElementById('rec-amount').value);
-  if(!amount){toast('Nhập số tiền');return}
+  if(!amount){warnField('rec-amount','Nhập số tiền');return}
   const id=document.getElementById('rec-edit-id').value;
   const type=document.getElementById('rec-type').value;
   const data={
@@ -3080,7 +3094,7 @@ function openDebtForm(idx){
 }
 function closeDebtForm(){document.getElementById('debt-modal').classList.remove('open');editDebtIdx=null}
 function saveDebt(){
-  const name=document.getElementById('d-name').value.trim();if(!name){toast('Nhập tên khoản nợ!');return}
+  const name=document.getElementById('d-name').value.trim();if(!name){warnField('d-name','Nhập tên khoản nợ');return}
   let remaining=getMoneyVal('d-remaining');const principal=getMoneyVal('d-principal');
   if(!remaining&&principal)remaining=principal;
   const obj={kind:debtKind,name,party:document.getElementById('d-party').value.trim(),type:document.getElementById('d-type').value,acct:document.getElementById('d-acct').value||'',principal,remaining,monthlyPayment:getMoneyVal('d-monthly'),rate:parseFloat(document.getElementById('d-rate').value)||0,term:parseInt(document.getElementById('d-term').value)||0,paid:parseInt(document.getElementById('d-paid').value)||0,startDate:document.getElementById('d-start').value,note:document.getElementById('d-note').value};
@@ -3137,7 +3151,7 @@ function confirmSettle(){
   if(settleInstId!=null){
     const it=(db.installments||[]).find(x=>x.id===settleInstId);if(!it)return;
     const amt=getMoneyVal('s-amount');
-    if(!amt){toast('Nhập số tiền tất toán!');return}
+    if(!amt){warnField('s-amount','Nhập số tiền tất toán');return}
     it.settled=true;it.settleAmount=amt;it.settleFee=getMoneyVal('s-fee');
     it.settleDate=document.getElementById('s-date').value||today();
     it.paid=it.term;
@@ -3159,7 +3173,7 @@ function confirmSettle(){
 }
 function deleteDebt(i){if(i==null||!db.debts[i])return;const item=db.debts[i];db.debts.splice(i,1);save();closeDebtForm();renderAll();renderDebts();toastUndo('Đã xoá khoản nợ',()=>{db.debts.splice(i,0,item);save();renderAll();renderDebts()})}
 function saveGoal(){
-  const name=document.getElementById('g-name').value;if(!name){toast('Nhập tên mục tiêu!');return}
+  const name=document.getElementById('g-name').value;if(!name){warnField('g-name','Nhập tên mục tiêu');return}
   db.goals.push({name,type:document.getElementById('g-type').value,target:getMoneyVal('g-target'),current:getMoneyVal('g-current'),deadline:document.getElementById('g-deadline').value});
   save();closeGoalForm();renderAll();toast('Đã thêm mục tiêu ✓');
 }
@@ -3780,7 +3794,7 @@ function renderJournal(){
 function openJournalForm(){document.getElementById('journal-modal').classList.add('open');document.getElementById('j-date').value=today()}
 function closeJournalForm(){document.getElementById('journal-modal').classList.remove('open')}
 function saveJournal(){
-  const signal=document.getElementById('j-signal').value;if(!signal){toast('Nhập tín hiệu!');return}
+  const signal=document.getElementById('j-signal').value;if(!signal){warnField('j-signal','Nhập tín hiệu');return}
   db.journals.push({coin:document.getElementById('j-coin').value,signal,action:document.getElementById('j-action').value,date:document.getElementById('j-date').value,result:document.getElementById('j-result').value,note:document.getElementById('j-note').value});
   save();closeJournalForm();renderJournal();toast('Đã lưu nhật ký ✓');
 }
@@ -3795,7 +3809,7 @@ function filterProject(el,f){projectFilter=f;renderCompany()}
 function addProjectPrompt(){const name=(prompt('Tên công việc mới:')||'').trim();if(!name)return;db.projects=db.projects||[];if(db.projects.includes(name)){toast('Công việc đã tồn tại');return}db.projects.push(name);save();projectFilter=name;renderCompany();toast('Đã thêm công việc ✓')}
 function openProjectManager(){document.getElementById('pf-name').value='';renderProjectManageList();document.getElementById('project-modal').classList.add('open')}
 function closeProjectManager(){document.getElementById('project-modal').classList.remove('open')}
-function saveNewProject(){const inp=document.getElementById('pf-name');const name=(inp.value||'').trim();if(!name){toast('Nhập tên công việc');return}db.projects=db.projects||[];if(db.projects.includes(name)){toast('Công việc đã tồn tại');return}db.projects.push(name);save();inp.value='';renderProjectManageList();renderCompany();toast('Đã thêm công việc ✓')}
+function saveNewProject(){const inp=document.getElementById('pf-name');const name=(inp.value||'').trim();if(!name){warnField('pf-name','Nhập tên công việc');return}db.projects=db.projects||[];if(db.projects.includes(name)){toast('Công việc đã tồn tại');return}db.projects.push(name);save();inp.value='';renderProjectManageList();renderCompany();toast('Đã thêm công việc ✓')}
 function projectTxCount(name){return db.transactions.filter(t=>t.group==='project'&&t.category===name).length}
 function renderProjectManageList(){const el=document.getElementById('project-manage-list');if(!el)return;const list=db.projects||[];if(!list.length){el.innerHTML='<div class="empty" style="padding:26px 12px"><div class="empty-icon"><svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6l-3.45-6.89A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z"/></svg></div>Chưa có công việc nào<div style="font-size:11px;margin-top:6px;opacity:.8">Thêm công việc ở trên để bắt đầu</div></div>';return}el.innerHTML=list.map((p,i)=>{const safe=p.replace(/'/g,"\\'");const cnt=projectTxCount(p);return`<div class="set-row" style="gap:10px">
     <div class="set-ic" style="background:#fff3e0">${CAT_ICONS[p]||I.brief}</div>
@@ -3958,7 +3972,7 @@ function editJobTx(id){const t=db.transactions.find(x=>x.id===id);if(!t)return;j
 function addJobTransaction(){
   const j=db.jobs.find(x=>x.id===jobDetailId);if(!j)return;
   const desc=document.getElementById('jtx-desc').value.trim();const amount=getMoneyVal('jtx-amount');const date=document.getElementById('jtx-date').value||today();const note=document.getElementById('jtx-note').value.trim();
-  if(!amount){toast('Nhập số tiền!');return}
+  if(!amount){warnField('jtx-amount','Nhập số tiền');return}
   const flow=jobTxType==='income'?'in':'out';
   if(jobTxEditId){const t=db.transactions.find(x=>x.id===jobTxEditId);if(t){t.flow=flow;t.amount=amount;t.date=date;t.note=note;if(desc)t.desc=desc;}jobTxEditId=null;save();openJobDetail(jobDetailId);renderCompany();toast('Đã cập nhật khoản ✓');return}
   db.transactions.push({id:Date.now(),amount,desc:desc||(flow==='in'?'Khoản thu':'Khoản chi'),category:j.name,group:'project',date,note,flow,jobId:j.id});
@@ -3988,7 +4002,7 @@ function openJobForm(editId){
 }
 function closeJobForm(){document.getElementById('job-form-modal').classList.remove('open');jobEditId=null}
 function saveJob(){
-  const name=document.getElementById('jf-name').value.trim();if(!name){toast('Nhập tên công việc!');return}
+  const name=document.getElementById('jf-name').value.trim();if(!name){warnField('jf-name','Nhập tên công việc');return}
   const data={name,assignee:document.getElementById('jf-assignee').value.trim(),type:document.getElementById('jf-type').value,date:document.getElementById('jf-date').value,deadline:document.getElementById('jf-deadline').value,budget:getMoneyVal('jf-budget'),progress:Math.max(0,Math.min(100,+document.getElementById('jf-progress').value||0)),note:document.getElementById('jf-note').value.trim()};
   if(jobEditId){
     const j=db.jobs.find(x=>x.id===jobEditId);
@@ -4071,7 +4085,7 @@ function editSvcTx(svId,id){const sv=db.services.find(s=>s.id===svId);if(!sv)ret
 function addSvcTransaction(){
   const sv=db.services.find(s=>s.id===svcDetailId);if(!sv)return;
   const desc=document.getElementById('svtx-desc').value.trim();const amount=getMoneyVal('svtx-amount');const date=document.getElementById('svtx-date').value;const note=document.getElementById('svtx-note').value.trim();
-  if(!amount){toast('Nhập số tiền!');return}
+  if(!amount){warnField('svtx-amount','Nhập số tiền');return}
   if(!sv.transactions)sv.transactions=[];
   if(svcTxEditId){const t=sv.transactions.find(x=>x.id===svcTxEditId);if(t){t.type=svcTxType;t.amount=amount;t.date=date;t.note=note;t.desc=desc;}svcTxEditId=null;save();openSvcDetail(svcDetailId);toast('Đã cập nhật khoản ✓');return;}
   sv.transactions.push({id:'tx'+Date.now().toString(36)+Math.random().toString(36).slice(2,7),type:svcTxType,amount,date,note,desc});
@@ -4096,7 +4110,7 @@ function openSvcForm(editId){
 function closeSvcForm(){document.getElementById('svc-form-modal').classList.remove('open');svcEditId=null}
 function updateSfCalc(){const fee=getMoneyVal('sf-fee');const cost=getMoneyVal('sf-cost');const el=document.getElementById('sf-calc');if(!fee){el.style.display='none';return};el.style.display='';const profit=fee-cost;document.getElementById('sfc-fee').textContent=fmtK(fee)+' đ';document.getElementById('sfc-cost').textContent=fmtK(cost)+' đ';document.getElementById('sfc-profit').textContent=(profit>=0?'+':'')+fmtK(profit)+' đ';document.getElementById('sfc-profit').style.color=profit>=0?'var(--green)':'var(--red)'}
 function saveService(){
-  const name=document.getElementById('sf-name').value;if(!name){toast('Nhập tên hồ sơ!');return}
+  const name=document.getElementById('sf-name').value;if(!name){warnField('sf-name','Nhập tên hồ sơ');return}
   const data={name,client:document.getElementById('sf-client').value,phone:document.getElementById('sf-phone').value,type:document.getElementById('sf-type').value,date:document.getElementById('sf-date').value,deadline:document.getElementById('sf-deadline').value,fee:getMoneyVal('sf-fee'),cost:getMoneyVal('sf-cost'),note:document.getElementById('sf-note').value};
   if(svcEditId){const idx=db.services.findIndex(s=>s.id===svcEditId);if(idx>=0)db.services[idx]={...db.services[idx],...data};save();closeSvcForm();renderServiceTab();toast('Đã cập nhật hồ sơ ✓')}
   else{const newSv={id:'sv_'+Date.now(),status:'open',transactions:[],images:[],...data};const firstPay=getMoneyVal('sf-firstpay');if(firstPay)newSv.transactions.push({type:'income',amount:firstPay,date:document.getElementById('sf-firstdate').value||data.date,note:document.getElementById('sf-firstnote').value||'Thu lần đầu'});db.services.push(newSv);save();closeSvcForm();renderServiceTab();toast('Đã tạo hồ sơ ✓');setTimeout(()=>openSvcDetail(newSv.id),300)}
@@ -4293,8 +4307,8 @@ function saveTransaction(){
       const unit=document.getElementById('as-unit').value.trim()||ASSET_META[assetClass].unit;
       const avg=getMoneyVal('as-avg')||0;const cur=getMoneyVal('as-cur')||0;
       const date=document.getElementById('as-date').value||today();const note=document.getElementById('as-note').value;
-      if(!qty){toast('Nhập số lượng!');return}
-      if(!cur&&!avg){toast('Nhập giá vốn hoặc giá hiện tại!');return}
+      if(!qty){warnField('as-qty','Nhập số lượng');return}
+      if(!cur&&!avg){warnField('as-cur','Nhập giá vốn hoặc giá hiện tại');return}
       const curF=cur||avg;db.assets=db.assets||[];
       if(editAssetId!=null){const i=db.assets.findIndex(x=>String(x.id)===String(editAssetId));if(i>=0)db.assets[i]={...db.assets[i],type:assetClass,name,qty,unit,avg,cur:curF,date,note};editAssetId=null;save();closeModal();renderAll();toast('Đã cập nhật ✓');return;}
       db.assets.push({id:'as_'+Date.now(),type:assetClass,name,qty,unit,avg,cur:curF,date,note});
@@ -4302,7 +4316,7 @@ function saveTransaction(){
     }
     const coin=document.getElementById('f-coin').value;const custom=document.getElementById('f-coin-custom').value;const finalCoin=coin==='Khác'?(custom||'Khác'):coin;
     const qty=+document.getElementById('f-qty').value;const price=+document.getElementById('f-price').value;const rate=getMoneyVal('f-rate')||25400;const avgCost=+document.getElementById('f-avgcost').value||0;
-    if(!qty||!price){toast('Nhập số lượng và giá!');return}
+    if(!qty||!price){warnField('f-qty','Nhập số lượng và giá');return}
     const portfolio=computePortfolio();const pos=portfolio.find(p=>p.coin===finalCoin);const avgBuy=avgCost||(pos?pos.avgBuy:0);
     let pnlUSDT=0,pnlVnd=0;if(cryptoAction==='sell'){pnlUSDT=(price-avgBuy)*qty;pnlVnd=pnlUSDT*rate}
     const tp=+document.getElementById('f-tp').value||0;const sl=+document.getElementById('f-sl').value||0;
@@ -4311,7 +4325,7 @@ function saveTransaction(){
     db.cryptoTrades.push({id:Date.now(),...tradeObj});
   }else{
     const amount=getMoneyVal('f-amount');const desc=document.getElementById('f-desc').value;const catRaw=document.getElementById('f-cat').value;const date=document.getElementById('f-date').value;const note=document.getElementById('f-note').value;
-    if(!amount){toast('Nhập số tiền!');return}
+    if(!amount){warnField('f-amount','Nhập số tiền');return}
     if(txType==='xfer'){
       const from=document.getElementById('f-from').value,to=document.getElementById('f-to').value;
       if(!from||!to||from===to){toast('Chọn 2 tài khoản khác nhau!');return}
@@ -4448,7 +4462,7 @@ function acSpentAvail(src){
   else setMoneyVal('ac-avail',Math.max(0,lim-getMoneyVal('ac-spent')));
 }
 function closeAcctModal(){document.getElementById('acct-modal').classList.remove('open');editAcctId=null}
-function saveAcct(){ensureAccounts();const name=document.getElementById('ac-name').value.trim();if(!name){toast('Nhập tên tài khoản!');return}
+function saveAcct(){ensureAccounts();const name=document.getElementById('ac-name').value.trim();if(!name){warnField('ac-name','Nhập tên tài khoản');return}
   const type=document.getElementById('ac-type').value;let opening=getMoneyVal('ac-opening')||0;const limit=getMoneyVal('ac-limit')||0;const main=document.getElementById('ac-main').checked;
   if(type==='credit'){const S=getMoneyVal('ac-spent')||0;const ex=editAcctId?acctById(editAcctId):null;const txEff=ex?(acctBalance(ex)-(ex.opening||0)):0;opening=-S-txEff;}
   const stDay=+document.getElementById('ac-stday').value||0;const dueDay=+document.getElementById('ac-dueday').value||0;
@@ -4624,10 +4638,10 @@ function openInstForm(id){ensureInst();editInstId=id||null;const it=id?db.instal
 function instAutoCalc(){const total=getMoneyVal('in-total'),term=+document.getElementById('in-term').value;if(total&&term&&!getMoneyVal('in-per'))setMoneyVal('in-per',Math.round(total/term))}
 function closeInstModal(){document.getElementById('inst-modal').classList.remove('open');editInstId=null}
 function saveInst(){ensureInst();
-  const name=document.getElementById('in-name').value.trim();if(!name){toast('Nhập tên khoản góp!');return}
+  const name=document.getElementById('in-name').value.trim();if(!name){warnField('in-name','Nhập tên khoản góp');return}
   const card=document.getElementById('in-card').value;const total=getMoneyVal('in-total');let per=getMoneyVal('in-per');
   const term=+document.getElementById('in-term').value;const paid=+document.getElementById('in-paid').value||0;
-  if(!total||!term){toast('Nhập tổng tiền và số kỳ!');return}
+  if(!total||!term){warnField('in-total','Nhập tổng tiền và số kỳ');return}
   if(!per)per=Math.round(total/term);
   if(editInstId){const it=db.installments.find(x=>x.id===editInstId);if(it)Object.assign(it,{name,card,total,per,term,paid})}
   else db.installments.push({id:'in_'+Date.now(),name,card,total,per,term,paid});
@@ -5200,5 +5214,24 @@ if ('serviceWorker' in navigator) {
 
 </script>
 <script src="desktop-extras.js"></script>
+
+<script>
+(function(){
+  var DBK='fintrack_v3';
+  var hadLocal=!!localStorage.getItem(DBK);
+  window.hideSplash=function(){var s=document.getElementById('boot-splash');if(s&&!s._h){s._h=1;s.style.opacity='0';setTimeout(function(){s.remove();},380);}};
+  function dataReady(){try{return typeof db!=='undefined'&&db&&((db.transactions&&db.transactions.length)||(db.assets&&db.assets.length)||(db.services&&db.services.length)||(db.debts&&db.debts.length)||(db.cryptoTrades&&db.cryptoTrades.length));}catch(e){return false;}}
+  function ready(){
+    if(hadLocal){setTimeout(window.hideSplash,180);return;}
+    var t0=Date.now();
+    (function poll(){ if(dataReady()||Date.now()-t0>4500){window.hideSplash();} else {setTimeout(poll,150);} })();
+  }
+  if(document.readyState!=='loading')ready();else document.addEventListener('DOMContentLoaded',ready);
+  window.clearFieldErr=function(id){var el=document.getElementById(id);if(!el)return;el.classList.remove('field-invalid');var g=el.closest('.form-group')||el.parentElement;var e=g&&g.querySelector('.field-err');if(e)e.remove();};
+  window.warnField=function(id,msg){var el=document.getElementById(id);if(!el){if(window.toast)toast(msg);return false;}el.classList.add('field-invalid');var g=el.closest('.form-group')||el.parentElement;if(g){var e=g.querySelector('.field-err');if(!e){e=document.createElement('div');e.className='field-err';g.appendChild(e);}e.textContent=msg;}try{el.focus({preventScroll:true});}catch(_){try{el.focus();}catch(__){}}return false;};
+  document.addEventListener('input',function(ev){var t=ev.target;if(t&&t.classList&&t.classList.contains('field-invalid'))window.clearFieldErr(t.id);},true);
+  document.addEventListener('change',function(ev){var t=ev.target;if(t&&t.classList&&t.classList.contains('field-invalid'))window.clearFieldErr(t.id);},true);
+})();
+</script>
 </body>
 </html>
