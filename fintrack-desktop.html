@@ -663,6 +663,7 @@ body.dark #boot-splash{background:#0f1622}
     <button class="tab-item active" onclick="switchPersonalTab(this,'daily')">Nhật ký</button>
     <button class="tab-item" onclick="switchPersonalTab(this,'account')">Tài khoản</button>
     <button class="tab-item" onclick="switchPersonalTab(this,'debt')">Nợ</button>
+    <button class="tab-item" onclick="switchPersonalTab(this,'trip')">Chuyến đi</button>
     <button class="tab-item" onclick="switchPersonalTab(this,'stats')">Thống kê</button>
   </div>
   <div id="personal-account" style="display:none">
@@ -729,6 +730,7 @@ body.dark #boot-splash{background:#0f1622}
     </div>
     <div style="height:14px"></div>
   </div>
+  <div id="personal-trip" style="display:none"></div>
 </div>
 
 <!-- ③ CRYPTO -->
@@ -1327,6 +1329,10 @@ body.dark #boot-splash{background:#0f1622}
         <div id="acct-row" style="display:none"><label class="form-label">Tài khoản</label><select class="form-input form-select" id="f-acct" onchange="setAcct(this.value)"></select></div>
         <div><label class="form-label">Ghi chú</label><input class="form-input" type="text" id="f-note" placeholder="Ghi chú thêm..."></div>
       </div>
+      <div class="form-group" id="trip-row" style="display:none">
+        <label class="form-label">Chuyến đi / Sự kiện <span style="font-weight:400;color:var(--muted)">— tuỳ chọn</span></label>
+        <select class="form-input form-select" id="f-trip" onchange="onTripChange()"></select>
+      </div>
       <div id="recurring-block" style="background:var(--light);border-radius:10px;padding:8px 12px;margin-top:0">
         <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;gap:10px">
           <span style="font-size:13px;font-weight:500">Lặp lại tự động</span>
@@ -1709,6 +1715,27 @@ body.dark #boot-splash{background:#0f1622}
   </div>
 </div>
 
+<!-- TRIP FORM -->
+<div class="modal-overlay" id="trip-modal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="trip-modal-title">Chuyến đi</div>
+    <div class="form-group"><label class="form-label">Tên chuyến đi / sự kiện *</label><input class="form-input" id="tf-name" placeholder="Công tác Đà Nẵng, Du lịch Đà Lạt..."></div>
+    <div class="fg-2col form-group">
+      <div><label class="form-label">Ngày bắt đầu</label><input class="form-input" type="date" id="tf-start"></div>
+      <div><label class="form-label">Ngày kết thúc</label><input class="form-input" type="date" id="tf-end"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Ngân sách dự kiến (đ) <span style="font-weight:400;color:var(--muted)">— tuỳ chọn</span></label>
+      <input class="form-input money-input" type="text" inputmode="numeric" id="tf-budget" placeholder="5,000,000"><div class="money-display" id="tf-budget-display"></div></div>
+    <div class="form-group"><label class="form-label">Ghi chú</label><input class="form-input" id="tf-note" placeholder="Ghi chú thêm..."></div>
+    <div class="btn-row">
+      <button class="btn btn-cancel" onclick="closeTripForm()">Hủy</button>
+      <button class="btn btn-primary" onclick="saveTrip()">Lưu</button>
+    </div>
+    <div id="trip-del-row" style="display:none;text-align:center;margin-top:8px"><span style="font-size:12px;color:var(--red);cursor:pointer" onclick="deleteTrip()">Xoá chuyến đi này</span></div>
+  </div>
+</div>
+
 <!-- SETTLE (TẤT TOÁN) MODAL -->
 <div class="modal-overlay" id="settle-modal">
   <div class="modal">
@@ -1896,6 +1923,7 @@ function migrateData(){
     db.projects=names.length?names:['Trạm dừng chân','Trạm xăng'];
     changed=true;
   }
+  if(!Array.isArray(db.trips))db.trips=[];
   const deE=s=>typeof s==='string'?s.replace(/^[^\p{L}\p{N}+←-]+\s+/u,''):s;
   (db.services||[]).forEach(sv=>{const n=deE(sv.type);if(n!==sv.type){sv.type=n;changed=true}});
   (db.jobs||[]).forEach(j=>{const n=deE(j.type);if(n!==j.type){j.type=n;changed=true}});
@@ -3197,7 +3225,7 @@ function txRow(t,opts){
   const bg=isIn?'#e3f2fd':'#fdecea';const sign=isIn?'+':'−';
   const hasDesc=!!(t.desc&&t.desc.trim());
   const name=(t.recurringId?I.rep+' ':'')+(hasDesc?t.desc:t.category);
-  const subParts=[];if(hasDesc)subParts.push(t.category);if(t.group==='personal'&&t.account&&(db.accounts||[]).length>1){const _a=acctById(t.account);if(_a)subParts.push(_a.name)}if(t.note)subParts.push(t.note);
+  const subParts=[];if(hasDesc)subParts.push(t.category);if(t.group==='personal'&&t.account&&(db.accounts||[]).length>1){const _a=acctById(t.account);if(_a)subParts.push(_a.name)}if(t.tripId){const _tr=(db.trips||[]).find(x=>String(x.id)===String(t.tripId));if(_tr)subParts.push('✈ '+_tr.name)}if(t.note)subParts.push(t.note);
   const sub=subParts.join(' · ');
   const dateHtml=opts.hideDate?'':`<div class="tx-date">${dateLabel(t.date)}</div>`;
   const swipeAttrs=` data-swipe-edit="openEditTx('${t.id}')" data-swipe-del="deleteTxById('${t.id}')" data-swipe-hold="duplicateTx('${t.id}')"`;
@@ -3435,7 +3463,7 @@ function initPullRefresh(){
 }
 
 // ── PERSONAL ──
-function switchPersonalTab(el,tab){document.querySelectorAll('#screen-personal .tab-item').forEach(t=>t.classList.remove('active'));el.classList.add('active');personalSubTab=tab;if(tab==='account')try{renderAcctReport()}catch(e){};['daily','account','debt','stats'].forEach(t=>document.getElementById('personal-'+t).style.display=t===tab?'':'none');renderPersonal()}
+function switchPersonalTab(el,tab){document.querySelectorAll('#screen-personal .tab-item').forEach(t=>t.classList.remove('active'));el.classList.add('active');personalSubTab=tab;if(tab==='account')try{renderAcctReport()}catch(e){};['daily','account','debt','stats','trip'].forEach(t=>document.getElementById('personal-'+t).style.display=t===tab?'':'none');renderPersonal()}
 function filterPersonal(el,cat){document.querySelectorAll('#personal-daily .chip').forEach(c=>c.classList.remove('active'));el.classList.add('active');personalFilter=cat;renderPersonal()}
 function filterPersonalSel(cat){personalFilter=cat;renderPersonal()}
 function renderPersonal(){
@@ -3443,6 +3471,121 @@ function renderPersonal(){
   if(personalSubTab==='daily')renderDailyLog(txs);
   if(personalSubTab==='debt')renderDebts();
   if(personalSubTab==='stats')renderPersonalStats();
+  if(personalSubTab==='trip')renderTrips();
+}
+// ── TRIPS / CHUYẾN ĐI ──
+let tripDetailId=null,editTripId=null;
+function tripById(id){return (db.trips||[]).find(t=>String(t.id)===String(id))}
+function populateTripSelect(){
+  const sel=document.getElementById('f-trip');if(!sel)return;
+  const cur=sel.value;
+  const trips=(db.trips||[]).filter(t=>t.status!=='done');
+  sel.innerHTML='<option value="">— Không thuộc chuyến đi —</option>'+trips.map(t=>`<option value="${t.id}">${t.name}</option>`).join('')+'<option value="__newtrip__">+ Tạo chuyến đi mới…</option>';
+  if(cur&&[...sel.options].some(o=>o.value===cur))sel.value=cur;
+}
+function onTripChange(){
+  const sel=document.getElementById('f-trip');if(!sel||sel.value!=='__newtrip__')return;
+  const name=(prompt('Tên chuyến đi / sự kiện:')||'').trim();
+  if(name){const id='trip_'+Date.now();db.trips=db.trips||[];db.trips.push({id,name,status:'open',startDate:today()});save();populateTripSelect();sel.value=id}
+  else sel.value='';
+}
+function tripStats(id){
+  const txs=db.transactions.filter(t=>t.tripId===id);
+  const chi=txs.filter(t=>t.flow==='out').reduce((s,t)=>s+t.amount,0);
+  const thu=txs.filter(t=>t.flow==='in').reduce((s,t)=>s+t.amount,0);
+  return{txs,chi,thu,net:chi-thu,count:txs.length};
+}
+function tripPayBreakdown(txs){
+  const b={cash:0,card:0,bank:0};
+  txs.filter(t=>t.flow==='out').forEach(t=>{const a=acctById(t.account);const ty=a?a.type:'cash';if(ty==='cash')b.cash+=t.amount;else if(ty==='credit')b.card+=t.amount;else b.bank+=t.amount});
+  return b;
+}
+function openTrip(id){tripDetailId=id;renderTrips();window.scrollTo({top:0})}
+function closeTripDetail(){tripDetailId=null;renderTrips()}
+function renderTrips(){
+  const el=document.getElementById('personal-trip');if(!el)return;
+  db.trips=db.trips||[];
+  if(tripDetailId&&tripById(tripDetailId)){el.innerHTML=tripDetailHtml(tripDetailId);return}
+  tripDetailId=null;
+  const trips=[...db.trips].sort((a,b)=>(b.startDate||'').localeCompare(a.startDate||''));
+  let html='<div class="sec-head" style="padding-top:8px"><span class="sec-head-title">Chuyến đi / Sự kiện</span><span class="sec-head-action" onclick="openTripForm()">+ Thêm</span></div>';
+  if(!trips.length){
+    el.innerHTML=html+'<div class="empty" style="padding:26px 24px;text-align:center"><div class="empty-icon" style="font-size:30px">✈️</div>Chưa có chuyến đi nào.<br>Tạo một chuyến để gom chi tiêu ăn · xe · mua sắm và biết chuyến đó tốn bao nhiêu.<div style="margin-top:14px"><button class="btn btn-primary" style="width:auto;padding:9px 20px" onclick="openTripForm()">Tạo chuyến đi</button></div></div>';return;
+  }
+  html+=trips.map(tr=>{
+    const s=tripStats(tr.id);const done=tr.status==='done';
+    const dates=tr.startDate?fmtDMY(tr.startDate)+(tr.endDate&&tr.endDate!==tr.startDate?' – '+fmtDMY(tr.endDate):''):'';
+    let bar='';
+    if(tr.budget){const pct=Math.min(100,Math.round(s.chi/tr.budget*100));const over=s.chi>tr.budget;const col=over?'var(--red)':pct>=80?'#e67e22':'var(--green)';bar=`<div style="margin-top:9px"><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:4px"><span>Ngân sách ${fmtK(tr.budget)} đ</span><span style="color:${col};font-weight:600">${over?'Vượt '+fmtK(s.chi-tr.budget)+' đ':pct+'%'}</span></div><div style="height:6px;border-radius:4px;background:var(--light);overflow:hidden"><div style="height:100%;width:${pct}%;background:${col};border-radius:4px"></div></div></div>`;}
+    return`<div class="card" style="margin:8px 12px;padding:13px 15px;cursor:pointer" onclick="openTrip('${tr.id}')">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
+        <div style="min-width:0"><div style="font-weight:600;font-size:15px">${tr.name}${done?' <span style="font-size:10px;background:var(--light);color:var(--muted);border-radius:5px;padding:1px 6px;font-weight:500">đã kết thúc</span>':''}</div><div style="font-size:11.5px;color:var(--muted);margin-top:2px">${dates?dates+' · ':''}${s.count} khoản</div></div>
+        <div style="text-align:right;flex-shrink:0"><div style="font-size:10px;color:var(--muted)">Chi thực</div><div style="font-weight:700;font-size:16px;color:var(--red)">${fmtK(s.net)} đ</div></div>
+      </div>${bar}
+    </div>`;
+  }).join('');
+  el.innerHTML=html;
+}
+function tripDetailHtml(id){
+  const tr=tripById(id),s=tripStats(id);
+  const dates=tr.startDate?fmtDMY(tr.startDate)+(tr.endDate&&tr.endDate!==tr.startDate?' – '+fmtDMY(tr.endDate):''):'';
+  const catMap={};s.txs.filter(t=>t.flow==='out').forEach(t=>{catMap[t.category]=(catMap[t.category]||0)+t.amount});
+  const cats=Object.entries(catMap).sort((a,b)=>b[1]-a[1]);const maxCat=cats.length?cats[0][1]:0;
+  const catHtml=cats.length?cats.map(([c,v])=>`<div style="margin:0 0 9px"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px"><span>${CAT_ICONS[c]||''} ${c}</span><b>${fmtK(v)} đ</b></div><div style="height:6px;border-radius:4px;background:var(--light);overflow:hidden"><div style="height:100%;width:${maxCat?Math.round(v/maxCat*100):0}%;background:var(--navy);border-radius:4px"></div></div></div>`).join(''):'<div style="color:var(--muted);font-size:13px;padding:4px 0">Chưa có khoản chi.</div>';
+  const pb=tripPayBreakdown(s.txs);
+  const payRows=[['💵 Tiền mặt',pb.cash],['💳 Thẻ tín dụng',pb.card],['🏦 Ngân hàng / Ví',pb.bank]].filter(r=>r[1]>0);
+  const payHtml=payRows.length?payRows.map(([n,v])=>`<div style="display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-bottom:1px solid var(--bdr)"><span>${n}</span><b>${fmtK(v)} đ</b></div>`).join(''):'<div style="color:var(--muted);font-size:13px">—</div>';
+  const txList=[...s.txs].sort((a,b)=>b.date.localeCompare(a.date)||(b.id||0)-(a.id||0));
+  let budgetBar='';
+  if(tr.budget){const pct=Math.min(100,Math.round(s.chi/tr.budget*100));const over=s.chi>tr.budget;const col=over?'var(--red)':pct>=80?'#e67e22':'var(--green)';budgetBar=`<div style="margin-top:10px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px"><span style="color:var(--muted)">Ngân sách ${fmtK(tr.budget)} đ</span><span style="color:${col};font-weight:600">${over?'Vượt '+fmtK(s.chi-tr.budget)+' đ':'Còn '+fmtK(tr.budget-s.chi)+' đ'}</span></div><div style="height:8px;border-radius:5px;background:var(--light);overflow:hidden"><div style="height:100%;width:${pct}%;background:${col};border-radius:5px"></div></div></div>`;}
+  return`
+  <div style="display:flex;align-items:center;gap:10px;padding:12px 12px 4px">
+    <button onclick="closeTripDetail()" style="background:var(--card);border:1px solid var(--bdr);border-radius:9px;width:34px;height:34px;font-size:18px;cursor:pointer;color:var(--text);flex-shrink:0">‹</button>
+    <div style="flex:1;min-width:0"><div style="font-weight:700;font-size:17px">${tr.name}</div>${dates?`<div style="font-size:11.5px;color:var(--muted)">${dates}</div>`:''}</div>
+    <button onclick="openTripForm('${tr.id}')" style="background:none;border:none;color:var(--navy);font-size:13px;font-weight:600;cursor:pointer;flex-shrink:0">Sửa</button>
+  </div>
+  <div class="stat-grid" style="margin:8px 12px 0">
+    <div class="stat-tile"><div class="stat-label">Tổng chi</div><div class="stat-val r">${fmtK(s.chi)} đ</div></div>
+    <div class="stat-tile"><div class="stat-label">Đã thu / hoàn</div><div class="stat-val g">${fmtK(s.thu)} đ</div></div>
+    <div class="stat-tile" style="grid-column:1/-1"><div class="stat-label">Chi thực — tốn thật của chuyến</div><div class="stat-val r" style="font-size:22px">${fmtK(s.net)} đ</div>${budgetBar}</div>
+  </div>
+  <div class="card" style="margin:10px 12px"><div class="card-h">Chi theo danh mục</div><div style="padding:8px 15px 12px">${catHtml}</div></div>
+  <div class="card" style="margin:10px 12px"><div class="card-h">Theo hình thức trả</div><div style="padding:4px 15px 12px">${payHtml}</div></div>
+  <div class="sec-head"><span class="sec-head-title">Các khoản (${s.count})</span></div>
+  ${txList.length?`<div class="card" style="margin:8px 12px">${txList.map(t=>txRow(t)).join('')}</div>`:'<div class="empty" style="padding:18px 24px;text-align:center;color:var(--muted);font-size:13px">Chưa có khoản nào.<br>Khi thêm giao dịch, chọn chuyến đi này ở ô "Chuyến đi".</div>'}
+  <div style="padding:4px 12px 24px">
+    ${tr.status==='done'?`<button class="btn btn-cancel" style="width:100%" onclick="reopenTrip('${tr.id}')">Mở lại chuyến</button>`:`<button class="btn btn-cancel" style="width:100%" onclick="finishTrip('${tr.id}')">Kết thúc chuyến</button>`}
+  </div>`;
+}
+function openTripForm(id){
+  editTripId=id||null;const tr=id?tripById(id):{};
+  document.getElementById('trip-modal-title').textContent=id?'Sửa chuyến đi':'Chuyến đi mới';
+  document.getElementById('tf-name').value=tr.name||'';
+  document.getElementById('tf-start').value=tr.startDate||today();
+  document.getElementById('tf-end').value=tr.endDate||'';
+  setMoneyVal('tf-budget',tr.budget||0);
+  document.getElementById('tf-note').value=tr.note||'';
+  document.getElementById('trip-del-row').style.display=id?'':'none';
+  document.getElementById('trip-modal').classList.add('open');
+}
+function closeTripForm(){document.getElementById('trip-modal').classList.remove('open');editTripId=null}
+function saveTrip(){
+  const name=document.getElementById('tf-name').value.trim();if(!name){warnField('tf-name','Nhập tên chuyến đi');return}
+  const obj={name,startDate:document.getElementById('tf-start').value||today(),endDate:document.getElementById('tf-end').value||'',budget:getMoneyVal('tf-budget')||0,note:document.getElementById('tf-note').value.trim()};
+  db.trips=db.trips||[];
+  if(editTripId){const t=tripById(editTripId);if(t)Object.assign(t,obj)}
+  else db.trips.push({id:'trip_'+Date.now(),status:'open',...obj});
+  save();closeTripForm();renderTrips();toast('Đã lưu chuyến đi ✓');
+}
+function finishTrip(id){const t=tripById(id);if(!t)return;t.status='done';save();renderTrips();toast('Đã kết thúc chuyến')}
+function reopenTrip(id){const t=tripById(id);if(!t)return;t.status='open';save();renderTrips();toast('Đã mở lại chuyến')}
+function deleteTrip(){
+  if(!editTripId)return;const id=editTripId;const s=tripStats(id);
+  const msg=s.count?`Xoá chuyến đi này?\n${s.count} khoản thu/chi sẽ được gỡ khỏi chuyến (giao dịch vẫn còn trong sổ).`:'Xoá chuyến đi này?';
+  if(!confirm(msg))return;
+  db.transactions.forEach(t=>{if(t.tripId===id)delete t.tripId});
+  db.trips=db.trips.filter(t=>String(t.id)!==String(id));
+  editTripId=null;tripDetailId=null;save();closeTripForm();renderTrips();toast('Đã xoá chuyến đi');
 }
 let dailyLogLimit=30;
 function renderDailyLog(txs){
@@ -4178,6 +4321,7 @@ function openAddModal(domain,showPicker){
   document.getElementById('add-modal').classList.add('open');
   document.getElementById('f-amount').value='';document.getElementById('f-amount-display').textContent='';
   document.getElementById('f-desc').value='';document.getElementById('f-note').value='';
+  populateTripSelect();{const _ft=document.getElementById('f-trip');if(_ft)_ft.value='';}
   document.getElementById('f-date').value=today();document.getElementById('f-cdate').value=today();
   setMoneyVal('f-rate',25400);
   ['as-name','as-qty','as-unit','as-note'].forEach(id=>{const e=document.getElementById(id);if(e)e.value=''});
@@ -4239,6 +4383,7 @@ function setTxType(type){txType=type;
   document.getElementById('normal-form').style.display=type!=='crypto'?'':'none';
   document.getElementById('crypto-form').style.display=type==='crypto'?'':'none';
   if(type==='income'||type==='expense')populateCatSelect(modalDomain,type==='income'?'in':'out');
+  const _tr=document.getElementById('trip-row');if(_tr)_tr.style.display=(type==='income'||type==='expense')?'':'none';
   updateAcctUI();}
 function openEditTx(id){
   const t=db.transactions.find(x=>String(x.id)===String(id));if(!t)return;
@@ -4260,6 +4405,7 @@ function openEditTx(id){
   if([...sel.options].some(o=>o.value===opt))sel.value=opt;
   document.getElementById('f-date').value=t.date;
   document.getElementById('f-note').value=t.note||'';
+  {const _ft=document.getElementById('f-trip');if(_ft){populateTripSelect();_ft.value=t.tripId||''}}
   if(t.flow==='xfer'){populateXferSelects();const ff=document.getElementById('f-from'),ft=document.getElementById('f-to');if(ff&&t.from)ff.value=t.from;if(ft&&t.to)ft.value=t.to;}
   else if(t.group==='personal'&&t.account){selAcct=t.account;renderAcctChips();}
 }
@@ -4324,7 +4470,7 @@ function saveTransaction(){
     if(editTradeId!=null){const i=db.cryptoTrades.findIndex(x=>String(x.id)===String(editTradeId));if(i>=0)db.cryptoTrades[i]={...db.cryptoTrades[i],...tradeObj};editTradeId=null;save();closeModal();renderAll();toast('Đã cập nhật ✓');return;}
     db.cryptoTrades.push({id:Date.now(),...tradeObj});
   }else{
-    const amount=getMoneyVal('f-amount');const desc=document.getElementById('f-desc').value;const catRaw=document.getElementById('f-cat').value;const date=document.getElementById('f-date').value;const note=document.getElementById('f-note').value;
+    const amount=getMoneyVal('f-amount');const desc=document.getElementById('f-desc').value;const catRaw=document.getElementById('f-cat').value;const date=document.getElementById('f-date').value;const note=document.getElementById('f-note').value;const tripId=(document.getElementById('f-trip')&&document.getElementById('f-trip').value)||'';
     if(!amount){warnField('f-amount','Nhập số tiền');return}
     if(txType==='xfer'){
       const from=document.getElementById('f-from').value,to=document.getElementById('f-to').value;
@@ -4341,10 +4487,10 @@ function saveTransaction(){
     const[category,group]=catRaw.split('|');const flow=txType==='income'?'in':'out';
     if(editTxId!=null){
       const idx=db.transactions.findIndex(x=>String(x.id)===String(editTxId));
-      if(idx>=0)db.transactions[idx]={...db.transactions[idx],amount,desc,category,group,flow,date,note,account:group==='personal'?(selAcct||mainAcctId()):undefined};
+      if(idx>=0)db.transactions[idx]={...db.transactions[idx],amount,desc,category,group,flow,date,note,tripId:tripId||undefined,account:group==='personal'?(selAcct||mainAcctId()):undefined};
       editTxId=null;save();closeModal();renderAll();toast('Đã cập nhật ✓');return;
     }
-    db.transactions.push({id:Date.now(),amount,desc,category,group,flow,date,note,account:group==='personal'?(selAcct||mainAcctId()):undefined});
+    db.transactions.push({id:Date.now(),amount,desc,category,group,flow,date,note,tripId:tripId||undefined,account:group==='personal'?(selAcct||mainAcctId()):undefined});
     const rc=document.getElementById('f-recurring');
     if(rc&&rc.checked){
       db.recurring=db.recurring||[];
