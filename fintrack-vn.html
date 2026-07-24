@@ -207,6 +207,11 @@ body.dark .tier-head{color:#8fb4e0}
 .ah-strip:hover{background:var(--light)}
 .ah-tag{font-size:10.5px;background:var(--light);border-radius:6px;padding:1px 7px;margin-left:4px}
 .sec-head.hidden{display:none}
+.card-h.clps{cursor:pointer;user-select:none;display:flex;align-items:center}
+.card-h.clps .clps-chev{margin-left:auto}
+.card-h.collapsed .clps-chev{transform:rotate(-90deg)}
+[data-clps-head].ah-hidden{display:none!important}
+[data-clps].ah-hidden{display:none!important}
 /* ALERT */
 .alert-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line,#f2f4f9);font-size:13px}
 .alert-item:last-child{border-bottom:none}
@@ -831,6 +836,7 @@ body.dark #boot-splash{background:#0f1622}
   <div class="tab-bar">
     <button class="tab-item active" onclick="switchCompanyTab(this,'company')">Công ty</button>
     <button class="tab-item" onclick="switchCompanyTab(this,'project')">Công việc</button>
+    <button class="tab-item" onclick="switchCompanyTab(this,'trip')">Công tác</button>
     <button class="tab-item" onclick="switchCompanyTab(this,'stats')">Thống kê</button>
   </div>
   <div id="company-tab">
@@ -845,6 +851,7 @@ body.dark #boot-splash{background:#0f1622}
     </div>
     <div class="card"><div id="company-list"></div></div>
   </div>
+  <div id="company-trip" style="display:none"></div>
   <div id="project-tab" style="display:none">
     <div class="stat-grid" style="margin:8px 12px 0">
       <div class="stat-tile"><div class="stat-label">Tổng thu</div><div class="stat-val g" id="p-thu">—</div></div>
@@ -1113,8 +1120,12 @@ body.dark #boot-splash{background:#0f1622}
     <div class="card"><div id="ah-settings"></div></div>
     <div class="sec-head"><span class="sec-head-title">Chế độ hiển thị</span></div>
     <div class="card">
-      <div class="set-row set-tap" style="border-bottom:none" onclick="location.href='fintrack-desktop.html'"><div class="set-ic" style="background:var(--bbg,#e8f0fe)"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="13" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>
+      <div class="set-row set-tap" onclick="location.href='fintrack-desktop.html'"><div class="set-ic" style="background:var(--bbg,#e8f0fe)"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="13" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>
         <div style="flex:1"><div class="set-t">Chuyển sang bản Desktop</div><div class="set-d">Giao diện màn hình to — dữ liệu vẫn đồng bộ chung</div></div>
+        <div class="set-arr">›</div>
+      </div>
+      <div class="set-row set-tap" style="border-bottom:none" onclick="toggleDark()"><div class="set-ic" style="background:#eceff4"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg></div>
+        <div style="flex:1"><div class="set-t">Chế độ tối</div><div class="set-d">Bật / tắt nền tối</div></div>
         <div class="set-arr">›</div>
       </div>
     </div>
@@ -1133,13 +1144,6 @@ body.dark #boot-splash{background:#0f1622}
         <div class="set-arr">›</div>
       </div>
       <input type="file" id="import-file" accept=".json" style="display:none" onchange="handleImport(event)">
-    </div>
-    <div class="sec-head"><span class="sec-head-title">Giao diện</span></div>
-    <div class="card">
-      <div class="set-row set-tap" style="border-bottom:none" onclick="toggleDark()"><div class="set-ic" style="background:#eceff4"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg></div>
-        <div style="flex:1"><div class="set-t">Chế độ tối</div><div class="set-d">Bật / tắt nền tối</div></div>
-        <div class="set-arr">›</div>
-      </div>
     </div>
     <div class="sec-head"><span class="sec-head-title" style="color:var(--red)">Vùng nguy hiểm</span></div>
     <div class="card"><div style="padding:14px">
@@ -1329,8 +1333,14 @@ body.dark #boot-splash{background:#0f1622}
         <div><label class="form-label">Ghi chú</label><input class="form-input" type="text" id="f-note" placeholder="Ghi chú thêm..."></div>
       </div>
       <div class="form-group" id="trip-row" style="display:none">
-        <label class="form-label">Chuyến đi / Sự kiện <span style="font-weight:400;color:var(--muted)">— tuỳ chọn</span></label>
-        <select class="form-input form-select" id="f-trip" onchange="onTripChange()"></select>
+        <div id="trip-toggle" style="background:var(--light);border-radius:10px;padding:10px 12px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:10px" onclick="expandTripRow()">
+          <span style="font-size:13px;font-weight:500">✈ Gắn vào chuyến đi / sự kiện</span>
+          <span style="font-size:14px;color:var(--navy);font-weight:700">›</span>
+        </div>
+        <div id="trip-select-wrap" style="display:none">
+          <label class="form-label">Chuyến đi / Sự kiện <span style="font-weight:400;color:var(--muted)">— tuỳ chọn</span></label>
+          <select class="form-input form-select" id="f-trip" onchange="onTripChange()"></select>
+        </div>
       </div>
       <div id="recurring-block" style="background:var(--light);border-radius:10px;padding:8px 12px;margin-top:0">
         <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;gap:10px">
@@ -1938,7 +1948,7 @@ const monthOf=d=>d?d.slice(0,7):'';
 const curMonth=()=>new Date().toISOString().slice(0,7);
 const dateLabel=d=>{if(!d)return'';const dt=new Date(d+'T00:00:00');const wd=dt.toLocaleDateString('vi-VN',{weekday:'short'});return `${wd}, ${fmtDMY(d)}`};
 const fmtDMY=d=>{if(!d)return'';const p=String(d).slice(0,10).split('-');return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:d};
-const CAT_ICONS={'Ăn uống':'🍜','Di chuyển':'🚗','Mua sắm':'🛒','Giáo dục':'📚','Y tế':'🏥','Giải trí':'🎮','Gia đình':'🏠','Điện':'⚡','Nước':'💧','Internet':'🌐','Truyền hình':'📺','Điện thoại':'📱','Thuê nhà':'🏘️','Bảo hiểm':'🛡️','Hiếu hỉ':'💐','Lương':'💼','Thưởng':'🎁','Đầu tư':'📈','Lợi nhuận đầu tư':'📈','Online':'💻','Thu nhập online':'💻','Tạm ứng':'🧾','Hoàn ứng':'↩️','Thu từ khách hàng':'🤝','Doanh thu':'💵','Hoàn thuế':'🏛️','Thu khác':'💰','Tiếp khách':'🍽️','Công tác phí':'✈️','Văn phòng phẩm':'📎','Lương nhân viên':'👥','Thuê văn phòng':'🏢','Thuế & phí':'🏦','Marketing':'📣','Vận chuyển':'🚚','Chi khác':'📦','Doanh thu công việc':'💵','Thu hồi vốn':'↩️','Góp vốn / Đầu tư':'💰','Chi vận hành':'⚙️','Chi xây dựng':'🏗️','Nhân công':'👷','Phòng pháp chế':'⚖️','Vận hành':'⚙️','Trạm dừng chân':'🛣️','Trạm xăng':'⛽','Khác':'📎'};
+const CAT_ICONS={'Ăn uống':'🍜','Di chuyển':'🚗','Mua sắm':'🛒','Giáo dục':'📚','Y tế':'🏥','Giải trí':'🎮','Gia đình':'🏠','Điện':'⚡','Nước':'💧','Internet':'🌐','Truyền hình':'📺','Điện thoại':'📱','Thuê nhà':'🏘️','Bảo hiểm':'🛡️','Hiếu hỉ':'💐','Lưu trú':'🏨','Chăm sóc cá nhân':'💇','Biếu tặng / Từ thiện':'🎗️','Được tặng / cho':'🧧','Bán đồ / thanh lý':'🏷️','Lương':'💼','Thưởng':'🎁','Đầu tư':'📈','Lợi nhuận đầu tư':'📈','Online':'💻','Thu nhập online':'💻','Tạm ứng':'🧾','Hoàn ứng':'↩️','Thu từ khách hàng':'🤝','Doanh thu':'💵','Hoàn thuế':'🏛️','Thu khác':'💰','Tiếp khách':'🍽️','Công tác phí':'✈️','Văn phòng phẩm':'📎','Lương nhân viên':'👥','Thuê văn phòng':'🏢','Thuế & phí':'🏦','Marketing':'📣','Vận chuyển':'🚚','Chi khác':'📦','Doanh thu công việc':'💵','Thu hồi vốn':'↩️','Góp vốn / Đầu tư':'💰','Chi vận hành':'⚙️','Chi xây dựng':'🏗️','Nhân công':'👷','Phòng pháp chế':'⚖️','Vận hành':'⚙️','Trạm dừng chân':'🛣️','Trạm xăng':'⛽','Khác':'📎'};
 // ── SVG ICON SYSTEM ──
 const _ip={
 coffee:'<path d="M18 8h1a4 4 0 010 8h-1"/><path d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/>',
@@ -1996,17 +2006,17 @@ const _isvg=p=>'<svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" st
 const I={};Object.keys(_ip).forEach(k=>I[k]=_isvg(k));
 const DOT=c=>'<span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:'+c+';flex-shrink:0"></span>';
 const DOT_G=DOT('#27ae60'),DOT_R=DOT('#c0392b'),DOT_Y=DOT('#e5b910'),DOT_O=DOT('#e67e22'),DOT_B=DOT('#2980b9'),DOT_N=DOT('#94a3b8');
-(function(){const M={'Ăn uống':'coffee','Di chuyển':'truck','Mua sắm':'cart','Giáo dục':'book','Y tế':'act','Giải trí':'play','Gia đình':'home','Điện':'zap','Nước':'drop','Internet':'globe','Truyền hình':'tv','Điện thoại':'phone','Thuê nhà':'key','Bảo hiểm':'shield','Hiếu hỉ':'heart','Lương':'brief','Thưởng':'gift','Đầu tư':'up','Lợi nhuận đầu tư':'up','Online':'mon','Thu nhập online':'mon','Tạm ứng':'file','Hoàn ứng':'undo','Thu từ khách hàng':'users','Doanh thu':'usd','Hoàn thuế':'bank','Thu khác':'card','Tiếp khách':'coffee','Công tác phí':'send','Văn phòng phẩm':'clip','Lương nhân viên':'users','Thuê văn phòng':'brief','Thuế & phí':'bank','Marketing':'mega','Vận chuyển':'truck','Chi khác':'pkg','Doanh thu công việc':'usd','Thu hồi vốn':'undo','Góp vốn / Đầu tư':'usd','Chi vận hành':'tool','Chi xây dựng':'tool','Nhân công':'user','Phòng pháp chế':'file','Vận hành':'tool','Trạm dừng chân':'map','Trạm xăng':'drop','Khác':'clip'};Object.keys(CAT_ICONS).forEach(k=>{CAT_ICONS[k]=I[M[k]]||I.clip});})();
+(function(){const M={'Ăn uống':'coffee','Di chuyển':'truck','Mua sắm':'cart','Giáo dục':'book','Y tế':'act','Giải trí':'play','Gia đình':'home','Điện':'zap','Nước':'drop','Internet':'globe','Truyền hình':'tv','Điện thoại':'phone','Thuê nhà':'key','Bảo hiểm':'shield','Hiếu hỉ':'heart','Lưu trú':'key','Chăm sóc cá nhân':'act','Biếu tặng / Từ thiện':'heart','Được tặng / cho':'gift','Bán đồ / thanh lý':'card','Lương':'brief','Thưởng':'gift','Đầu tư':'up','Lợi nhuận đầu tư':'up','Online':'mon','Thu nhập online':'mon','Tạm ứng':'file','Hoàn ứng':'undo','Thu từ khách hàng':'users','Doanh thu':'usd','Hoàn thuế':'bank','Thu khác':'card','Tiếp khách':'coffee','Công tác phí':'send','Văn phòng phẩm':'clip','Lương nhân viên':'users','Thuê văn phòng':'brief','Thuế & phí':'bank','Marketing':'mega','Vận chuyển':'truck','Chi khác':'pkg','Doanh thu công việc':'usd','Thu hồi vốn':'undo','Góp vốn / Đầu tư':'usd','Chi vận hành':'tool','Chi xây dựng':'tool','Nhân công':'user','Phòng pháp chế':'file','Vận hành':'tool','Trạm dừng chân':'map','Trạm xăng':'drop','Khác':'clip'};Object.keys(CAT_ICONS).forEach(k=>{CAT_ICONS[k]=I[M[k]]||I.clip});})();
 // Danh mục theo domain (tab) & dòng tiền (in=thu, out=chi) — để nút + mỗi tab chỉ hiện đúng khoản của tab đó
 const DOMAIN_CATS={
-  personal:{out:[['Ăn uống','🍜'],['Di chuyển','🚗'],['Mua sắm','🛒'],['Giáo dục','📚'],['Y tế','🏥'],['Điện','⚡'],['Nước','💧'],['Internet','🌐'],['Truyền hình','📺'],['Điện thoại','📱'],['Thuê nhà','🏘️'],['Bảo hiểm','🛡️'],['Hiếu hỉ','💐'],['Giải trí','🎮'],['Gia đình','🏠'],['Khác','📎']],
-    in:[['Lương','💼'],['Thưởng','🎁'],['Thu nhập online','💻'],['Lợi nhuận đầu tư','📈'],['Khác','💰']]},
+  personal:{out:[['Ăn uống','🍜'],['Di chuyển','🚗'],['Mua sắm','🛒'],['Giáo dục','📚'],['Y tế','🏥'],['Điện','⚡'],['Nước','💧'],['Internet','🌐'],['Truyền hình','📺'],['Điện thoại','📱'],['Thuê nhà','🏘️'],['Bảo hiểm','🛡️'],['Hiếu hỉ','💐'],['Lưu trú','🏨'],['Chăm sóc cá nhân','💇'],['Biếu tặng / Từ thiện','🎗️'],['Giải trí','🎮'],['Gia đình','🏠'],['Khác','📎']],
+    in:[['Lương','💼'],['Thưởng','🎁'],['Thu nhập online','💻'],['Lợi nhuận đầu tư','📈'],['Được tặng / cho','🧧'],['Bán đồ / thanh lý','🏷️'],['Khác','💰']]},
   company:{in:[['Tạm ứng','🧾'],['Hoàn ứng','↩️'],['Thu từ khách hàng','🤝'],['Doanh thu','💵'],['Hoàn thuế','🏛️'],['Thu khác','💰']],
     out:[['Tiếp khách','🍽️'],['Công tác phí','✈️'],['Văn phòng phẩm','📎'],['Lương nhân viên','👥'],['Thuê văn phòng','🏢'],['Thuế & phí','🏦'],['Marketing','📣'],['Vận chuyển','🚚'],['Chi khác','📦']]},
   project:{in:[['Doanh thu công việc','💵'],['Thu hồi vốn','↩️'],['Thu khác','💰']],
     out:[['Góp vốn / Đầu tư','💰'],['Chi vận hành','⚙️'],['Chi xây dựng','🏗️'],['Nhân công','👷'],['Chi khác','📦']]}
 };
-(function(){const M={'Ăn uống':'coffee','Di chuyển':'truck','Mua sắm':'cart','Giáo dục':'book','Y tế':'act','Giải trí':'play','Gia đình':'home','Điện':'zap','Nước':'drop','Internet':'globe','Truyền hình':'tv','Điện thoại':'phone','Thuê nhà':'key','Bảo hiểm':'shield','Hiếu hỉ':'heart','Lương':'brief','Thưởng':'gift','Đầu tư':'up','Lợi nhuận đầu tư':'up','Online':'mon','Thu nhập online':'mon','Tạm ứng':'file','Hoàn ứng':'undo','Thu từ khách hàng':'users','Doanh thu':'usd','Hoàn thuế':'bank','Thu khác':'card','Tiếp khách':'coffee','Công tác phí':'send','Văn phòng phẩm':'clip','Lương nhân viên':'users','Thuê văn phòng':'brief','Thuế & phí':'bank','Marketing':'mega','Vận chuyển':'truck','Chi khác':'pkg','Doanh thu công việc':'usd','Thu hồi vốn':'undo','Góp vốn / Đầu tư':'usd','Chi vận hành':'tool','Chi xây dựng':'tool','Nhân công':'user','Khác':'coin'};
+(function(){const M={'Ăn uống':'coffee','Di chuyển':'truck','Mua sắm':'cart','Giáo dục':'book','Y tế':'act','Giải trí':'play','Gia đình':'home','Điện':'zap','Nước':'drop','Internet':'globe','Truyền hình':'tv','Điện thoại':'phone','Thuê nhà':'key','Bảo hiểm':'shield','Hiếu hỉ':'heart','Lưu trú':'key','Chăm sóc cá nhân':'act','Biếu tặng / Từ thiện':'heart','Được tặng / cho':'gift','Bán đồ / thanh lý':'card','Lương':'brief','Thưởng':'gift','Đầu tư':'up','Lợi nhuận đầu tư':'up','Online':'mon','Thu nhập online':'mon','Tạm ứng':'file','Hoàn ứng':'undo','Thu từ khách hàng':'users','Doanh thu':'usd','Hoàn thuế':'bank','Thu khác':'card','Tiếp khách':'coffee','Công tác phí':'send','Văn phòng phẩm':'clip','Lương nhân viên':'users','Thuê văn phòng':'brief','Thuế & phí':'bank','Marketing':'mega','Vận chuyển':'truck','Chi khác':'pkg','Doanh thu công việc':'usd','Thu hồi vốn':'undo','Góp vốn / Đầu tư':'usd','Chi vận hành':'tool','Chi xây dựng':'tool','Nhân công':'user','Khác':'coin'};
 Object.values(DOMAIN_CATS).forEach(d=>Object.values(d).forEach(list=>list.forEach(p=>{p[1]=I[M[p[0]]]||I.clip})));})();
 const CAT_COLORS=['#1a3c5e','#2980b9','#16a085','#8e44ad','#d35400','#c0392b','#27ae60','#f39c12','#7f8c8d','#e91e63','#0e7490','#6a1b9a','#b7791f','#2c3e50','#00897b','#5e35b1','#ef6c00','#3949ab'];
 
@@ -2061,7 +2071,7 @@ function initDark(){if(localStorage.getItem('dark')==='1'){document.body.classLi
 function showTab(tab){
   if(curTab===tab){window.scrollTo({top:0,behavior:'smooth'});return}
   curTab=tab;
-  try{const _ks=['tab_'+tab];document.querySelectorAll('#screen-'+tab+' .sec-head[data-clps-head]').forEach(x=>_ks.push(x.getAttribute('data-clps-head')));const _u=ahUsage(),_n=Date.now();_ks.forEach(k=>_u[k]=_n);localStorage.setItem('ahUsage',JSON.stringify(_u));if(tab==='settings')setTimeout(renderAhSettings,50)}catch(e){}
+  try{const _ks=['tab_'+tab];document.querySelectorAll('#screen-'+tab+' [data-clps-head]').forEach(x=>_ks.push(x.getAttribute('data-clps-head')));const _u=ahUsage(),_n=Date.now();_ks.forEach(k=>_u[k]=_n);localStorage.setItem('ahUsage',JSON.stringify(_u));if(tab==='settings')setTimeout(renderAhSettings,50)}catch(e){}
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('screen-'+tab).classList.add('active');
@@ -2398,7 +2408,7 @@ function applyCollapse(){
   document.querySelectorAll('[data-clps]').forEach(w=>{
     const key=w.getAttribute('data-clps');const on=!!st[key];
     w.classList.toggle('hidden',on);
-    const head=document.querySelector(`.sec-head[data-clps-head="${key}"]`);
+    const head=document.querySelector(`[data-clps-head="${key}"]`);
     if(head)head.classList.toggle('collapsed',on);
   });
 }
@@ -2420,6 +2430,19 @@ function initCollapsibles(){
     titleEl.style.cursor='pointer';
     titleEl.addEventListener('click',e=>{e.stopPropagation();toggleCollapse(key)});
   });
+  document.querySelectorAll('#screen-service .card-h, #screen-company .card-h').forEach(h=>{
+    if(h.hasAttribute('data-clps-head'))return;
+    const card=h.closest('.card');if(!card)return;
+    const sibs=[];let n=h.nextElementSibling;while(n){sibs.push(n);n=n.nextElementSibling}
+    if(!sibs.length)return;
+    const scr=h.closest('.screen');
+    const raw=(scr?scr.id.replace('screen-',''):'')+'_'+h.textContent.trim();
+    const key='c_'+raw.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'').slice(0,28);
+    h.setAttribute('data-clps-head',key);h.classList.add('clps');
+    sibs.forEach(el=>{if(!el.hasAttribute('data-clps'))el.setAttribute('data-clps',key)});
+    if(!h.querySelector('.clps-chev')){const c=document.createElement('span');c.className='clps-chev';c.textContent='▾';h.appendChild(c)}
+    h.addEventListener('click',e=>{e.stopPropagation();toggleCollapse(key)});
+  });
   applyCollapse();
 }
 
@@ -2430,77 +2453,101 @@ function ahCfg(){try{return JSON.parse(localStorage.getItem('autoHide')||'{"on":
 function ahSetCfg(c){localStorage.setItem('autoHide',JSON.stringify(c));applyAutoHide()}
 function ahUsage(){try{return JSON.parse(localStorage.getItem('ahUsage')||'{}')}catch(e){return{}}}
 function ahPins(){try{return JSON.parse(localStorage.getItem('ahPins')||'{}')}catch(e){return{}}}
+function ahMan(){try{return JSON.parse(localStorage.getItem('ahManual')||'{}')}catch(e){return{}}}
+function ahSetMan(key,v){const m=ahMan();if(v===0)m[key]=0;else if(v===1)m[key]=1;else delete m[key];localStorage.setItem('ahManual',JSON.stringify(m));try{ahApplyTabs()}catch(e){}applyAutoHide();try{renderAhSettings()}catch(e){}}
+function ahClearHide(key){const m=ahMan();delete m[key];localStorage.setItem('ahManual',JSON.stringify(m));ahTouch(key);try{ahApplyTabs()}catch(e){}applyAutoHide();try{renderAhSettings()}catch(e){}}
+function ahToggleHide(key){let hidden;if(key.slice(0,4)==='tab_'){const btn=document.getElementById('nav-'+key.slice(4));hidden=btn&&btn.style.display==='none'}else{const hd=document.querySelector('[data-clps-head="'+key+'"]');hidden=hd&&hd.classList.contains('ah-hidden')}ahSetMan(key,hidden?0:1)}
 function ahTouch(key){const u=ahUsage();u[key]=Date.now();localStorage.setItem('ahUsage',JSON.stringify(u))}
 function ahTogglePin(key){const p=ahPins();p[key]=!p[key];localStorage.setItem('ahPins',JSON.stringify(p));applyAutoHide();renderAhSettings()}
 function ahIsSafe(key){
   // các mục rủi ro / thời gian thực: không tự ẩn
   return /canhbao|sapto|upcoming|alert|taikhoan|sodu/.test(key);
 }
-function ahLabelOf(key){const h=document.querySelector('.sec-head[data-clps-head="'+key+'"] .sec-head-title');if(!h)return key;const c=h.cloneNode(true);const ch=c.querySelector('.clps-chev');if(ch)ch.remove();return c.textContent.trim()}
+function ahLabelOf(key){const h=document.querySelector('[data-clps-head="'+key+'"]');if(!h)return key;const src=h.querySelector('.sec-head-title')||h;const c=src.cloneNode(true);const ch=c.querySelector('.clps-chev');if(ch)ch.remove();return c.textContent.trim()}
 function applyAutoHide(){
-  const cfg=ahCfg();const u=ahUsage(),p=ahPins();const now=Date.now();const lim=cfg.days*864e5;
-  document.querySelectorAll('.sec-head[data-clps-head]').forEach(h=>{
+  const cfg=ahCfg();const u=ahUsage(),p=ahPins(),man=ahMan();const now=Date.now();const lim=cfg.days*864e5;
+  document.querySelectorAll('[data-clps-head]').forEach(h=>{
     const key=h.getAttribute('data-clps-head');
     const wraps=document.querySelectorAll('[data-clps="'+key+'"]');
     let strip=document.querySelector('.ah-strip[data-ah="'+key+'"]');
     const last=u[key]||0;
-    const hide=cfg.on&&!p[key]&&!ahIsSafe(key)&&last>0&&(now-last)>lim;
+    const auto=cfg.on&&!p[key]&&!ahIsSafe(key)&&last>0&&(now-last)>lim;const mv=man[key];const hide=mv===1?true:mv===0?false:auto;
     if(hide){
-      h.classList.add('hidden');wraps.forEach(w=>w.classList.add('hidden'));
+      h.classList.add('ah-hidden');wraps.forEach(w=>w.classList.add('ah-hidden'));
       if(!strip){strip=document.createElement('div');strip.className='ah-strip';strip.setAttribute('data-ah',key);
-        strip.innerHTML='<span style="opacity:.55">·</span> '+ahLabelOf(key)+' <span class="ah-tag">ẩn do ít dùng — bấm để mở</span>';
-        strip.onclick=()=>{ahTouch(key);applyAutoHide()};
+        strip.innerHTML='<span style="opacity:.55">·</span> '+ahLabelOf(key)+' <span class="ah-tag">đã ẩn — bấm để mở</span>';
+        strip.onclick=()=>{ahClearHide(key)};
         h.parentNode.insertBefore(strip,h)}
       strip.style.display='';
     }else{
-      h.classList.remove('hidden');
+      h.classList.remove('ah-hidden');wraps.forEach(w=>w.classList.remove('ah-hidden'));
       if(strip)strip.style.display='none';
     }
   });
   applyCollapse();
   // lần đầu: mục chưa có dấu vết dùng -> coi như vừa dùng (không ẩn ngay khi mới cài)
   const u2=ahUsage();let ch=false;
-  document.querySelectorAll('.sec-head[data-clps-head]').forEach(h=>{const k=h.getAttribute('data-clps-head');if(!u2[k]){u2[k]=now;ch=true}});
+  document.querySelectorAll('[data-clps-head]').forEach(h=>{const k=h.getAttribute('data-clps-head');if(!u2[k]){u2[k]=now;ch=true}});
   if(ch)localStorage.setItem('ahUsage',JSON.stringify(u2));
   try{ahApplyTabs()}catch(e){}
 }
 const AH_TABS=['personal','crypto','service','company','table','report','cal'];
-function ahTabLabel(t){const b=document.getElementById('nav-'+t);return b?b.textContent.trim().replace(/\s+/g,' '):t}
+function ahTabLabel(t){const btn=document.getElementById('nav-'+t);if(!btn)return t;let s='';btn.childNodes.forEach(n=>{if(n.nodeType===3)s+=n.textContent});return s.trim().replace(/\s+/g,' ')||t}
 function ahApplyTabs(){
-  const cfg=ahCfg(),u=ahUsage(),p=ahPins();const now=Date.now();const lim=cfg.days*864e5;let ch=false;
+  const cfg=ahCfg(),u=ahUsage(),p=ahPins(),man=ahMan();const now=Date.now();const lim=cfg.days*864e5;let ch=false;
   AH_TABS.forEach(t=>{const btn=document.getElementById('nav-'+t);if(!btn)return;
     const k='tab_'+t;if(!u[k]){u[k]=now;ch=true}
     const badge=btn.querySelector('.nav-badge');
     const hasBadge=badge&&badge.style.display!=='none';
-    const hide=cfg.on&&!p[k]&&!hasBadge&&(now-u[k])>lim&&(typeof curTab==='undefined'||curTab!==t);
+    const notCur=(typeof curTab==='undefined'||curTab!==t);const auto=cfg.on&&!p[k]&&!hasBadge&&(now-u[k])>lim&&notCur;const mv=man[k];const hide=mv===1?notCur:mv===0?false:auto;
     if(hide){btn.style.display='none';btn.dataset.ahHid='1'}
-    else if(btn.dataset.ahHid){btn.style.display='';btn.dataset.ahHid=''}});
+    else{btn.style.display='';btn.dataset.ahHid=''}});
   if(ch)localStorage.setItem('ahUsage',JSON.stringify(u));
 }
 function ahOpenTab(t){ahTouch('tab_'+t);ahApplyTabs();showTab(t);}
+let ahGrpOpen={};
+const AH_GRP_ORDER=['home','personal','crypto','service','company','table','report','cal','settings'];
+const AH_GRP_LABEL={home:'Tổng quan',personal:'Cá nhân',crypto:'Đầu tư',service:'Dịch vụ',company:'Công ty',table:'Bảng',report:'Báo cáo',cal:'Lịch',settings:'Cài đặt'};
+function ahGroupOf(key){const hd=document.querySelector('[data-clps-head="'+key+'"]');const sc=hd&&hd.closest('.screen');return sc?sc.id.replace('screen-',''):'home'}
+function ahToggleGrp(g){ahGrpOpen[g]=!ahGrpOpen[g];renderAhSettings()}
+function ahSecRow(k,p,man,cfg,u,now){const mv=man[k];const auto=cfg.on&&!p[k]&&(u[k]||0)>0&&(now-(u[k]||0))>cfg.days*864e5;const hid=mv===1?true:mv===0?false:auto;const kk=k.replace(/'/g,'');
+  return '<div style="display:flex;align-items:center;gap:9px;padding:7px 0 7px 10px;border-bottom:1px dashed var(--bdr);font-size:12.5px">'
+    +'<span style="flex:1">'+ahLabelOf(k)+'</span>'
+    +'<button onclick="ahToggleHide(\''+kk+'\')" style="border:none;background:'+(hid?'var(--navy)':'var(--light)')+';color:'+(hid?'#fff':'var(--muted)')+';border-radius:7px;padding:4px 12px;font-size:11.5px;font-weight:700;cursor:pointer">'+(hid?'Hiện':'Ẩn')+'</button>'
+    +'<button onclick="ahTogglePin(\''+kk+'\')" title="Ghim: không bao giờ tự ẩn" style="border:none;background:'+(p[k]?'var(--navy)':'var(--light)')+';color:'+(p[k]?'#fff':'var(--muted)')+';border-radius:7px;padding:4px 9px;font-size:11.5px;font-weight:700;cursor:pointer">'+(p[k]?'Đã ghim':'Ghim')+'</button></div>'}
+function ahRenderSecGroups(uniq,p,man,cfg,u,now){
+  const groups={};uniq.forEach(k=>{const g=ahGroupOf(k);(groups[g]=groups[g]||[]).push(k)});
+  const order=[...AH_GRP_ORDER.filter(g=>groups[g]),...Object.keys(groups).filter(g=>!AH_GRP_ORDER.includes(g))];
+  return order.map(g=>{const keys=groups[g];const open=!!ahGrpOpen[g];
+    const nHid=keys.filter(k=>{const mv=man[k];const auto=cfg.on&&!p[k]&&(u[k]||0)>0&&(now-(u[k]||0))>cfg.days*864e5;return mv===1?true:mv===0?false:auto}).length;
+    return '<div style="border:1px solid var(--bdr);border-radius:11px;margin-bottom:8px;overflow:hidden">'
+      +'<div onclick="ahToggleGrp(\''+g+'\')" style="display:flex;align-items:center;gap:8px;padding:10px 13px;cursor:pointer;background:var(--light)">'
+        +'<span style="transition:transform .15s;transform:rotate('+(open?'90':'0')+'deg);color:var(--muted);font-size:12px">▶</span>'
+        +'<span style="flex:1;font-size:13px;font-weight:700">'+(AH_GRP_LABEL[g]||g)+'</span>'
+        +(nHid?'<span style="font-size:10.5px;color:#fff;background:var(--navy);border-radius:8px;padding:1px 7px;font-weight:700">'+nHid+' ẩn</span>':'')
+        +'<span style="font-size:11px;color:var(--muted)">'+keys.length+' mục</span></div>'
+      +(open?'<div style="padding:2px 13px 8px">'+keys.map(k=>ahSecRow(k,p,man,cfg,u,now)).join('')+'</div>':'')
+    +'</div>'}).join('')
+}
 function renderAhSettings(){
   const el=document.getElementById('ah-settings');if(!el)return;
   const cfg=ahCfg();const u=ahUsage(),p=ahPins();const now=Date.now();
-  const keys=[...document.querySelectorAll('.sec-head[data-clps-head]')].map(h=>h.getAttribute('data-clps-head'));
+  const keys=[...document.querySelectorAll('[data-clps-head]')].map(h=>h.getAttribute('data-clps-head'));
   const uniq=[...new Set(keys)].filter(k=>!ahIsSafe(k));
   const hidden=uniq.filter(k=>cfg.on&&!p[k]&&(u[k]||0)>0&&(now-(u[k]||0))>cfg.days*864e5);
   el.innerHTML='<div style="padding:13px 15px">'
-    +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><div style="flex:1"><div style="font-size:13.5px;font-weight:700">Tự ẩn mục ít dùng</div><div style="font-size:11.5px;color:var(--muted)">Mục không mở quá ngưỡng sẽ thu thành dòng mỏng</div></div>'
+    +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><div style="flex:1"><div style="font-size:13.5px;font-weight:700">Tự ẩn mục ít dùng</div><div style="font-size:11.5px;color:var(--muted)">Bấm Ẩn/Hiện để chủ động, hoặc bật tự thu gọn theo thời gian</div></div>'
     +'<button onclick="ahSetCfg({...ahCfg(),on:!ahCfg().on})" style="padding:7px 14px;border-radius:9px;border:none;font-size:12.5px;font-weight:700;cursor:pointer;background:'+(cfg.on?'var(--green)':'var(--light)')+';color:'+(cfg.on?'#fff':'var(--muted)')+'">'+(cfg.on?'Đang bật':'Đang tắt')+'</button></div>'
     +'<div style="display:flex;gap:8px;margin-bottom:12px">'
     +[14,30].map(d=>'<button onclick="ahSetCfg({...ahCfg(),days:'+d+'})" style="flex:1;padding:7px 0;border-radius:9px;border:1px solid '+(cfg.days===d?'var(--navy)':'var(--bdr)')+';background:'+(cfg.days===d?'var(--navy)':'var(--light)')+';color:'+(cfg.days===d?'#fff':'var(--muted)')+';font-size:12.5px;font-weight:700;cursor:pointer">'+d+' ngày</button>').join('')+'</div>'
     +'<div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin:2px 0 6px">Tab</div>'
-    +AH_TABS.filter(t=>document.getElementById('nav-'+t)).map(t=>{const k='tab_'+t;const hid=cfg.on&&!p[k]&&(u[k]||0)>0&&(now-(u[k]||0))>cfg.days*864e5;const dleft=u[k]?Math.max(0,cfg.days-Math.floor((now-u[k])/864e5)):cfg.days;
+    +AH_TABS.filter(t=>document.getElementById('nav-'+t)).map(t=>{const k='tab_'+t;const mv=ahMan()[k];const auto=cfg.on&&!p[k]&&(u[k]||0)>0&&(now-(u[k]||0))>cfg.days*864e5;const hid=mv===1?true:mv===0?false:auto;
       return '<div style="display:flex;align-items:center;gap:9px;padding:7px 0;border-bottom:1px dashed var(--bdr);font-size:12.5px">'
       +'<span style="flex:1">'+ahTabLabel(t)+'</span>'
-      +(hid?'<button onclick="ahOpenTab(\''+t+'\')" style="border:none;background:var(--light);color:var(--navy);border-radius:7px;padding:4px 9px;font-size:11.5px;font-weight:700;cursor:pointer">đang ẩn — Mở</button>':'<span style="color:var(--muted);font-size:11px">'+(p[k]?'':'ẩn sau '+dleft+' ngày')+'</span>')
+      +'<button onclick="ahToggleHide(\'tab_'+t+'\')" style="border:none;background:'+(hid?'var(--navy)':'var(--light)')+';color:'+(hid?'#fff':'var(--muted)')+';border-radius:7px;padding:4px 12px;font-size:11.5px;font-weight:700;cursor:pointer">'+(hid?'Hiện':'Ẩn')+'</button>'
       +'<button onclick="ahTogglePin(\'tab_'+t+'\')" style="border:none;background:'+(p[k]?'var(--navy)':'var(--light)')+';color:'+(p[k]?'#fff':'var(--muted)')+';border-radius:7px;padding:4px 9px;font-size:11.5px;font-weight:700;cursor:pointer">'+(p[k]?'Đã ghim':'Ghim')+'</button></div>'}).join('')
-    +'<div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin:12px 0 6px">Các mục theo dõi ('+uniq.length+')</div>'
-    +uniq.map(k=>{const hid=hidden.includes(k);const dleft=u[k]?Math.max(0,cfg.days-Math.floor((now-u[k])/864e5)):cfg.days;
-      return '<div style="display:flex;align-items:center;gap:9px;padding:7px 0;border-bottom:1px dashed var(--bdr);font-size:12.5px">'
-      +'<span style="flex:1">'+ahLabelOf(k)+'</span>'
-      +(hid?'<span style="color:var(--red);font-size:11px">đang ẩn</span>':'<span style="color:var(--muted);font-size:11px">'+(p[k]?'':'ẩn sau '+dleft+' ngày')+'</span>')
-      +'<button onclick="ahTogglePin(\''+k.replace(/'/g,'')+'\')" title="Ghim: không bao giờ tự ẩn" style="border:none;background:'+(p[k]?'var(--navy)':'var(--light)')+';color:'+(p[k]?'#fff':'var(--muted)')+';border-radius:7px;padding:4px 9px;font-size:11.5px;font-weight:700;cursor:pointer">'+(p[k]?'Đã ghim':'Ghim')+'</button></div>'}).join('')
+    +'<div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin:12px 0 6px">Các mục theo dõi ('+uniq.length+') — theo tab</div>'
+    +ahRenderSecGroups(uniq,p,ahMan(),cfg,u,now)
     +'</div>';
 }
 function expandAndScroll(key){const st=homeCollapsed();if(st[key]){st[key]=false;localStorage.setItem('homeCollapsed',JSON.stringify(st));applyCollapse()}const w=document.querySelector(`[data-clps="${key}"]`);if(w){const y=w.getBoundingClientRect().top+window.scrollY-70;window.scrollTo({top:y,behavior:'smooth'})}}
@@ -2920,7 +2967,7 @@ function renderRecurring(){
     const FL={weekly:'Hàng tuần',monthly:'Hàng tháng',quarterly:'Hàng quý',yearly:'Hàng năm'};
     const freq=r.freq||'monthly';
     const cycle=FL[freq]+(freq==='weekly'?'':' · ngày '+r.day)+(r.endDate?' · đến '+r.endDate:'');
-    return`<div class="tx-item" onclick="openRecurringForm('${r.id}')" style="cursor:pointer"><div class="tx-icon" style="background:${bg};color:${isIn?'#1c7947':'#b03a2e'}">${icon}</div><div class="tx-meta"><div class="tx-name">${r.desc||r.category}</div><div class="tx-sub">${r.category} · ${cycle}</div></div><div class="tx-right" style="display:flex;flex-direction:column;align-items:flex-end;gap:4px"><div class="tx-amt ${isIn?'g':'r'}">${isIn?'+':'−'}${fmtK(r.amount)} đ</div><span style="font-size:11px;color:var(--red);cursor:pointer" onclick="event.stopPropagation();deleteRecurring('${r.id}')">Xoá</span></div></div>`;
+    return`<div class="tx-item" data-swipe-edit="openRecurringForm('${r.id}')" data-swipe-del="deleteRecurring('${r.id}')" onclick="openRecurringForm('${r.id}')" style="cursor:pointer"><div class="tx-icon" style="background:${bg};color:${isIn?'#1c7947':'#b03a2e'}">${icon}</div><div class="tx-meta"><div class="tx-name">${r.desc||r.category}</div><div class="tx-sub">${r.category} · ${cycle}</div></div><div class="tx-right"><div class="tx-amt ${isIn?'g':'r'}">${isIn?'+':'−'}${fmtK(r.amount)} đ</div></div></div>`;
   }).join('');
 }
 function openRecurringForm(id){
@@ -3102,15 +3149,24 @@ function goalProgress(g){
 function goalRow(g){
   const pct=goalProgress(g);const color=pct>=100?'#27ae60':pct>=60?'#e67e22':'#1a3c5e';
   const typeLabel={save:'Tiết kiệm',income:'Thu nhập',expense:'Giảm chi',service:'DV'}[g.type]||g.type;
-  return`<div class="goal-item"><div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="font-size:13px;font-weight:500">${g.name}</span><span style="font-size:11px;color:${color};font-weight:700">${pct}%</span></div><div class="bar-bg"><div class="bar-fill" style="width:${pct}%;background:${color}"></div></div><div style="display:flex;justify-content:space-between;margin-top:4px;font-size:11px;color:var(--muted)"><span>${typeLabel}</span><span>Mục tiêu: ${fmtK(g.target)} đ</span></div></div>`;
+  return`<div class="goal-item"><div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="font-size:13px;font-weight:500">${g.name}${pct>=100?' <span style="font-size:10px;color:#27ae60;font-weight:700">✓ HOÀN THÀNH</span>':''}</span><span style="font-size:11px;color:${color};font-weight:700">${pct}%</span></div><div class="bar-bg"><div class="bar-fill" style="width:${pct}%;background:${color}"></div></div><div style="display:flex;justify-content:space-between;margin-top:4px;font-size:11px;color:var(--muted)"><span>${typeLabel}</span><span>Mục tiêu: ${fmtK(g.target)} đ</span></div></div>`;
 }
 function renderGoalSettings(){
   const el=document.getElementById('goal-list-settings');
   if(!db.goals.length){el.innerHTML='<div class="empty" style="padding:20px">Chưa có mục tiêu</div>';return}
-  el.innerHTML=db.goals.map((g,i)=>goalRow(g)+`<div style="text-align:right;padding:4px 14px 10px"><span style="font-size:11px;color:var(--red);cursor:pointer" onclick="deleteGoal(${i})">Xoá</span></div>`).join('');
+  el.innerHTML=db.goals.map((g,i)=>`<div data-swipe-edit="openGoalForm(${i})" data-swipe-del="deleteGoal(${i})" onclick="openGoalForm(${i})" style="cursor:pointer">`+goalRow(g)+`</div>`).join('');
 }
-function openGoalForm(){document.getElementById('goal-modal').classList.add('open');document.getElementById('g-date').value=today();setMoneyVal('g-target',0);setMoneyVal('g-current',0)}
-function closeGoalForm(){document.getElementById('goal-modal').classList.remove('open')}
+let editGoalIdx=null;
+function openGoalForm(i){
+  editGoalIdx=(typeof i==='number')?i:null;const g=editGoalIdx!=null?db.goals[editGoalIdx]:null;
+  const tt=document.querySelector('#goal-modal .modal-title');if(tt)tt.textContent=g?'Sửa mục tiêu':'Mục tiêu tài chính';
+  document.getElementById('g-name').value=g?g.name:'';
+  document.getElementById('g-type').value=g?(g.type||'save'):'save';
+  setMoneyVal('g-target',g?(g.target||0):0);setMoneyVal('g-current',g?(g.current||0):0);
+  document.getElementById('g-deadline').value=g?(g.deadline||''):'';
+  document.getElementById('goal-modal').classList.add('open');
+}
+function closeGoalForm(){document.getElementById('goal-modal').classList.remove('open');editGoalIdx=null}
 let editDebtIdx=null;
 function renderDebts(){
   const el=document.getElementById('debt-list');if(!el)return;
@@ -3285,8 +3341,10 @@ function confirmSettle(){
 function deleteDebt(i){if(i==null||!db.debts[i])return;const item=db.debts[i];db.debts.splice(i,1);save();closeDebtForm();renderAll();renderDebts();toastUndo('Đã xoá khoản nợ',()=>{db.debts.splice(i,0,item);save();renderAll();renderDebts()})}
 function saveGoal(){
   const name=document.getElementById('g-name').value;if(!name){warnField('g-name','Nhập tên mục tiêu');return}
-  db.goals.push({name,type:document.getElementById('g-type').value,target:getMoneyVal('g-target'),current:getMoneyVal('g-current'),deadline:document.getElementById('g-deadline').value});
-  save();closeGoalForm();renderAll();toast('Đã thêm mục tiêu ✓');
+  const obj={name,type:document.getElementById('g-type').value,target:getMoneyVal('g-target'),current:getMoneyVal('g-current'),deadline:document.getElementById('g-deadline').value};
+  const editing=editGoalIdx!=null&&db.goals[editGoalIdx];
+  if(editing)Object.assign(db.goals[editGoalIdx],obj);else db.goals.push(obj);
+  save();closeGoalForm();renderAll();try{renderGoalSettings()}catch(e){}toast(editing?'Đã cập nhật mục tiêu ✓':'Đã thêm mục tiêu ✓');
 }
 function deleteGoal(i){if(i==null||!db.goals[i])return;const item=db.goals[i];db.goals.splice(i,1);save();renderGoalSettings();renderAll();toastUndo('Đã xoá mục tiêu',()=>{db.goals.splice(i,0,item);save();renderGoalSettings();renderAll()})}
 
@@ -3554,22 +3612,25 @@ function renderPersonal(){
   if(personalSubTab==='daily')renderDailyLog(txs);
   if(personalSubTab==='debt')renderDebts();
   if(personalSubTab==='stats')renderPersonalStats();
-  if(personalSubTab==='trip')renderTrips();
+  if(personalSubTab==='trip')renderTrips('personal');
 }
 // ── TRIPS / CHUYẾN ĐI ──
-let tripDetailId=null,editTripId=null;
+let tripDetailId=null,editTripId=null,tripDomain='personal';
 function tripById(id){return (db.trips||[]).find(t=>String(t.id)===String(id))}
 function populateTripSelect(){
   const sel=document.getElementById('f-trip');if(!sel)return;
   const cur=sel.value;
-  const trips=(db.trips||[]).filter(t=>t.status!=='done');
+  const dom=modalDomain==='company'?'company':'personal';const trips=(db.trips||[]).filter(t=>t.status!=='done'&&(t.domain||'personal')===dom);
   sel.innerHTML='<option value="">— Không thuộc chuyến đi —</option>'+trips.map(t=>`<option value="${t.id}">${t.name}</option>`).join('')+'<option value="__newtrip__">+ Tạo chuyến đi mới…</option>';
   if(cur&&[...sel.options].some(o=>o.value===cur))sel.value=cur;
 }
+function hasActiveTripToday(){const d=today();return (db.trips||[]).some(t=>t.status!=='done'&&(t.startDate||'')<=d&&(!t.endDate||t.endDate>=d))}
+function expandTripRow(){const w=document.getElementById('trip-select-wrap'),g=document.getElementById('trip-toggle');if(w)w.style.display='';if(g)g.style.display='none'}
+function syncTripRow(force){const w=document.getElementById('trip-select-wrap'),g=document.getElementById('trip-toggle');if(!w||!g)return;const show=!!force||hasActiveTripToday();w.style.display=show?'':'none';g.style.display=show?'none':''}
 function onTripChange(){
   const sel=document.getElementById('f-trip');if(!sel||sel.value!=='__newtrip__')return;
   const name=(prompt('Tên chuyến đi / sự kiện:')||'').trim();
-  if(name){const id='trip_'+Date.now();db.trips=db.trips||[];db.trips.push({id,name,status:'open',startDate:today()});save();populateTripSelect();sel.value=id}
+  if(name){const id='trip_'+Date.now();db.trips=db.trips||[];db.trips.push({id,name,status:'open',startDate:today(),domain:modalDomain==='company'?'company':'personal'});save();populateTripSelect();sel.value=id}
   else sel.value='';
 }
 function tripStats(id){
@@ -3585,13 +3646,14 @@ function tripPayBreakdown(txs){
 }
 function openTrip(id){tripDetailId=id;renderTrips();window.scrollTo({top:0})}
 function closeTripDetail(){tripDetailId=null;renderTrips()}
-function renderTrips(){
-  const el=document.getElementById('personal-trip');if(!el)return;
+function renderTrips(domain){
+  if(domain)tripDomain=domain;
+  const el=document.getElementById(tripDomain==='company'?'company-trip':'personal-trip');if(!el)return;
   db.trips=db.trips||[];
   if(tripDetailId&&tripById(tripDetailId)){el.innerHTML=tripDetailHtml(tripDetailId);return}
   tripDetailId=null;
-  const trips=[...db.trips].sort((a,b)=>(b.startDate||'').localeCompare(a.startDate||''));
-  let html='<div class="sec-head" style="padding-top:8px"><span class="sec-head-title">Chuyến đi / Sự kiện</span><span class="sec-head-action" onclick="openTripForm()">+ Thêm</span></div>';
+  const trips=db.trips.filter(t=>(t.domain||'personal')===tripDomain).sort((a,b)=>(b.startDate||'').localeCompare(a.startDate||''));
+  let html='<div class="sec-head" style="padding-top:8px"><span class="sec-head-title">'+(tripDomain==='company'?'Chuyến công tác':'Chuyến đi / Sự kiện')+'</span><span class="sec-head-action" onclick="openTripForm()">+ Thêm</span></div>';
   if(!trips.length){
     el.innerHTML=html+'<div class="empty" style="padding:26px 24px;text-align:center"><div class="empty-icon" style="font-size:30px">✈️</div>Chưa có chuyến đi nào.<br>Tạo một chuyến để gom chi tiêu ăn · xe · mua sắm và biết chuyến đó tốn bao nhiêu.<div style="margin-top:14px"><button class="btn btn-primary" style="width:auto;padding:9px 20px" onclick="openTripForm()">Tạo chuyến đi</button></div></div>';return;
   }
@@ -3657,7 +3719,7 @@ function saveTrip(){
   const obj={name,startDate:document.getElementById('tf-start').value||today(),endDate:document.getElementById('tf-end').value||'',budget:getMoneyVal('tf-budget')||0,note:document.getElementById('tf-note').value.trim()};
   db.trips=db.trips||[];
   if(editTripId){const t=tripById(editTripId);if(t)Object.assign(t,obj)}
-  else db.trips.push({id:'trip_'+Date.now(),status:'open',...obj});
+  else db.trips.push({id:'trip_'+Date.now(),status:'open',domain:tripDomain,...obj});
   save();closeTripForm();renderTrips();toast('Đã lưu chuyến đi ✓');
 }
 function finishTrip(id){const t=tripById(id);if(!t)return;t.status='done';save();renderTrips();toast('Đã kết thúc chuyến')}
@@ -4028,7 +4090,7 @@ function deleteJournal(i){if(i==null||!db.journals[i])return;const item=db.journ
 
 // ── COMPANY / PROJECT ──
 let companySubTab2='company';
-function switchCompanyTab(el,tab){document.querySelectorAll('#screen-company .tab-item').forEach(t=>t.classList.remove('active'));el.classList.add('active');companySubTab2=tab;document.getElementById('company-tab').style.display=tab==='company'?'':'none';document.getElementById('project-tab').style.display=tab==='project'?'':'none';document.getElementById('cstats-tab').style.display=tab==='stats'?'':'none';renderCompany()}
+function switchCompanyTab(el,tab){document.querySelectorAll('#screen-company .tab-item').forEach(t=>t.classList.remove('active'));el.classList.add('active');companySubTab2=tab;document.getElementById('company-tab').style.display=tab==='company'?'':'none';document.getElementById('project-tab').style.display=tab==='project'?'':'none';document.getElementById('cstats-tab').style.display=tab==='stats'?'':'none';document.getElementById('company-trip').style.display=tab==='trip'?'':'none';if(tab==='trip')renderTrips('company');else renderCompany()}
 function filterCompany(el,f){document.querySelectorAll('#company-chips .chip').forEach(c=>c.classList.remove('active'));el.classList.add('active');companyFilter=f;renderCompany()}
 function filterCompanySel(f){companyFilter=f;renderCompany()}
 function filterProject(el,f){projectFilter=f;renderCompany()}
@@ -4058,6 +4120,8 @@ function renderCompany(){
     el.innerHTML=[...f].sort((a,b)=>b.date.localeCompare(a.date)||(b.id||0)-(a.id||0)).map(t=>txRow(t)).join('')||'<div class="empty"><div class="empty-icon"><svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6l-3.45-6.89A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z"/></svg></div>Chưa có khoản thu/chi<div style="font-size:11px;margin-top:6px;opacity:.8">Nhấn + để thêm thu hoặc chi của công ty</div></div>';
   }else if(companySubTab2==='stats'){
     renderCompanyStats();
+  }else if(companySubTab2==='trip'){
+    renderTrips('company');
   }else{
     ensureJobs();syncProjectsFromJobs();
     const txs=db.transactions.filter(t=>t.group==='project');
@@ -4404,7 +4468,7 @@ function openAddModal(domain,showPicker){
   document.getElementById('add-modal').classList.add('open');
   document.getElementById('f-amount').value='';document.getElementById('f-amount-display').textContent='';
   document.getElementById('f-desc').value='';document.getElementById('f-note').value='';
-  populateTripSelect();{const _ft=document.getElementById('f-trip');if(_ft)_ft.value='';}
+  populateTripSelect();{const _ft=document.getElementById('f-trip');if(_ft)_ft.value='';}syncTripRow(false);
   document.getElementById('f-date').value=today();document.getElementById('f-cdate').value=today();
   setMoneyVal('f-rate',25400);
   ['as-name','as-qty','as-unit','as-note'].forEach(id=>{const e=document.getElementById(id);if(e)e.value=''});
@@ -4442,7 +4506,7 @@ function populateCatSelect(domain,flow){
     sel.innerHTML=list.map(([n,ic])=>`<option value="${n}|${domain}">${n}</option>`).join('');
   }
 }
-const CAT_HINTS=[[/(c[àa] ph[êe]|cafe|coffee|tr[àa] s[ữu]a|highlands|starbucks)/i,'Ăn uống'],[/(ăn|c[ơo]m|qu[áa]n|nh[àa] h[àa]ng|b[úu]n|ph[ởo]|food|baemin|grabfood)/i,'Ăn uống'],[/(grab|taxi|x[ăa]ng|xe [ôo]m|bus|v[ée] xe|gojek|be )/i,'Di chuyển'],[/(shopee|lazada|tiki|[áa]o|qu[ầa]n|gi[àa]y|mua s[ắa]m)/i,'Mua sắm'],[/(h[ọo]c ph[íi]|kho[áa] h[ọo]c|s[áa]ch)/i,'Giáo dục'],[/(thu[ốo]c|kh[áa]m|b[ệe]nh vi[ệe]n|nha khoa)/i,'Y tế'],[/(ti[ềe]n đi[ệe]n|evn)/i,'Điện'],[/(ti[ềe]n n[ưuơ]?[ớo]c)/i,'Nước'],[/(internet|wifi|fpt|c[áa]p quang)/i,'Internet'],[/(l[ưuơ]?[ơư]ng|salary)/i,'Lương'],[/(th[ưuơ]?[ởo]ng|bonus)/i,'Thưởng'],[/(netflix|spotify|gi[ải] tr[íi]|game|phim|r[ạa]p)/i,'Giải trí']];
+const CAT_HINTS=[[/(kh[áa]ch s[ạa]n|hotel|resort|homestay|villa|airbnb|l[ưu]u tr[úu]|agoda|booking)/i,'Lưu trú'],[/(c[ắa]t t[óo]c|g[ội]i đ[ầâ]u|spa|gym|n[ạa]il|m[ỹy] ph[ẩâ]m|salon)/i,'Chăm sóc cá nhân'],[/(c[àa] ph[êe]|cafe|coffee|tr[àa] s[ữu]a|highlands|starbucks)/i,'Ăn uống'],[/(ăn|c[ơo]m|qu[áa]n|nh[àa] h[àa]ng|b[úu]n|ph[ởo]|food|baemin|grabfood)/i,'Ăn uống'],[/(grab|taxi|x[ăa]ng|xe [ôo]m|bus|v[ée] xe|gojek|be )/i,'Di chuyển'],[/(shopee|lazada|tiki|[áa]o|qu[ầa]n|gi[àa]y|mua s[ắa]m)/i,'Mua sắm'],[/(h[ọo]c ph[íi]|kho[áa] h[ọo]c|s[áa]ch)/i,'Giáo dục'],[/(thu[ốo]c|kh[áa]m|b[ệe]nh vi[ệe]n|nha khoa)/i,'Y tế'],[/(ti[ềe]n đi[ệe]n|evn)/i,'Điện'],[/(ti[ềe]n n[ưuơ]?[ớo]c)/i,'Nước'],[/(internet|wifi|fpt|c[áa]p quang)/i,'Internet'],[/(l[ưuơ]?[ơư]ng|salary)/i,'Lương'],[/(th[ưuơ]?[ởo]ng|bonus)/i,'Thưởng'],[/(netflix|spotify|gi[ải] tr[íi]|game|phim|r[ạa]p)/i,'Giải trí']];
 function suggestCat(){
   if(catManual)return;
   const desc=(document.getElementById('f-desc').value||'').trim();if(!desc)return;
@@ -4488,7 +4552,7 @@ function openEditTx(id){
   if([...sel.options].some(o=>o.value===opt))sel.value=opt;
   document.getElementById('f-date').value=t.date;
   document.getElementById('f-note').value=t.note||'';
-  {const _ft=document.getElementById('f-trip');if(_ft){populateTripSelect();_ft.value=t.tripId||''}}
+  {const _ft=document.getElementById('f-trip');if(_ft){populateTripSelect();_ft.value=t.tripId||''}syncTripRow(!!t.tripId);}
   if(t.flow==='xfer'){populateXferSelects();const ff=document.getElementById('f-from'),ft=document.getElementById('f-to');if(ff&&t.from)ff.value=t.from;if(ft&&t.to)ft.value=t.to;}
   else if(t.group==='personal'&&t.account){selAcct=t.account;renderAcctChips();}
 }
@@ -4667,7 +4731,7 @@ function renderAcctList(){ensureAccounts();const el=document.getElementById('acc
     const limitInfo=cr&&a.limit?' · khả dụng <b style="color:var(--green)">'+fmtK(Math.max(0,a.limit-totDebt))+'</b>/'+fmtK(a.limit)+' đ':'';
     const lkN=(db.debts||[]).filter(d=>d.acct===a.id&&(d.remaining||0)>0).length;
     const lkInfo=lkN?' · '+lkN+' khoản nợ liên kết':'';
-    return`<div style="display:flex;align-items:center;gap:10px;padding:12px 0${i<db.accounts.length-1?';border-bottom:1px solid var(--line,#f2f4f9)':''};cursor:pointer" onclick="openAcctForm('${a.id}')">
+    return`<div style="display:flex;align-items:center;gap:10px;padding:12px 0${i<db.accounts.length-1?';border-bottom:1px solid var(--line,#f2f4f9)':''};cursor:pointer" data-swipe-edit="openAcctForm('${a.id}')" data-swipe-del="deleteAcctById('${a.id}')" onclick="openAcctForm('${a.id}')">
       <div style="flex:1;min-width:0"><div style="font-size:13.5px;font-weight:600">${a.name}${a.main?' <span style="font-size:10px;font-weight:700;color:var(--navy);background:var(--light);padding:2px 7px;border-radius:8px;vertical-align:1px">MẶC ĐỊNH</span>':''}</div>
       <div style="font-size:11.5px;color:var(--muted)">${ACCT_TYPES[a.type]||''}${limitInfo}${lkInfo}${warn}</div></div>
       <div style="text-align:right"><div style="font-size:14.5px;font-weight:700;color:${color}">${val<0?'−':''}${fmtK(Math.abs(val))} đ</div><div style="font-size:11px;color:var(--muted)">${cr?'Dư nợ':'Số dư'}</div></div>
@@ -4844,7 +4908,7 @@ function renderInstList(){ensureInst();const el=document.getElementById('inst-li
   if(!db.installments.length){el.innerHTML='<div style="padding:16px 0;text-align:center;font-size:12.5px;color:var(--muted)">Chưa có khoản trả góp nào</div>';return}
   el.innerHTML=db.installments.map((it,i)=>{
     const card=acctById(it.card);const pct=Math.min(100,Math.round((it.paid||0)/it.term*100));const done=(it.paid||0)>=it.term;
-    return`<div style="padding:11px 0${i<db.installments.length-1?';border-bottom:1px solid var(--line,#f2f4f9)':''};cursor:pointer" onclick="openInstForm('${it.id}')">
+    return`<div style="padding:11px 0${i<db.installments.length-1?';border-bottom:1px solid var(--line,#f2f4f9)':''};cursor:pointer" data-swipe-edit="openInstForm('${it.id}')" data-swipe-del="deleteInstById('${it.id}')" onclick="openInstForm('${it.id}')">
       <div style="display:flex;justify-content:space-between;align-items:baseline">
         <span style="font-size:13.5px;font-weight:600">${it.name}${done?` <span style="font-size:10px;color:var(--green);font-weight:700">✓ ${it.settled?'TẤT TOÁN':'XONG'}</span>`:''}</span>
         <b style="font-size:13px">${fmtK(it.per)} đ/kỳ</b>
@@ -4875,6 +4939,8 @@ function saveInst(){ensureInst();
   if(editInstId){const it=db.installments.find(x=>x.id===editInstId);if(it)Object.assign(it,{name,card,total,per,term,paid})}
   else db.installments.push({id:'in_'+Date.now(),name,card,total,per,term,paid});
   save();closeInstModal();renderAll();renderInstList();toast('Đã lưu khoản góp ✓')}
+function deleteAcctById(id){editAcctId=id;deleteAcct()}
+function deleteInstById(id){editInstId=id;deleteInst()}
 function deleteInst(){if(!editInstId)return;db.installments=db.installments.filter(x=>x.id!==editInstId);editInstId=null;save();closeInstModal();renderAll();renderInstList();toast('Đã xoá')}
 // ── SETTINGS ──
 function switchSettingsTab(el,tab){document.querySelectorAll('#screen-settings .tab-item').forEach(t=>t.classList.remove('active'));el.classList.add('active');settingsSubTab=tab;['budget','goal','recurring','account','export'].forEach(t=>document.getElementById('settings-'+t).style.display=t===tab?'':'none');renderSettings()}
