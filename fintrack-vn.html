@@ -1120,10 +1120,10 @@ body.dark #boot-splash{background:#0f1622}
     <div class="card"><div id="ah-settings"></div></div>
     <div class="sec-head"><span class="sec-head-title">Chế độ hiển thị</span></div>
     <div class="card">
-      <div class="set-row set-tap" onclick="goDesktopVersion()"><div class="set-ic" style="background:var(--bbg,#e8f0fe)"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="13" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>
+      <a class="set-row set-tap" href="fintrack-desktop.html" style="text-decoration:none;color:inherit"><div class="set-ic" style="background:var(--bbg,#e8f0fe)"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="13" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>
         <div style="flex:1"><div class="set-t">Chuyển sang bản Desktop</div><div class="set-d">Giao diện màn hình to — dữ liệu vẫn đồng bộ chung</div></div>
         <div class="set-arr">›</div>
-      </div>
+      </a>
       <div class="set-row set-tap" style="border-bottom:none" onclick="toggleDark()"><div class="set-ic" style="background:#eceff4"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg></div>
         <div style="flex:1"><div class="set-t">Chế độ tối</div><div class="set-d">Bật / tắt nền tối</div></div>
         <div class="set-arr">›</div>
@@ -5442,7 +5442,7 @@ async function pushToCloud(setDoc, doc, serverTimestamp) {
       _updatedAt: ts,
       _seq: localSeq,
       _version: 4
-    });
+    }, { merge: true });
     updateSyncUI('synced');
     lastSyncTime = ts;
     lastCloudSeq = localSeq;
@@ -5514,9 +5514,9 @@ async function manualSync() {
 }
 
 
-// ── ĐỒNG BỘ CÀI ĐẶT (riêng cho bản app, không ảnh hưởng bản kia) ──
+// ── ĐỒNG BỘ CÀI ĐẶT (lưu trong doc fintrack/main, field riêng cho từng bản) ──
 const SETTINGS_VARIANT='app';
-const SETTINGS_DOC='settings_'+SETTINGS_VARIANT;
+const SETTINGS_FIELD='st_'+SETTINGS_VARIANT;
 const SETTINGS_KEYS=['dark','homeCollapsed','autoHide','ahPins','ahManual','fcDays'];
 let settingsSeq=parseInt(localStorage.getItem('settings_seq_'+SETTINGS_VARIANT))||0;
 let _stTools=null,_stTimeout=null,_stApplying=false,_stDirty=false;
@@ -5530,17 +5530,18 @@ async function pushSettings(){
   if(!_stTools||!firestoreDb)return;
   try{
     settingsSeq++;localStorage.setItem('settings_seq_'+SETTINGS_VARIANT,String(settingsSeq));
-    await _stTools.setDoc(_stTools.doc(firestoreDb,'fintrack',SETTINGS_DOC),{payload:JSON.stringify(collectSettings()),_deviceId:DEVICE_ID,_seq:settingsSeq,_updatedAt:Date.now()});
+    const body={};body[SETTINGS_FIELD]={payload:JSON.stringify(collectSettings()),deviceId:DEVICE_ID,seq:settingsSeq,updatedAt:Date.now()};
+    await _stTools.setDoc(_stTools.doc(firestoreDb,'fintrack','main'),body,{merge:true});
     _stDirty=false;
   }catch(e){console.warn('Settings push error:',e)}
 }
-function adoptSettings(data){
+function adoptSettings(s){
   try{
-    const o=JSON.parse(data.payload||'{}');
+    const o=JSON.parse(s.payload||'{}');
     _stApplying=true;
     SETTINGS_KEYS.forEach(k=>{if(o[k]!==undefined&&o[k]!==null)localStorage.setItem(k,String(o[k]));else localStorage.removeItem(k)});
     _stApplying=false;
-    settingsSeq=data._seq||0;localStorage.setItem('settings_seq_'+SETTINGS_VARIANT,String(settingsSeq));
+    settingsSeq=s.seq||0;localStorage.setItem('settings_seq_'+SETTINGS_VARIANT,String(settingsSeq));
     applySyncedSettings();
   }catch(e){_stApplying=false;console.warn('Settings adopt error:',e)}
 }
@@ -5554,24 +5555,24 @@ function applySyncedSettings(){
 }
 async function initSettingsSync(doc,setDoc,getDoc,onSnapshot){
   _stTools={doc,setDoc,getDoc,onSnapshot};
-  const ref=doc(firestoreDb,'fintrack',SETTINGS_DOC);
+  const ref=doc(firestoreDb,'fintrack','main');
   try{
     const snap=await getDoc(ref);
-    if(snap.exists()){
-      const data=snap.data();const cs=data._seq||0;
-      if((settingsSeq===0&&!_stDirty)||cs>settingsSeq)adoptSettings(data);
+    const s=snap.exists()?snap.data()[SETTINGS_FIELD]:null;
+    if(s){
+      const cs=s.seq||0;
+      if((settingsSeq===0&&!_stDirty)||cs>settingsSeq)adoptSettings(s);
       else if(settingsSeq>cs||_stDirty)scheduleSettingsPush();
     }else if(settingsSeq>0||_stDirty)scheduleSettingsPush();
   }catch(e){console.warn('Settings pull error:',e)}
   onSnapshot(ref,snap=>{
-    if(!snap.exists())return;const data=snap.data();
-    if(data._deviceId===DEVICE_ID)return;
-    const cs=data._seq||0;if(cs<=settingsSeq)return;
-    adoptSettings(data);
+    if(!snap.exists())return;
+    const s=snap.data()[SETTINGS_FIELD];if(!s||s.deviceId===DEVICE_ID)return;
+    const cs=s.seq||0;if(cs<=settingsSeq)return;
+    adoptSettings(s);
     if(typeof showSyncToast==='function')showSyncToast('Đã nhận cài đặt mới từ thiết bị khác');
   });
 }
-
 // Init Firebase sau khi app load
 setTimeout(initFirebase, 500);
 
