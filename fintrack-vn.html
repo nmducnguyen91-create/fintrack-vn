@@ -5380,6 +5380,7 @@ async function initFirebase() {
     };
 
     // Gọi lại save để patch
+    initSettingsSync(doc, setDoc, getDoc, onSnapshot);
     console.log('Firebase sync ready ✓');
   } catch(e) {
     console.warn('Firebase init error:', e);
@@ -5512,6 +5513,65 @@ async function manualSync() {
   } catch(e) { toast('Lỗi đồng bộ: ' + e.message); }
 }
 
+
+// ── ĐỒNG BỘ CÀI ĐẶT (riêng cho bản app, không ảnh hưởng bản kia) ──
+const SETTINGS_VARIANT='app';
+const SETTINGS_DOC='settings_'+SETTINGS_VARIANT;
+const SETTINGS_KEYS=['dark','homeCollapsed','autoHide','ahPins','ahManual','fcDays'];
+let settingsSeq=parseInt(localStorage.getItem('settings_seq_'+SETTINGS_VARIANT))||0;
+let _stTools=null,_stTimeout=null,_stApplying=false,_stDirty=false;
+(function(){
+  const orig=localStorage.setItem.bind(localStorage);
+  localStorage.setItem=function(k,v){orig(k,v);if(!_stApplying&&SETTINGS_KEYS.indexOf(k)>-1)scheduleSettingsPush();};
+})();
+function collectSettings(){const o={};SETTINGS_KEYS.forEach(k=>{const v=localStorage.getItem(k);if(v!==null)o[k]=v});return o}
+function scheduleSettingsPush(){_stDirty=true;if(!_stTools)return;clearTimeout(_stTimeout);_stTimeout=setTimeout(pushSettings,1200)}
+async function pushSettings(){
+  if(!_stTools||!firestoreDb)return;
+  try{
+    settingsSeq++;localStorage.setItem('settings_seq_'+SETTINGS_VARIANT,String(settingsSeq));
+    await _stTools.setDoc(_stTools.doc(firestoreDb,'fintrack',SETTINGS_DOC),{payload:JSON.stringify(collectSettings()),_deviceId:DEVICE_ID,_seq:settingsSeq,_updatedAt:Date.now()});
+    _stDirty=false;
+  }catch(e){console.warn('Settings push error:',e)}
+}
+function adoptSettings(data){
+  try{
+    const o=JSON.parse(data.payload||'{}');
+    _stApplying=true;
+    SETTINGS_KEYS.forEach(k=>{if(o[k]!==undefined&&o[k]!==null)localStorage.setItem(k,String(o[k]));else localStorage.removeItem(k)});
+    _stApplying=false;
+    settingsSeq=data._seq||0;localStorage.setItem('settings_seq_'+SETTINGS_VARIANT,String(settingsSeq));
+    applySyncedSettings();
+  }catch(e){_stApplying=false;console.warn('Settings adopt error:',e)}
+}
+function applySyncedSettings(){
+  try{const dk=localStorage.getItem('dark')==='1';document.body.classList.toggle('dark',dk);const b=document.getElementById('dark-btn');if(b&&typeof I!=='undefined'&&I.sun&&I.moon)b.innerHTML=dk?I.sun:I.moon}catch(e){}
+  try{applyCollapse()}catch(e){}
+  try{applyAutoHide()}catch(e){}
+  try{ahApplyTabs()}catch(e){}
+  try{renderAhSettings()}catch(e){}
+  try{if(typeof fcDays!=='undefined'){fcDays=parseInt(localStorage.getItem('fcDays'))||30;if(typeof renderForecast==='function')renderForecast()}}catch(e){}
+}
+async function initSettingsSync(doc,setDoc,getDoc,onSnapshot){
+  _stTools={doc,setDoc,getDoc,onSnapshot};
+  const ref=doc(firestoreDb,'fintrack',SETTINGS_DOC);
+  try{
+    const snap=await getDoc(ref);
+    if(snap.exists()){
+      const data=snap.data();const cs=data._seq||0;
+      if((settingsSeq===0&&!_stDirty)||cs>settingsSeq)adoptSettings(data);
+      else if(settingsSeq>cs||_stDirty)scheduleSettingsPush();
+    }else if(settingsSeq>0||_stDirty)scheduleSettingsPush();
+  }catch(e){console.warn('Settings pull error:',e)}
+  onSnapshot(ref,snap=>{
+    if(!snap.exists())return;const data=snap.data();
+    if(data._deviceId===DEVICE_ID)return;
+    const cs=data._seq||0;if(cs<=settingsSeq)return;
+    adoptSettings(data);
+    if(typeof showSyncToast==='function')showSyncToast('Đã nhận cài đặt mới từ thiết bị khác');
+  });
+}
+
 // Init Firebase sau khi app load
 setTimeout(initFirebase, 500);
 
@@ -5563,8 +5623,8 @@ function goDesktopVersion(){
   if(/\/app\/$/.test(base)) cands.unshift(base.replace(/app\/$/,'desktop/')+'fintrack-desktop.html');
   else cands.push(base+'desktop/fintrack-desktop.html');
   (function tryNext(i){
-    if(i>=cands.length){ alert('Không tìm thấy bản Desktop (fintrack-desktop.html) cạnh file này.'); return; }
-    fetch(cands[i],{method:'GET'}).then(function(r){ r.ok?location.href=cands[i]:tryNext(i+1); }).catch(function(){ tryNext(i+1); });
+    if(i>=cands.length){ location.href=cands[0]; return; }
+    fetch(cands[i],{method:'GET',cache:'no-store'}).then(function(r){ r.ok?location.href=cands[i]:tryNext(i+1); }).catch(function(){ tryNext(i+1); });
   })(0);
 }
 </script>

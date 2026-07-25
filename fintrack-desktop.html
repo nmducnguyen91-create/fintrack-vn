@@ -11,6 +11,18 @@
 <meta name="theme-color" content="#16314d">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
+<script>
+// Cài đặt bản desktop lưu tách riêng bản app (tiền tố dt_) — dùng chung trình duyệt không lẫn nhau
+(function(){
+  var KEYS=['dark','homeCollapsed','autoHide','ahPins','ahManual','ahUsage','fcDays'],P='dt_';
+  var g=localStorage.getItem.bind(localStorage),s=localStorage.setItem.bind(localStorage),r=localStorage.removeItem.bind(localStorage);
+  if(!g('dt__migr')){KEYS.forEach(function(k){if(g(P+k)===null&&g(k)!==null)s(P+k,g(k))});s('dt__migr','1');}
+  function m(k){return KEYS.indexOf(k)>-1?P+k:k}
+  localStorage.getItem=function(k){return g(m(k))};
+  localStorage.setItem=function(k,v){return s(m(k),v)};
+  localStorage.removeItem=function(k){return r(m(k))};
+})();
+</script>
 <link rel="icon" type="image/png" href="icon-192.png">
 <title>[Desktop] FinTrack VN</title>
 <style>
@@ -1090,6 +1102,13 @@ body.dark #boot-splash{background:#0f1622}
       </div>
       <div style="padding:12px 14px"><button class="btn btn-primary" style="width:100%" onclick="manualSync()">↺ Đồng bộ ngay</button>
         <div style="font-size:11px;color:var(--muted);text-align:center;margin-top:8px">Tự động đồng bộ giữa các thiết bị khi có mạng. Offline vẫn dùng bình thường.</div>
+      </div>
+    </div>
+    <div class="sec-head"><span class="sec-head-title">Chế độ hiển thị</span></div>
+    <div class="card">
+      <div class="set-row set-tap" onclick="goAppVersion()" style="border-bottom:none"><div class="set-ic" style="background:var(--bbg,#e8f0fe)"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg></div>
+        <div style="flex:1"><div class="set-t">Chuyển sang bản App</div><div class="set-d">Giao diện điện thoại — dữ liệu vẫn đồng bộ chung</div></div>
+        <div class="set-arr">›</div>
       </div>
     </div>
     <div class="sec-head"><span class="sec-head-title">Bảo mật</span></div>
@@ -5298,6 +5317,7 @@ async function initFirebase() {
     };
 
     // Gọi lại save để patch
+    initSettingsSync(doc, setDoc, getDoc, onSnapshot);
     console.log('Firebase sync ready ✓');
   } catch(e) {
     console.warn('Firebase init error:', e);
@@ -5433,10 +5453,69 @@ async function manualSync() {
 // Init Firebase sau khi app load
 setTimeout(initFirebase, 500);
 
+
+// ── ĐỒNG BỘ CÀI ĐẶT (riêng cho bản desktop, không ảnh hưởng bản kia) ──
+const SETTINGS_VARIANT='desktop';
+const SETTINGS_DOC='settings_'+SETTINGS_VARIANT;
+const SETTINGS_KEYS=['dark','homeCollapsed','autoHide','ahPins','ahManual','fcDays'];
+let settingsSeq=parseInt(localStorage.getItem('settings_seq_'+SETTINGS_VARIANT))||0;
+let _stTools=null,_stTimeout=null,_stApplying=false,_stDirty=false;
+(function(){
+  const orig=localStorage.setItem.bind(localStorage);
+  localStorage.setItem=function(k,v){orig(k,v);if(!_stApplying&&SETTINGS_KEYS.indexOf(k)>-1)scheduleSettingsPush();};
+})();
+function collectSettings(){const o={};SETTINGS_KEYS.forEach(k=>{const v=localStorage.getItem(k);if(v!==null)o[k]=v});return o}
+function scheduleSettingsPush(){_stDirty=true;if(!_stTools)return;clearTimeout(_stTimeout);_stTimeout=setTimeout(pushSettings,1200)}
+async function pushSettings(){
+  if(!_stTools||!firestoreDb)return;
+  try{
+    settingsSeq++;localStorage.setItem('settings_seq_'+SETTINGS_VARIANT,String(settingsSeq));
+    await _stTools.setDoc(_stTools.doc(firestoreDb,'fintrack',SETTINGS_DOC),{payload:JSON.stringify(collectSettings()),_deviceId:DEVICE_ID,_seq:settingsSeq,_updatedAt:Date.now()});
+    _stDirty=false;
+  }catch(e){console.warn('Settings push error:',e)}
+}
+function adoptSettings(data){
+  try{
+    const o=JSON.parse(data.payload||'{}');
+    _stApplying=true;
+    SETTINGS_KEYS.forEach(k=>{if(o[k]!==undefined&&o[k]!==null)localStorage.setItem(k,String(o[k]));else localStorage.removeItem(k)});
+    _stApplying=false;
+    settingsSeq=data._seq||0;localStorage.setItem('settings_seq_'+SETTINGS_VARIANT,String(settingsSeq));
+    applySyncedSettings();
+  }catch(e){_stApplying=false;console.warn('Settings adopt error:',e)}
+}
+function applySyncedSettings(){
+  try{const dk=localStorage.getItem('dark')==='1';document.body.classList.toggle('dark',dk);const b=document.getElementById('dark-btn');if(b&&typeof I!=='undefined'&&I.sun&&I.moon)b.innerHTML=dk?I.sun:I.moon}catch(e){}
+  try{applyCollapse()}catch(e){}
+  try{applyAutoHide()}catch(e){}
+  try{ahApplyTabs()}catch(e){}
+  try{renderAhSettings()}catch(e){}
+  try{if(typeof fcDays!=='undefined'){fcDays=parseInt(localStorage.getItem('fcDays'))||30;if(typeof renderForecast==='function')renderForecast()}}catch(e){}
+}
+async function initSettingsSync(doc,setDoc,getDoc,onSnapshot){
+  _stTools={doc,setDoc,getDoc,onSnapshot};
+  const ref=doc(firestoreDb,'fintrack',SETTINGS_DOC);
+  try{
+    const snap=await getDoc(ref);
+    if(snap.exists()){
+      const data=snap.data();const cs=data._seq||0;
+      if((settingsSeq===0&&!_stDirty)||cs>settingsSeq)adoptSettings(data);
+      else if(settingsSeq>cs||_stDirty)scheduleSettingsPush();
+    }else if(settingsSeq>0||_stDirty)scheduleSettingsPush();
+  }catch(e){console.warn('Settings pull error:',e)}
+  onSnapshot(ref,snap=>{
+    if(!snap.exists())return;const data=snap.data();
+    if(data._deviceId===DEVICE_ID)return;
+    const cs=data._seq||0;if(cs<=settingsSeq)return;
+    adoptSettings(data);
+    if(typeof showSyncToast==='function')showSyncToast('Đã nhận cài đặt mới từ thiết bị khác');
+  });
+}
+
 // Đăng ký Service Worker → cài được như app điện thoại + dùng offline
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    Promise.resolve().then(reg => {
+    navigator.serviceWorker.register('sw.js').then(reg => {
       // Chủ động kiểm tra bản mới mỗi khi mở app
       reg.update().catch(() => {});
       // Khi service worker mới đã cài xong và sẵn sàng → tự tải lại để lấy bản mới nhất
@@ -5474,6 +5553,18 @@ if ('serviceWorker' in navigator) {
   document.addEventListener('input',function(ev){var t=ev.target;if(t&&t.classList&&t.classList.contains('field-invalid'))window.clearFieldErr(t.id);},true);
   document.addEventListener('change',function(ev){var t=ev.target;if(t&&t.classList&&t.classList.contains('field-invalid'))window.clearFieldErr(t.id);},true);
 })();
+</script>
+<script>
+function goAppVersion(){
+  var here=location.pathname, base=here.replace(/[^/]*$/,'');
+  var cands=[base+'fintrack-vn.html'];
+  if(/\/desktop\/$/.test(base)) cands.unshift(base.replace(/desktop\/$/,'app/')+'fintrack-vn.html');
+  else cands.push(base+'app/fintrack-vn.html');
+  (function tryNext(i){
+    if(i>=cands.length){ location.href=cands[0]; return; }
+    fetch(cands[i],{cache:'no-store'}).then(function(r){ r.ok?location.href=cands[i]:tryNext(i+1); }).catch(function(){ tryNext(i+1); });
+  })(0);
+}
 </script>
 </body>
 </html>
