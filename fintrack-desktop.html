@@ -3153,6 +3153,9 @@ function filterDebtSel(f){debtFilter=f;renderDebts()}
 function setDebtKind(k){debtKind=k;document.getElementById('dk-payable').className='type-btn expense'+(k==='payable'?' active':'');document.getElementById('dk-receivable').className='type-btn income'+(k==='receivable'?' active':'');const pl=document.getElementById('d-party-label');if(pl)pl.textContent=k==='receivable'?'Người nợ mình':'Chủ nợ / Đơn vị'}
 function payDebtPeriod(i){
   const d=db.debts[i];if(!d)return;
+  const _mo=today().slice(0,7);
+  if(d.lastPayMonth===_mo&&!confirm('Khoản này đã ghi trả 1 kỳ trong tháng '+_mo+'.\nGhi thêm 1 kỳ nữa?'))return;
+  d.lastPayMonth=_mo;
   d.paid=d.term>0?Math.min((d.paid||0)+1,d.term):(d.paid||0)+1;
   let pmt=+d.monthlyPayment||0;
   if(!pmt&&d.term>0){const left=d.term-(d.paid-1);if(left>0)pmt=Math.round((+d.remaining||0)/left)}
@@ -4551,7 +4554,8 @@ function saveTransaction(){
         editTxId=null;save();closeModal();renderAll();toast('Đã cập nhật ✓');return;
       }
       db.transactions.push({id:Date.now(),amount,desc:desc||'Chuyển khoản',category:'Chuyển khoản',group:'personal',flow:'xfer',date,note,from,to});
-      save();closeModal();renderAll();toast('Đã ghi chuyển khoản ✓');return;
+      save();closeModal();renderAll();toast('Đã ghi chuyển khoản ✓');
+      setTimeout(()=>maybeAdvanceInst(to,date,amount),350);return;
     }
     if(catRaw==='__newproj__'||!catRaw){toast('Chọn hoặc thêm công việc!');return}
     const[category,group]=catRaw.split('|');const flow=txType==='income'?'in':'out';
@@ -4822,6 +4826,26 @@ function cardSpendCycle(card){
 }
 function cardInstDue(card){ensureInst();return db.installments.filter(i=>i.card===card.id&&(i.paid||0)<i.term).reduce((s,i)=>s+i.per,0)}
 function instRemaining(i){return Math.max(0,i.total-(i.paid||0)*i.per)}
+function maybeAdvanceInst(cardId,date,amount){
+  try{ensureInst()}catch(e){}
+  const card=acctById(cardId);if(!card||card.type!=='credit')return;
+  const mo=(date||today()).slice(0,7);
+  const list=db.installments.filter(i=>i.card===cardId&&(i.paid||0)<i.term&&i.lastPayMonth!==mo);
+  const dlist=(db.debts||[]).filter(d=>d.acct===cardId&&d.kind!=='receivable'&&!d.settled&&(+d.remaining||0)>0&&+d.monthlyPayment>0&&d.lastPayMonth!==mo&&!(d.term>0&&(d.paid||0)>=d.term));
+  if(!list.length&&!dlist.length)return;
+  const lines=list.map(i=>'· '+i.name+' — '+fmtK(i.per)+' đ/kỳ ('+((i.paid||0)+1)+'/'+i.term+')')
+    .concat(dlist.map(d=>'· '+(d.name||'Khoản nợ')+' — '+fmtK(+d.monthlyPayment)+' đ/kỳ'+(d.term>0?' ('+((d.paid||0)+1)+'/'+d.term+')':'')));
+  const due=list.reduce((s,i)=>s+i.per,0)+dlist.reduce((s,d)=>s+(+d.monthlyPayment),0);
+  const msg='Khoản chuyển vào '+card.name+' có gồm kỳ trả góp / trả nợ tháng này không?\n\n'
+    +lines.join('\n')
+    +'\n\nTổng phải trả kỳ này: '+fmtK(due)+' đ'+(amount>=due?'':'\n(Số chuyển '+fmtK(amount)+' đ nhỏ hơn tổng kỳ)')
+    +'\n\nOK = ghi nhận đã trả thêm 1 kỳ cho các khoản trên.';
+  if(!confirm(msg))return;
+  list.forEach(i=>{i.paid=(i.paid||0)+1;i.lastPayMonth=mo});
+  dlist.forEach(d=>{d.paid=(d.paid||0)+1;d.lastPayMonth=mo;const pmt=+d.monthlyPayment||0;d.remaining=Math.max(0,(+d.remaining||0)-pmt);if(d.term>0&&(d.paid||0)>=d.term)d.remaining=0;if(!(+d.remaining>0))d.settled=true});
+  save();renderAll();try{renderInstList()}catch(e){}try{renderDebts()}catch(e){}
+  toast('Đã cộng 1 kỳ cho '+(list.length+dlist.length)+' khoản ✓');
+}
 function totalInstRemaining(){ensureInst();return db.installments.reduce((s,i)=>s+instRemaining(i),0)}
 function nextDueDate(card){
   if(!card.dueDay)return null;const td=new Date();
@@ -4861,7 +4885,7 @@ function saveInst(){ensureInst();
   const term=+document.getElementById('in-term').value;const paid=+document.getElementById('in-paid').value||0;
   if(!total||!term){warnField('in-total','Nhập tổng tiền và số kỳ');return}
   if(!per)per=Math.round(total/term);
-  if(editInstId){const it=db.installments.find(x=>x.id===editInstId);if(it)Object.assign(it,{name,card,total,per,term,paid})}
+  if(editInstId){const it=db.installments.find(x=>x.id===editInstId);if(it){const bumped=paid>(it.paid||0);Object.assign(it,{name,card,total,per,term,paid});if(bumped)it.lastPayMonth=today().slice(0,7)}}
   else db.installments.push({id:'in_'+Date.now(),name,card,total,per,term,paid});
   save();closeInstModal();renderAll();renderInstList();toast('Đã lưu khoản góp ✓')}
 function deleteInst(){if(!editInstId)return;db.installments=db.installments.filter(x=>x.id!==editInstId);editInstId=null;save();closeInstModal();renderAll();renderInstList();toast('Đã xoá')}
