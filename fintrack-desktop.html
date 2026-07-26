@@ -1101,7 +1101,7 @@ body.dark #boot-splash{background:#0f1622}
         </div>
       </div>
       <div style="padding:12px 14px"><button class="btn btn-primary" style="width:100%" onclick="manualSync()">↺ Đồng bộ ngay</button>
-        <div style="font-size:11px;color:var(--muted);text-align:center;margin-top:8px">Tự động đồng bộ giữa các thiết bị khi có mạng. Offline vẫn dùng bình thường.</div>
+        <div style="display:flex;align-items:center;gap:10px;justify-content:center;margin-top:10px"><span id="acc-email" style="font-size:12px;color:var(--muted)"></span><button class="btn" style="font-size:12px;padding:4px 12px" onclick="if(window._fbLogout)window._fbLogout()">Đăng xuất</button></div><div style="font-size:11px;color:var(--muted);text-align:center;margin-top:8px">Tự động đồng bộ giữa các thiết bị khi có mạng. Offline vẫn dùng bình thường.</div>
       </div>
     </div>
     <div class="sec-head"><span class="sec-head-title">Chế độ hiển thị</span></div>
@@ -5254,6 +5254,9 @@ let firebaseReady = false;
 let firestoreDb = null;
 let syncTimeout = null;
 let lastSyncTime = null;
+
+let fbAuth = null, AUTH_UID = null;
+function userDocRef(docFn){ return docFn(firestoreDb, 'users', AUTH_UID, 'fintrack', 'main'); }
 const DEVICE_ID = localStorage.getItem('device_id') || (() => { const id = 'dev_' + Date.now(); localStorage.setItem('device_id', id); return id; })();
 
 async function initFirebase() {
@@ -5271,8 +5274,19 @@ async function initFirebase() {
     };
 
     const app = initializeApp(firebaseConfig);
+    // ── XÁC THỰC: dữ liệu nằm trong vùng riêng users/{uid}, chỉ chủ tài khoản đọc/ghi được ──
+    const { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js');
+    fbAuth = getAuth(app);
+    window._fbLogin = (em,pw)=>signInWithEmailAndPassword(fbAuth,em,pw);
+    window._fbSignup = (em,pw)=>createUserWithEmailAndPassword(fbAuth,em,pw);
+    window._fbLogout = ()=>signOut(fbAuth).then(()=>location.reload());
+    const user = await new Promise(res=>{ const un=onAuthStateChanged(fbAuth,u=>{un();res(u);}); });
+    if (!user) { updateSyncUI('offline'); showLoginGate(); return; }
+    AUTH_UID = user.uid;
+    const accEl = document.getElementById('acc-email'); if (accEl) accEl.textContent = user.email || '';
     firestoreDb = getFirestore(app);
     firebaseReady = true;
+    await migrateLegacyDoc(getDoc, setDoc, doc);
 
     // Pull dữ liệu từ cloud lần đầu
     await pullFromCloud(getDoc, doc);
@@ -5281,7 +5295,7 @@ async function initFirebase() {
     if (localSeq > lastCloudSeq) scheduleSync(setDoc, doc, serverTimestamp);
 
     // Lắng nghe thay đổi realtime từ thiết bị khác
-    const docRef = doc(firestoreDb, 'fintrack', 'main');
+    const docRef = userDocRef(doc);
     onSnapshot(docRef, (snapshot) => {
       if (!snapshot.exists()) return;
       const data = snapshot.data();
@@ -5327,7 +5341,7 @@ async function initFirebase() {
 
 async function pullFromCloud(getDoc, doc) {
   try {
-    const docRef = doc(firestoreDb, 'fintrack', 'main');
+    const docRef = userDocRef(doc);
     const snapshot = await getDoc(docRef);
     if (!snapshot.exists()) return;
     const data = snapshot.data();
@@ -5371,7 +5385,7 @@ async function pushToCloud(setDoc, doc, serverTimestamp) {
       images: (sv.images || []).map(img => img.startsWith('data:') && img.length > 50000 ? '[IMG_LOCAL]' : img)
     }));
     const payload = JSON.stringify(dbToSync);
-    const docRef = doc(firestoreDb, 'fintrack', 'main');
+    const docRef = userDocRef(doc);
     const ts = Date.now();
     await setDoc(docRef, {
       payload,
@@ -5451,6 +5465,57 @@ async function manualSync() {
 }
 
 // Init Firebase sau khi app load
+
+// ── MÀN HÌNH ĐĂNG NHẬP ──
+function showLoginGate(){
+  var ex=document.getElementById('login-gate'); if(ex){ex.style.display='flex';return;}
+  var d=document.createElement('div'); d.id='login-gate';
+  d.style.cssText='position:fixed;inset:0;z-index:99999;background:rgba(15,25,45,.55);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:20px';
+  d.innerHTML='<div style="background:#fff;border-radius:18px;padding:26px 22px;width:100%;max-width:360px;box-shadow:0 18px 50px rgba(0,0,0,.3)">'
+    +'<div style="font-size:19px;font-weight:800;color:#122a4d">Đăng nhập đồng bộ</div>'
+    +'<div style="font-size:13px;color:#6b7688;margin-top:5px;line-height:1.5">Dữ liệu được bảo vệ theo tài khoản. Các thiết bị đăng nhập cùng một tài khoản sẽ tự đồng bộ với nhau.</div>'
+    +'<input id="lg-email" type="email" placeholder="Email" autocomplete="username" style="width:100%;box-sizing:border-box;margin-top:16px;padding:11px 12px;border:1.5px solid #d7dde8;border-radius:10px;font-size:15px">'
+    +'<input id="lg-pass" type="password" placeholder="Mật khẩu (từ 6 ký tự)" autocomplete="current-password" style="width:100%;box-sizing:border-box;margin-top:10px;padding:11px 12px;border:1.5px solid #d7dde8;border-radius:10px;font-size:15px">'
+    +'<div id="lg-err" style="font-size:12.5px;color:#c0392b;margin-top:8px;min-height:16px"></div>'
+    +'<button id="lg-in" style="width:100%;border:none;cursor:pointer;background:#1a3a6b;color:#fff;font-weight:700;font-size:15px;border-radius:10px;padding:12px;margin-top:4px">Đăng nhập</button>'
+    +'<button id="lg-up" style="width:100%;border:none;cursor:pointer;background:#e3ebf7;color:#1a3a6b;font-weight:700;font-size:14px;border-radius:10px;padding:11px;margin-top:8px">Tạo tài khoản mới</button>'
+    +'<button id="lg-skip" style="width:100%;border:none;cursor:pointer;background:none;color:#8a94a6;font-weight:600;font-size:13px;padding:10px;margin-top:4px">Dùng offline, không đồng bộ</button>'
+    +'</div>';
+  document.body.appendChild(d);
+  document.getElementById('lg-in').onclick=function(){loginGate(false);};
+  document.getElementById('lg-up').onclick=function(){loginGate(true);};
+  document.getElementById('lg-skip').onclick=function(){d.style.display='none';};
+}
+async function loginGate(isSignup){
+  var em=document.getElementById('lg-email').value.trim(), pw=document.getElementById('lg-pass').value;
+  var err=document.getElementById('lg-err'); err.textContent='';
+  if(!em||pw.length<6){ err.textContent='Nhập email và mật khẩu từ 6 ký tự.'; return; }
+  err.textContent='Đang xử lý…'; err.style.color='#6b7688';
+  try{
+    await (isSignup ? window._fbSignup(em,pw) : window._fbLogin(em,pw));
+    location.reload();
+  }catch(e){
+    err.style.color='#c0392b';
+    var m={'auth/invalid-credential':'Sai email hoặc mật khẩu.','auth/user-not-found':'Tài khoản chưa tồn tại — bấm "Tạo tài khoản mới".','auth/wrong-password':'Sai mật khẩu.','auth/email-already-in-use':'Email này đã có tài khoản — bấm "Đăng nhập".','auth/invalid-email':'Email không hợp lệ.','auth/weak-password':'Mật khẩu quá yếu (từ 6 ký tự).','auth/network-request-failed':'Không có mạng.','auth/operation-not-allowed':'Chưa bật Email/Password trong Firebase Console (xem file hướng dẫn).'};
+    err.textContent=m[e.code]||('Lỗi: '+(e.code||e.message));
+  }
+}
+async function migrateLegacyDoc(getDoc, setDoc, doc){
+  try{
+    const usnap = await getDoc(userDocRef(doc));
+    if (usnap.exists()) return;
+    const lsnap = await getDoc(doc(firestoreDb, 'fintrack', 'main'));
+    if (lsnap.exists()) { await setDoc(userDocRef(doc), lsnap.data()); console.log('Đã chuyển dữ liệu cũ sang tài khoản ✓'); }
+  }catch(e){ console.warn('Migrate:', e); }
+}
+function showUpdateBanner(){
+  if(document.getElementById('upd-banner'))return;
+  var b=document.createElement('div'); b.id='upd-banner';
+  b.style.cssText='position:fixed;left:50%;transform:translateX(-50%);bottom:calc(78px + env(safe-area-inset-bottom,0px));z-index:99998;background:#122a4d;color:#fff;border-radius:30px;padding:10px 10px 10px 18px;display:flex;align-items:center;gap:12px;box-shadow:0 8px 24px rgba(0,0,0,.35);font-size:13.5px;font-weight:600';
+  b.innerHTML='Có bản cập nhật mới <button onclick="location.reload()" style="border:none;cursor:pointer;background:#4ade80;color:#0c2b16;font-weight:800;font-size:13px;border-radius:20px;padding:8px 14px">Cập nhật</button>';
+  document.body.appendChild(b);
+}
+
 setTimeout(initFirebase, 500);
 
 
@@ -5471,7 +5536,7 @@ async function pushSettings(){
   try{
     settingsSeq++;localStorage.setItem('settings_seq_'+SETTINGS_VARIANT,String(settingsSeq));
     const body={};body[SETTINGS_FIELD]={payload:JSON.stringify(collectSettings()),deviceId:DEVICE_ID,seq:settingsSeq,updatedAt:Date.now()};
-    await _stTools.setDoc(_stTools.doc(firestoreDb,'fintrack','main'),body,{merge:true});
+    await _stTools.setDoc(userDocRef(_stTools.doc),body,{merge:true});
     _stDirty=false;
   }catch(e){console.warn('Settings push error:',e)}
 }
@@ -5495,7 +5560,7 @@ function applySyncedSettings(){
 }
 async function initSettingsSync(doc,setDoc,getDoc,onSnapshot){
   _stTools={doc,setDoc,getDoc,onSnapshot};
-  const ref=doc(firestoreDb,'fintrack','main');
+  const ref=userDocRef(doc);
   try{
     const snap=await getDoc(ref);
     const s=snap.exists()?snap.data()[SETTINGS_FIELD]:null;
@@ -5525,8 +5590,7 @@ if ('serviceWorker' in navigator) {
         if (!nw) return;
         nw.addEventListener('statechange', () => {
           if (nw.state === 'installed' && navigator.serviceWorker.controller) {
-            // Đã có bản mới → reload một lần để áp dụng
-            window.location.reload();
+            showUpdateBanner();
           }
         });
       });
