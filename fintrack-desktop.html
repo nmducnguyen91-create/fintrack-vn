@@ -1101,7 +1101,7 @@ body.dark #boot-splash{background:#0f1622}
         </div>
       </div>
       <div style="padding:12px 14px"><button class="btn btn-primary" style="width:100%" onclick="manualSync()">↺ Đồng bộ ngay</button>
-        <div style="display:flex;align-items:center;gap:10px;justify-content:center;margin-top:10px"><span id="acc-email" style="font-size:12px;color:var(--muted)"></span><button class="btn" style="font-size:12px;padding:4px 12px" onclick="if(window._fbLogout)window._fbLogout()">Đăng xuất</button></div><div style="font-size:11px;color:var(--muted);text-align:center;margin-top:8px">Tự động đồng bộ giữa các thiết bị khi có mạng. Offline vẫn dùng bình thường.</div>
+        <div style="display:flex;align-items:center;gap:8px;justify-content:center;margin-top:10px;flex-wrap:wrap"><span id="acc-email" style="font-size:12px;color:var(--muted)"></span><button class="btn" style="font-size:12px;padding:4px 12px" onclick="showChangePass()">Đổi mật khẩu</button><button class="btn" style="font-size:12px;padding:4px 12px" onclick="if(window._fbLogout&&confirm('Đăng xuất khỏi thiết bị này?'))window._fbLogout()">Đăng xuất</button></div><div style="font-size:11px;color:var(--muted);text-align:center;margin-top:8px">Tự động đồng bộ giữa các thiết bị khi có mạng. Offline vẫn dùng bình thường.</div>
       </div>
     </div>
     <div class="sec-head"><span class="sec-head-title">Chế độ hiển thị</span></div>
@@ -5275,11 +5275,17 @@ async function initFirebase() {
 
     const app = initializeApp(firebaseConfig);
     // ── XÁC THỰC: dữ liệu nằm trong vùng riêng users/{uid}, chỉ chủ tài khoản đọc/ghi được ──
-    const { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js');
+    const { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, updatePassword, reauthenticateWithCredential, EmailAuthProvider, sendPasswordResetEmail } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js');
     fbAuth = getAuth(app);
     window._fbLogin = (em,pw)=>signInWithEmailAndPassword(fbAuth,em,pw);
     window._fbSignup = (em,pw)=>createUserWithEmailAndPassword(fbAuth,em,pw);
     window._fbLogout = ()=>signOut(fbAuth).then(()=>location.reload());
+    window._fbChangePass = async (oldPw, newPw)=>{
+      const u = fbAuth.currentUser;
+      await reauthenticateWithCredential(u, EmailAuthProvider.credential(u.email, oldPw));
+      await updatePassword(u, newPw);
+    };
+    window._fbResetMail = (em)=>sendPasswordResetEmail(fbAuth, em);
     const user = await new Promise(res=>{ const un=onAuthStateChanged(fbAuth,u=>{un();res(u);}); });
     if (!user) { updateSyncUI('offline'); showLoginGate(); return; }
     AUTH_UID = user.uid;
@@ -5466,6 +5472,46 @@ async function manualSync() {
 
 // Init Firebase sau khi app load
 
+// ── ĐỔI MẬT KHẨU ──
+function showChangePass(){
+  var ex=document.getElementById('cp-modal'); if(ex){ex.remove();}
+  var d=document.createElement('div'); d.id='cp-modal';
+  d.style.cssText='position:fixed;inset:0;z-index:99999;background:rgba(15,25,45,.55);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:20px';
+  d.innerHTML='<div style="background:#fff;border-radius:18px;padding:24px 22px;width:100%;max-width:360px;box-shadow:0 18px 50px rgba(0,0,0,.3)">'
+    +'<div style="font-size:18px;font-weight:800;color:#122a4d">Đổi mật khẩu</div>'
+    +'<div style="font-size:12.5px;color:#6b7688;margin-top:4px;line-height:1.5">Sau khi đổi, các thiết bị khác vẫn đăng nhập được bằng mật khẩu mới.</div>'
+    +'<input id="cp-old" type="password" placeholder="Mật khẩu hiện tại" autocomplete="current-password" style="width:100%;box-sizing:border-box;margin-top:14px;padding:11px 12px;border:1.5px solid #d7dde8;border-radius:10px;font-size:15px">'
+    +'<input id="cp-new" type="password" placeholder="Mật khẩu mới (từ 6 ký tự)" autocomplete="new-password" style="width:100%;box-sizing:border-box;margin-top:10px;padding:11px 12px;border:1.5px solid #d7dde8;border-radius:10px;font-size:15px">'
+    +'<input id="cp-new2" type="password" placeholder="Nhập lại mật khẩu mới" autocomplete="new-password" style="width:100%;box-sizing:border-box;margin-top:10px;padding:11px 12px;border:1.5px solid #d7dde8;border-radius:10px;font-size:15px">'
+    +'<div id="cp-err" style="font-size:12.5px;color:#c0392b;margin-top:8px;min-height:16px"></div>'
+    +'<button id="cp-ok" style="width:100%;border:none;cursor:pointer;background:#1a3a6b;color:#fff;font-weight:700;font-size:15px;border-radius:10px;padding:12px">Đổi mật khẩu</button>'
+    +'<button id="cp-cancel" style="width:100%;border:none;cursor:pointer;background:none;color:#8a94a6;font-weight:600;font-size:13px;padding:10px;margin-top:2px">Hủy</button>'
+    +'</div>';
+  document.body.appendChild(d);
+  document.getElementById('cp-cancel').onclick=function(){d.remove();};
+  document.getElementById('cp-ok').onclick=doChangePass;
+}
+async function doChangePass(){
+  var o=document.getElementById('cp-old').value, n=document.getElementById('cp-new').value, n2=document.getElementById('cp-new2').value;
+  var err=document.getElementById('cp-err'); err.style.color='#c0392b';
+  if(!o){ err.textContent='Nhập mật khẩu hiện tại.'; return; }
+  if(n.length<6){ err.textContent='Mật khẩu mới phải từ 6 ký tự.'; return; }
+  if(n!==n2){ err.textContent='Hai ô mật khẩu mới không khớp.'; return; }
+  if(n===o){ err.textContent='Mật khẩu mới trùng mật khẩu cũ.'; return; }
+  if(!window._fbChangePass){ err.textContent='Chưa đăng nhập.'; return; }
+  err.style.color='#6b7688'; err.textContent='Đang đổi…';
+  try{
+    await window._fbChangePass(o,n);
+    err.style.color='#1e8e4e'; err.textContent='Đã đổi mật khẩu thành công.';
+    if(typeof toast==='function') toast('Đã đổi mật khẩu');
+    setTimeout(function(){var m=document.getElementById('cp-modal'); if(m)m.remove();},1200);
+  }catch(e){
+    err.style.color='#c0392b';
+    var m={'auth/wrong-password':'Mật khẩu hiện tại không đúng.','auth/invalid-credential':'Mật khẩu hiện tại không đúng.','auth/weak-password':'Mật khẩu mới quá yếu.','auth/too-many-requests':'Thử sai nhiều lần, đợi ít phút rồi thử lại.','auth/network-request-failed':'Không có mạng.'};
+    err.textContent=m[e.code]||('Lỗi: '+(e.code||e.message));
+  }
+}
+
 // ── MÀN HÌNH ĐĂNG NHẬP ──
 function showLoginGate(){
   var ex=document.getElementById('login-gate'); if(ex){ex.style.display='flex';return;}
@@ -5479,12 +5525,20 @@ function showLoginGate(){
     +'<div id="lg-err" style="font-size:12.5px;color:#c0392b;margin-top:8px;min-height:16px"></div>'
     +'<button id="lg-in" style="width:100%;border:none;cursor:pointer;background:#1a3a6b;color:#fff;font-weight:700;font-size:15px;border-radius:10px;padding:12px;margin-top:4px">Đăng nhập</button>'
     +'<button id="lg-up" style="width:100%;border:none;cursor:pointer;background:#e3ebf7;color:#1a3a6b;font-weight:700;font-size:14px;border-radius:10px;padding:11px;margin-top:8px">Tạo tài khoản mới</button>'
-    +'<button id="lg-skip" style="width:100%;border:none;cursor:pointer;background:none;color:#8a94a6;font-weight:600;font-size:13px;padding:10px;margin-top:4px">Dùng offline, không đồng bộ</button>'
+    +'<button id="lg-forgot" style="width:100%;border:none;cursor:pointer;background:none;color:#1a3a6b;font-weight:600;font-size:13px;padding:8px;margin-top:4px">Quên mật khẩu?</button>'
+    +'<button id="lg-skip" style="width:100%;border:none;cursor:pointer;background:none;color:#8a94a6;font-weight:600;font-size:13px;padding:10px">Dùng offline, không đồng bộ</button>'
     +'</div>';
   document.body.appendChild(d);
   document.getElementById('lg-in').onclick=function(){loginGate(false);};
   document.getElementById('lg-up').onclick=function(){loginGate(true);};
   document.getElementById('lg-skip').onclick=function(){d.style.display='none';};
+  document.getElementById('lg-forgot').onclick=async function(){
+    var em=document.getElementById('lg-email').value.trim(), err=document.getElementById('lg-err');
+    if(!em){ err.style.color='#c0392b'; err.textContent='Nhập email trước rồi bấm lại.'; return; }
+    err.style.color='#6b7688'; err.textContent='Đang gửi…';
+    try{ await window._fbResetMail(em); err.style.color='#1e8e4e'; err.textContent='Đã gửi email đặt lại mật khẩu tới '+em; }
+    catch(e){ err.style.color='#c0392b'; err.textContent='Không gửi được: '+(e.code||e.message); }
+  };
 }
 async function loginGate(isSignup){
   var em=document.getElementById('lg-email').value.trim(), pw=document.getElementById('lg-pass').value;
