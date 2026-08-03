@@ -2479,7 +2479,7 @@ function ahPins(){try{return JSON.parse(localStorage.getItem('ahPins')||'{}')}ca
 function ahMan(){try{return JSON.parse(localStorage.getItem('ahManual')||'{}')}catch(e){return{}}}
 function ahSetMan(key,v){const m=ahMan();if(v===0)m[key]=0;else if(v===1)m[key]=1;else delete m[key];localStorage.setItem('ahManual',JSON.stringify(m));try{ahApplyTabs()}catch(e){}applyAutoHide();try{renderAhSettings()}catch(e){}}
 function ahClearHide(key){const m=ahMan();delete m[key];localStorage.setItem('ahManual',JSON.stringify(m));ahTouch(key);try{ahApplyTabs()}catch(e){}applyAutoHide();try{renderAhSettings()}catch(e){}}
-function ahToggleHide(key){let hidden;if(key.slice(0,4)==='tab_'){const btn=document.getElementById('nav-'+key.slice(4));hidden=btn&&btn.style.display==='none'}else{const hd=document.querySelector('[data-clps-head="'+key+'"]');hidden=hd&&hd.classList.contains('ah-hidden')}ahSetMan(key,hidden?0:1)}
+function ahToggleHide(key){let hidden;if(key.slice(0,4)==='sub_'){const pr=key.slice(4),i=pr.indexOf('_');const b=ahSubBtn(pr.slice(0,i),pr.slice(i+1));hidden=b&&b.style.display==='none'}else if(key.slice(0,4)==='tab_'){const btn=document.getElementById('nav-'+key.slice(4));hidden=btn&&btn.style.display==='none'}else{const hd=document.querySelector('[data-clps-head="'+key+'"]');hidden=hd&&hd.classList.contains('ah-hidden')}ahSetMan(key,hidden?0:1)}
 function ahTouch(key){const u=ahUsage();u[key]=Date.now();localStorage.setItem('ahUsage',JSON.stringify(u))}
 function ahTogglePin(key){const p=ahPins();p[key]=!p[key];localStorage.setItem('ahPins',JSON.stringify(p));applyAutoHide();renderAhSettings()}
 function ahIsSafe(key){
@@ -2516,6 +2516,52 @@ function applyAutoHide(){
 }
 const AH_TABS=['personal','crypto','service','company','table','report','cal'];
 function ahTabLabel(t){const btn=document.getElementById('nav-'+t);if(!btn)return t;let s='';btn.childNodes.forEach(n=>{if(n.nodeType===3)s+=n.textContent});return s.trim().replace(/\s+/g,' ')||t}
+// ── ẨN/HIỆN TAB CON TRONG TAB CÁ NHÂN ──
+const AH_SUBS={
+  personal:[['daily','Nhật ký'],['account','Tài khoản'],['debt','Nợ'],['trip','Chuyến đi'],['stats','Thống kê']],
+  crypto:[['portfolio','Danh mục'],['history','Nhật ký giao dịch'],['summary','Tổng kết']],
+  service:[['list','Hồ sơ'],['stats','Thống kê']],
+  company:[['company','Công ty'],['project','Công việc'],['trip','Công tác'],['stats','Thống kê']],
+  settings:[['budget','Ngân sách'],['goal','Mục tiêu'],['recurring','Định kỳ'],['account','Tài khoản']]
+};
+function ahSubBtn(scr,sub){const bar=document.querySelector('#screen-'+scr+' .tab-bar');if(!bar)return null;
+  return [...bar.querySelectorAll('.tab-item')].find(b=>(b.getAttribute('onclick')||'').indexOf("'"+sub+"'")>-1)||null}
+function ahApplySubs(){
+  const cfg=ahCfg(),u=ahUsage(),p=ahPins(),man=ahMan(),now=Date.now();
+  Object.keys(AH_SUBS).forEach(scr=>{
+    let firstVisible=null,activeHidden=false;
+    AH_SUBS[scr].forEach(([sub])=>{
+      const k='sub_'+scr+'_'+sub,btn=ahSubBtn(scr,sub);if(!btn)return;
+      const mv=man[k];const auto=cfg.on&&!p[k]&&(u[k]||0)>0&&(now-(u[k]||0))>cfg.days*864e5;
+      const hid=mv===1?true:mv===0?false:auto;
+      btn.style.display=hid?'none':'';
+      if(!hid&&!firstVisible)firstVisible=btn;
+      if(hid&&btn.classList.contains('active'))activeHidden=true;
+    });
+    if(activeHidden&&firstVisible)firstVisible.click();
+  });
+}
+function ahSubRow(scr,sub,label,p,man,cfg,u,now){
+  const k='sub_'+scr+'_'+sub;const mv=man[k];const auto=cfg.on&&!p[k]&&(u[k]||0)>0&&(now-(u[k]||0))>cfg.days*864e5;
+  const hid=mv===1?true:mv===0?false:auto;
+  return '<div style="display:flex;align-items:center;gap:9px;padding:7px 0 7px 10px;border-bottom:1px dashed var(--bdr);font-size:12.5px">'
+    +'<span style="flex:1">'+label+'</span>'
+    +'<button onclick="ahToggleHide(\''+k+'\')" style="border:none;background:'+(hid?'var(--navy)':'var(--light)')+';color:'+(hid?'#fff':'var(--muted)')+';border-radius:7px;padding:4px 12px;font-size:11.5px;font-weight:700;cursor:pointer">'+(hid?'Hiện':'Ẩn')+'</button>'
+    +'<button onclick="ahTogglePin(\''+k+'\')" title="Ghim: không bao giờ tự ẩn" style="border:none;background:'+(p[k]?'var(--navy)':'var(--light)')+';color:'+(p[k]?'#fff':'var(--muted)')+';border-radius:7px;padding:4px 9px;font-size:11.5px;font-weight:700;cursor:pointer">'+(p[k]?'Đã ghim':'Ghim')+'</button></div>';
+}
+function ahSubGroupHtml(p,man,cfg,u,now){
+  return Object.keys(AH_SUBS).filter(scr=>document.querySelector('#screen-'+scr+' .tab-bar')).map(scr=>{
+    const list=AH_SUBS[scr];const open=!!ahGrpOpen['sub_'+scr];
+    const nHid=list.filter(([sub])=>{const k='sub_'+scr+'_'+sub;const mv=man[k];const auto=cfg.on&&!p[k]&&(u[k]||0)>0&&(now-(u[k]||0))>cfg.days*864e5;return mv===1?true:mv===0?false:auto}).length;
+    return '<div style="border:1px solid var(--bdr);border-radius:11px;margin-bottom:8px;overflow:hidden">'
+      +'<div onclick="ahToggleGrp(\'sub_'+scr+'\')" style="display:flex;align-items:center;gap:8px;padding:10px 13px;cursor:pointer;background:var(--light)">'
+        +'<span style="transition:transform .15s;transform:rotate('+(open?'90':'0')+'deg);color:var(--muted);font-size:12px">▶</span>'
+        +'<span style="flex:1;font-size:13px;font-weight:700">'+(AH_GRP_LABEL[scr]||scr)+'</span>'
+        +(nHid?'<span style="font-size:10.5px;color:#fff;background:var(--navy);border-radius:8px;padding:1px 7px;font-weight:700">'+nHid+' ẩn</span>':'')
+        +'<span style="font-size:11px;color:var(--muted)">'+list.length+' mục</span></div>'
+      +(open?'<div style="padding:2px 13px 8px">'+list.map(([sub,label])=>ahSubRow(scr,sub,label,p,man,cfg,u,now)).join('')+'</div>':'')
+    +'</div>'}).join('');
+}
 function ahApplyTabs(){
   const cfg=ahCfg(),u=ahUsage(),p=ahPins(),man=ahMan();const now=Date.now();const lim=cfg.days*864e5;let ch=false;
   AH_TABS.forEach(t=>{const btn=document.getElementById('nav-'+t);if(!btn)return;
@@ -2526,6 +2572,7 @@ function ahApplyTabs(){
     if(hide){btn.style.display='none';btn.dataset.ahHid='1'}
     else{btn.style.display='';btn.dataset.ahHid=''}});
   if(ch)localStorage.setItem('ahUsage',JSON.stringify(u));
+  try{ahApplySubs()}catch(e){}
 }
 function ahOpenTab(t){ahTouch('tab_'+t);ahApplyTabs();showTab(t);}
 let ahGrpOpen={};
@@ -2563,13 +2610,15 @@ function renderAhSettings(){
     +'<button onclick="ahSetCfg({...ahCfg(),on:!ahCfg().on})" style="padding:7px 14px;border-radius:9px;border:none;font-size:12.5px;font-weight:700;cursor:pointer;background:'+(cfg.on?'var(--green)':'var(--light)')+';color:'+(cfg.on?'#fff':'var(--muted)')+'">'+(cfg.on?'Đang bật':'Đang tắt')+'</button></div>'
     +'<div style="display:flex;gap:8px;margin-bottom:12px">'
     +[14,30].map(d=>'<button onclick="ahSetCfg({...ahCfg(),days:'+d+'})" style="flex:1;padding:7px 0;border-radius:9px;border:1px solid '+(cfg.days===d?'var(--navy)':'var(--bdr)')+';background:'+(cfg.days===d?'var(--navy)':'var(--light)')+';color:'+(cfg.days===d?'#fff':'var(--muted)')+';font-size:12.5px;font-weight:700;cursor:pointer">'+d+' ngày</button>').join('')+'</div>'
-    +'<div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin:2px 0 6px">Tab</div>'
+    +'<div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin:2px 0 6px">Tab chính (thanh dưới)</div>'
     +AH_TABS.filter(t=>document.getElementById('nav-'+t)).map(t=>{const k='tab_'+t;const mv=ahMan()[k];const auto=cfg.on&&!p[k]&&(u[k]||0)>0&&(now-(u[k]||0))>cfg.days*864e5;const hid=mv===1?true:mv===0?false:auto;
       return '<div style="display:flex;align-items:center;gap:9px;padding:7px 0;border-bottom:1px dashed var(--bdr);font-size:12.5px">'
       +'<span style="flex:1">'+ahTabLabel(t)+'</span>'
       +'<button onclick="ahToggleHide(\'tab_'+t+'\')" style="border:none;background:'+(hid?'var(--navy)':'var(--light)')+';color:'+(hid?'#fff':'var(--muted)')+';border-radius:7px;padding:4px 12px;font-size:11.5px;font-weight:700;cursor:pointer">'+(hid?'Hiện':'Ẩn')+'</button>'
       +'<button onclick="ahTogglePin(\'tab_'+t+'\')" style="border:none;background:'+(p[k]?'var(--navy)':'var(--light)')+';color:'+(p[k]?'#fff':'var(--muted)')+';border-radius:7px;padding:4px 9px;font-size:11.5px;font-weight:700;cursor:pointer">'+(p[k]?'Đã ghim':'Ghim')+'</button></div>'}).join('')
-    +'<div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin:12px 0 6px">Các mục theo dõi ('+uniq.length+') — theo tab</div>'
+    +'<div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin:12px 0 6px">Mục con trong thanh tab</div>'
+    +ahSubGroupHtml(p,ahMan(),cfg,u,now)
+    +'<div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin:12px 0 6px">Khối nội dung trong màn hình ('+uniq.length+')</div>'
     +ahRenderSecGroups(uniq,p,ahMan(),cfg,u,now)
     +'</div>';
 }
@@ -3549,7 +3598,7 @@ function initPullRefresh(){
 }
 
 // ── PERSONAL ──
-function switchPersonalTab(el,tab){document.querySelectorAll('#screen-personal .tab-item').forEach(t=>t.classList.remove('active'));el.classList.add('active');personalSubTab=tab;if(tab==='account')try{renderAcctReport()}catch(e){};['daily','account','debt','stats','trip'].forEach(t=>document.getElementById('personal-'+t).style.display=t===tab?'':'none');renderPersonal()}
+function switchPersonalTab(el,tab){try{ahTouch('sub_personal_'+tab)}catch(e){}document.querySelectorAll('#screen-personal .tab-item').forEach(t=>t.classList.remove('active'));el.classList.add('active');personalSubTab=tab;if(tab==='account')try{renderAcctReport()}catch(e){};['daily','account','debt','stats','trip'].forEach(t=>document.getElementById('personal-'+t).style.display=t===tab?'':'none');renderPersonal()}
 function filterPersonal(el,cat){document.querySelectorAll('#personal-daily .chip').forEach(c=>c.classList.remove('active'));el.classList.add('active');personalFilter=cat;renderPersonal()}
 function filterPersonalSel(cat){personalFilter=cat;renderPersonal()}
 function renderPersonal(){
@@ -3840,7 +3889,7 @@ function renderPersonalStats(){
 }
 
 // ── CRYPTO ──
-function switchCryptoTab(el,tab){document.querySelectorAll('#screen-crypto .tab-item').forEach(t=>t.classList.remove('active'));el.classList.add('active');cryptoSubTab=tab;['portfolio','history','summary'].forEach(t=>document.getElementById('crypto-'+t).style.display=t===tab?'':'none');renderCrypto()}
+function switchCryptoTab(el,tab){try{ahTouch('sub_crypto_'+tab)}catch(e){}document.querySelectorAll('#screen-crypto .tab-item').forEach(t=>t.classList.remove('active'));el.classList.add('active');cryptoSubTab=tab;['portfolio','history','summary'].forEach(t=>document.getElementById('crypto-'+t).style.display=t===tab?'':'none');renderCrypto()}
 function computePortfolio(){
   const coins={};db.cryptoTrades.forEach(t=>{if(!coins[t.coin])coins[t.coin]={coin:t.coin,buys:[],sells:[]};coins[t.coin][t.action==='buy'?'buys':'sells'].push(t)});
   return Object.values(coins).map(c=>{
@@ -4035,7 +4084,7 @@ function deleteJournal(i){if(i==null||!db.journals[i])return;const item=db.journ
 
 // ── COMPANY / PROJECT ──
 let companySubTab2='company';
-function switchCompanyTab(el,tab){document.querySelectorAll('#screen-company .tab-item').forEach(t=>t.classList.remove('active'));el.classList.add('active');companySubTab2=tab;document.getElementById('company-tab').style.display=tab==='company'?'':'none';document.getElementById('project-tab').style.display=tab==='project'?'':'none';document.getElementById('cstats-tab').style.display=tab==='stats'?'':'none';document.getElementById('company-trip').style.display=tab==='trip'?'':'none';if(tab==='trip')renderTrips('company');else renderCompany()}
+function switchCompanyTab(el,tab){try{ahTouch('sub_company_'+tab)}catch(e){}document.querySelectorAll('#screen-company .tab-item').forEach(t=>t.classList.remove('active'));el.classList.add('active');companySubTab2=tab;document.getElementById('company-tab').style.display=tab==='company'?'':'none';document.getElementById('project-tab').style.display=tab==='project'?'':'none';document.getElementById('cstats-tab').style.display=tab==='stats'?'':'none';document.getElementById('company-trip').style.display=tab==='trip'?'':'none';if(tab==='trip')renderTrips('company');else renderCompany()}
 function filterCompany(el,f){document.querySelectorAll('#company-chips .chip').forEach(c=>c.classList.remove('active'));el.classList.add('active');companyFilter=f;renderCompany()}
 function filterCompanySel(f){companyFilter=f;renderCompany()}
 function filterProject(el,f){projectFilter=f;renderCompany()}
@@ -4259,7 +4308,7 @@ function saveJob(){
 // ── SERVICE ──
 function svcThu(sv){return(sv.transactions||[]).filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0)}
 function svcChi(sv){return(sv.transactions||[]).filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0)}
-function switchServiceTab(el,tab){document.querySelectorAll('#screen-service .tab-item').forEach(t=>t.classList.remove('active'));el.classList.add('active');serviceSubTab=tab;document.getElementById('service-list-tab').style.display=tab==='list'?'':'none';document.getElementById('service-stats-tab').style.display=tab==='stats'?'':'none';renderServiceTab()}
+function switchServiceTab(el,tab){try{ahTouch('sub_service_'+tab)}catch(e){}document.querySelectorAll('#screen-service .tab-item').forEach(t=>t.classList.remove('active'));el.classList.add('active');serviceSubTab=tab;document.getElementById('service-list-tab').style.display=tab==='list'?'':'none';document.getElementById('service-stats-tab').style.display=tab==='stats'?'':'none';renderServiceTab()}
 function filterService(el,f){document.querySelectorAll('#screen-service .chip').forEach(c=>c.classList.remove('active'));el.classList.add('active');svcStatusFilter=f;renderServiceList()}
 function filterServiceSel(f){svcStatusFilter=f;renderServiceList()}
 function renderServiceTab(){
@@ -4909,7 +4958,7 @@ function saveInst(){ensureInst();
   save();closeInstModal();renderAll();renderInstList();toast('Đã lưu khoản góp ✓')}
 function deleteInst(){if(!editInstId)return;db.installments=db.installments.filter(x=>x.id!==editInstId);editInstId=null;save();closeInstModal();renderAll();renderInstList();toast('Đã xoá')}
 // ── SETTINGS ──
-function switchSettingsTab(el,tab){document.querySelectorAll('#screen-settings .tab-item').forEach(t=>t.classList.remove('active'));el.classList.add('active');settingsSubTab=tab;['budget','goal','recurring','account','export'].forEach(t=>document.getElementById('settings-'+t).style.display=t===tab?'':'none');renderSettings()}
+function switchSettingsTab(el,tab){try{ahTouch('sub_settings_'+tab)}catch(e){}document.querySelectorAll('#screen-settings .tab-item').forEach(t=>t.classList.remove('active'));el.classList.add('active');settingsSubTab=tab;['budget','goal','recurring','account','export'].forEach(t=>document.getElementById('settings-'+t).style.display=t===tab?'':'none');renderSettings()}
 function renderSettings(){
   updateLockUI();
   try{renderAcctList()}catch(e){}
