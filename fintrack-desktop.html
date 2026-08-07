@@ -419,8 +419,8 @@ body.dark .set-ic,body.dark .tcat-ic,body.dark .kpi-ic{color:#8fb4e0}
 .clps-chev{border-radius:9px}
 
 /* ═══ REDESIGN 2026 · iOS26 · Glass · M3 (desktop) ═══ */
-:root{--ease-spring:cubic-bezier(.34,1.56,.64,1);--ease-soft:cubic-bezier(.22,.61,.36,1);--glass-lite:rgba(255,255,255,.85);--glass-brd:rgba(255,255,255,.7);--elev-1:0 2px 10px rgba(22,42,70,.05),0 8px 30px rgba(22,42,70,.06)}
-body.dark{--glass-lite:rgba(24,34,50,.85);--glass-brd:rgba(255,255,255,.09);--elev-1:0 2px 12px rgba(0,0,0,.3)}
+:root{--ease-spring:cubic-bezier(.34,1.56,.64,1);--ease-soft:cubic-bezier(.22,.61,.36,1);--glass-lite:#fcfdff;--glass-brd:rgba(255,255,255,.7);--elev-1:0 3px 14px rgba(22,42,70,.075)}
+body.dark{--glass-lite:#182232;--glass-brd:rgba(255,255,255,.09);--elev-1:0 2px 12px rgba(0,0,0,.3)}
 html{background:
   radial-gradient(120% 60% at 100% -5%, #e6eefb 0%, transparent 55%),
   radial-gradient(100% 55% at -5% 10%, #e7f5ef 0%, transparent 52%),
@@ -431,9 +431,9 @@ body.dark{background:
   radial-gradient(100% 55% at -5% 10%, #122032 0%, transparent 52%),
   radial-gradient(120% 55% at 60% 108%, #1a1730 0%, transparent 55%),
   linear-gradient(180deg,#0b1119,#080d14)!important}
-.card,.dx-card,.svc-card{background:var(--glass-lite);border:1px solid var(--glass-brd);box-shadow:var(--elev-1);transition:transform .28s var(--ease-soft),box-shadow .28s var(--ease-soft)}
+.card,.dx-card,.svc-card{background:var(--glass-lite);border:1px solid var(--glass-brd);box-shadow:var(--elev-1);transition:transform .28s var(--ease-soft)}
 body.dark .card,body.dark .dx-card,body.dark .svc-card{background:var(--glass-lite);border-color:var(--glass-brd)}
-.stat-tile,.kpi-card,.cg-item{border:1px solid var(--glass-brd);background:color-mix(in srgb,var(--light) 70%,transparent)}
+.stat-tile,.kpi-card,.cg-item{border:1px solid var(--glass-brd);background:var(--light)}
 .bottom-nav{-webkit-backdrop-filter:blur(16px)!important;backdrop-filter:blur(16px)!important;background:var(--glass-lite)!important;border-right:1px solid var(--glass-brd)!important;box-shadow:2px 0 24px rgba(16,40,64,.06)!important}
 .nav-btn{transition:background .2s var(--ease-soft),color .2s,transform .15s var(--ease-spring)}
 .nav-btn:active{transform:scale(.96)}
@@ -530,6 +530,46 @@ body.dark .tt-table td{border-bottom-color:#22304a}
   .card{box-shadow:none!important;border-color:#ccc!important;break-inside:avoid}
   .tt-table th{position:static;color:#333}
 }
+</style>
+<style id="dot2-color-type">
+/* ═══ ĐỢT 2 · siết màu & chữ ═══ */
+:root{
+  --act:#0066cc;--act-soft:rgba(0,102,204,.10);
+  --purple:#0066cc;--teal:#0066cc;
+}
+body.dark{
+  --act:#2997ff;--act-soft:rgba(41,151,255,.16);
+  --purple:#2997ff;--teal:#2997ff;
+}
+
+/* ── Một màu hành động duy nhất ── */
+a{color:var(--act)}
+a:hover{color:#0071e3}
+.nav-btn.active,body.dark .nav-btn.active{color:var(--act)}
+.nav-btn.active::before,body.dark .nav-btn.active::before{background:var(--act-soft)}
+.fab{background:var(--act);box-shadow:0 8px 22px rgba(0,102,204,.34),inset 0 1px 0 rgba(255,255,255,.28)}
+body.dark .fab{box-shadow:0 8px 22px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.2)}
+.btn-primary,body.dark .btn-primary{background:var(--act);box-shadow:0 5px 14px rgba(0,102,204,.26)}
+.chip.active,.proj-seg.on,.acct-chip.on{background:var(--act);border-color:var(--act)}
+.tab-item.active,body.dark .tab-item.active{color:var(--act);border-color:var(--act);background:var(--act-soft)}
+.form-input:focus{border-color:var(--act);box-shadow:0 0 0 4px var(--act-soft)}
+.stat-val.b,.stat-val.p,.stat-val.t{color:var(--act)}
+
+/* ── Chữ: 400/600, thang rõ hơn, tracking âm ── */
+.stat-label{font-size:13px;letter-spacing:-.1px;margin-bottom:4px}
+.stat-val{font-size:19px;font-weight:600;letter-spacing:-.4px}
+.tx-name{font-size:15px;font-weight:600;letter-spacing:-.25px}
+.tx-sub,.tx-date{font-size:13px}
+.tx-amt{font-size:15px;font-weight:600;letter-spacing:-.3px}
+.budget-name{font-size:15px;font-weight:600;letter-spacing:-.25px}
+.budget-pct,.budget-sub{font-size:13px;font-weight:400}
+.budget-pct{font-weight:600}
+.chip{font-size:13.5px;letter-spacing:-.15px}
+.tab-item{font-size:14px;font-weight:500;letter-spacing:-.2px}
+.tab-item.active{font-weight:600}
+.card-h{font-size:14px;font-weight:600;letter-spacing:-.22px}
+.topbar-balance{font-weight:600;letter-spacing:-1px}
+.topbar-stat .stat-val,.topbar-stat b{font-weight:600}
 </style>
 <style>
 /* ── Field validation + boot splash ── */
