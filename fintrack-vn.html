@@ -22,7 +22,7 @@
   --text:#1a2233;--muted:#7b8499;--light:#f0f2f8;
   --sbg:#e8f5e9;--dbg:#fdecea;--wbg:#fff8e1;
 }
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);max-width:430px;margin:0 auto;min-height:100vh;position:relative;padding-bottom:calc(134px + env(safe-area-inset-bottom))}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);max-width:430px;margin:0 auto;min-height:100vh;position:relative;padding-bottom:calc(150px + env(safe-area-inset-bottom))}
 /* TOPBAR */
 .topbar{background:linear-gradient(168deg,#26527d 0%,var(--navy) 52%,#163049 100%);padding:max(16px,env(safe-area-inset-top)) 16px 11px;color:#fff;box-shadow:0 3px 14px rgba(16,40,64,.16),inset 0 -1px 0 rgba(255,255,255,.08);position:relative;z-index:10;transition:background .35s ease}
 .topbar-greeting{font-size:14px;opacity:.78;margin-bottom:3px;font-weight:500}
@@ -1142,7 +1142,7 @@ body.navB .nav-btn.active::before{
 
 /* C · viên nổi cách đáy */
 body.navC .bottom-nav{
-  bottom:calc(14px + env(safe-area-inset-bottom))!important;
+  bottom:calc(26px + env(safe-area-inset-bottom))!important;
   width:calc(100% - 24px)!important;max-width:406px!important;
   border-radius:26px!important;padding:2px 0!important;
   box-shadow:0 10px 30px rgba(16,40,64,.16),0 0 0 .5px var(--hair)!important
@@ -1155,7 +1155,7 @@ body.navC .nav-btn.active::before{
 
 .bottom-nav.nav-hide{transform:translate(-50%,calc(100% + 30px))!important}
 body.navA .fab,body.navB .fab{bottom:calc(76px + env(safe-area-inset-bottom))!important}
-body.navC .fab{bottom:calc(88px + env(safe-area-inset-bottom))!important}
+body.navC .fab{bottom:calc(100px + env(safe-area-inset-bottom))!important}
 .fab.nav-hide-fab{bottom:calc(24px + env(safe-area-inset-bottom))!important}
 #nav-switch{
   position:fixed;left:10px;top:calc(env(safe-area-inset-top) + 8px);z-index:120;
