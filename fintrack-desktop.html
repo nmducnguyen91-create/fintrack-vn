@@ -1492,7 +1492,7 @@ body.dark input[type="date"].form-input,body.dark #add-modal input[type="date"]{
   backdrop-filter:saturate(180%) blur(24px)!important;-webkit-backdrop-filter:saturate(180%) blur(24px)!important;
   border:.5px solid rgba(255,255,255,.6)!important;border-top:.5px solid rgba(255,255,255,.6)!important;
   box-shadow:0 10px 34px rgba(15,23,42,.20),0 2px 8px rgba(15,23,42,.10)!important;
-  padding:0 4px!important;overflow:hidden!important}
+  padding:0 4px!important;overflow:visible!important}
 body.dark .bottom-nav,body.dark.navA .bottom-nav,body.dark.navB .bottom-nav,body.dark.navC .bottom-nav{
   background:rgba(22,29,41,.92)!important;border-color:rgba(255,255,255,.09)!important;
   box-shadow:0 10px 34px rgba(0,0,0,.5)!important}
@@ -1500,14 +1500,20 @@ body.dark .bottom-nav,body.dark.navA .bottom-nav,body.dark.navB .bottom-nav,body
   transform:translateY(calc(100% + 28px))!important;opacity:0!important;pointer-events:none!important;
   transition:transform .26s ease,opacity .2s ease!important}
 body.navA .fab.nav-hide-fab,body.navB .fab.nav-hide-fab,body.navC .fab.nav-hide-fab,.fab.nav-hide-fab{bottom:calc(24px + env(safe-area-inset-bottom))!important}
-.nav-btn{position:relative!important;flex:1 1 0!important;min-width:0!important;
-  padding:10px 0 7px!important;gap:4px!important;font-size:10.5px!important;font-weight:500!important;
+.bottom-nav{display:flex!important;flex-wrap:nowrap!important;align-items:stretch!important}
+.nav-btn{position:relative!important;flex:1 1 0!important;min-width:0!important;width:0!important;
+  display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;
+  overflow:hidden!important;text-overflow:clip!important;
+  padding:10px 1px 7px!important;gap:4px!important;font-size:10px!important;font-weight:500!important;
   letter-spacing:0!important;line-height:1.2!important;white-space:nowrap!important;min-height:60px!important;
   color:var(--muted)!important;transition:color .18s ease!important}
-.nav-btn svg{width:25px!important;height:25px!important;stroke-width:1.75!important;position:relative;z-index:1}
+.nav-btn svg{width:25px!important;height:25px!important;stroke-width:1.75!important;position:relative;z-index:1;flex:0 0 auto!important}
+.nav-btn > span:not(.nav-badge),.nav-btn > div:not(.nav-badge){max-width:100%!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;line-height:1.15!important}
+.nav-btn > .nav-badge{position:absolute!important;z-index:2!important}
+@media (max-width:380px){.nav-btn{font-size:9.5px!important;letter-spacing:-.2px!important}}
 .nav-btn.active svg{stroke-width:2.1!important}
 .nav-btn.active::before,body.navA .nav-btn.active::before,body.navB .nav-btn.active::before,body.navC .nav-btn.active::before{display:none!important}
-.nav-btn > *{position:relative;z-index:1}
+.nav-btn > *:not(.nav-badge){position:relative;z-index:1}
 /* màu riêng cho từng tab khi đang chọn */
 #nav-home.active,body.dark #nav-home.active{color:#0a84ff!important}
 #nav-personal.active,body.dark #nav-personal.active{color:#00b25c!important}

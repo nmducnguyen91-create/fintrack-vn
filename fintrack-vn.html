@@ -23,7 +23,7 @@
   --text:#1a2233;--muted:#7b8499;--light:#f0f2f8;
   --sbg:#e8f5e9;--dbg:#fdecea;--wbg:#fff8e1;
 }
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);max-width:430px;margin:0 auto;min-height:100vh;position:relative;padding-bottom:calc(150px + env(safe-area-inset-bottom))}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);max-width:430px;margin:0 auto;min-height:100vh;position:relative;padding-bottom:calc(168px + env(safe-area-inset-bottom))}
 /* TOPBAR */
 .topbar{background:linear-gradient(168deg,#26527d 0%,var(--navy) 52%,#163049 100%);padding:max(16px,env(safe-area-inset-top)) 16px 11px;color:#fff;box-shadow:0 3px 14px rgba(16,40,64,.16),inset 0 -1px 0 rgba(255,255,255,.08);position:relative;z-index:10;transition:background .35s ease}
 .topbar-greeting{font-size:14px;opacity:.78;margin-bottom:3px;font-weight:500}
@@ -1391,14 +1391,14 @@ body.dark input[type="date"].form-input,body.dark #add-modal input[type="date"]{
 
 /* ═══ Thanh tab dưới — phẳng kiểu hệ thống, màu theo từng tab ═══ */
 .bottom-nav,body.navA .bottom-nav,body.navB .bottom-nav,body.navC .bottom-nav{
-  bottom:calc(env(safe-area-inset-bottom) + 16px)!important;left:10px!important;right:10px!important;
+  bottom:calc(env(safe-area-inset-bottom) + 48px)!important;left:10px!important;right:10px!important;
   transform:none!important;margin:0 auto!important;
   width:auto!important;max-width:410px!important;border-radius:22px!important;
   background:rgba(252,252,254,.9)!important;
   backdrop-filter:saturate(180%) blur(24px)!important;-webkit-backdrop-filter:saturate(180%) blur(24px)!important;
   border:.5px solid rgba(255,255,255,.6)!important;border-top:.5px solid rgba(255,255,255,.6)!important;
   box-shadow:0 10px 34px rgba(15,23,42,.20),0 2px 8px rgba(15,23,42,.10)!important;
-  padding:0 4px!important;overflow:hidden!important}
+  padding:0 4px!important;overflow:visible!important}
 body.dark .bottom-nav,body.dark.navA .bottom-nav,body.dark.navB .bottom-nav,body.dark.navC .bottom-nav{
   background:rgba(22,29,41,.92)!important;border-color:rgba(255,255,255,.09)!important;
   box-shadow:0 10px 34px rgba(0,0,0,.5)!important}
@@ -1406,14 +1406,20 @@ body.dark .bottom-nav,body.dark.navA .bottom-nav,body.dark.navB .bottom-nav,body
   transform:translateY(calc(100% + 28px))!important;opacity:0!important;pointer-events:none!important;
   transition:transform .26s ease,opacity .2s ease!important}
 body.navA .fab.nav-hide-fab,body.navB .fab.nav-hide-fab,body.navC .fab.nav-hide-fab,.fab.nav-hide-fab{bottom:calc(24px + env(safe-area-inset-bottom))!important}
-.nav-btn{position:relative!important;flex:1 1 0!important;min-width:0!important;
-  padding:10px 0 7px!important;gap:4px!important;font-size:10.5px!important;font-weight:500!important;
+.bottom-nav{display:flex!important;flex-wrap:nowrap!important;align-items:stretch!important}
+.nav-btn{position:relative!important;flex:1 1 0!important;min-width:0!important;width:0!important;
+  display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;
+  overflow:hidden!important;text-overflow:clip!important;
+  padding:10px 1px 7px!important;gap:4px!important;font-size:10px!important;font-weight:500!important;
   letter-spacing:0!important;line-height:1.2!important;white-space:nowrap!important;min-height:60px!important;
   color:var(--muted)!important;transition:color .18s ease!important}
-.nav-btn svg{width:25px!important;height:25px!important;stroke-width:1.75!important;position:relative;z-index:1}
+.nav-btn svg{width:25px!important;height:25px!important;stroke-width:1.75!important;position:relative;z-index:1;flex:0 0 auto!important}
+.nav-btn > span:not(.nav-badge),.nav-btn > div:not(.nav-badge){max-width:100%!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;line-height:1.15!important}
+.nav-btn > .nav-badge{position:absolute!important;z-index:2!important}
+@media (max-width:380px){.nav-btn{font-size:9.5px!important;letter-spacing:-.2px!important}}
 .nav-btn.active svg{stroke-width:2.1!important}
 .nav-btn.active::before,body.navA .nav-btn.active::before,body.navB .nav-btn.active::before,body.navC .nav-btn.active::before{display:none!important}
-.nav-btn > *{position:relative;z-index:1}
+.nav-btn > *:not(.nav-badge){position:relative;z-index:1}
 /* màu riêng cho từng tab khi đang chọn */
 #nav-home.active,body.dark #nav-home.active{color:#0a84ff!important}
 #nav-personal.active,body.dark #nav-personal.active{color:#00b25c!important}
@@ -1421,7 +1427,7 @@ body.navA .fab.nav-hide-fab,body.navB .fab.nav-hide-fab,body.navC .fab.nav-hide-
 #nav-service.active,body.dark #nav-service.active{color:#ff9500!important}
 #nav-company.active,body.dark #nav-company.active{color:#0e9bb5!important}
 .nav-btn.active{font-weight:600!important}
-.fab,body.navA .fab,body.navB .fab,body.navC .fab{bottom:calc(96px + env(safe-area-inset-bottom))!important}
+.fab,body.navA .fab,body.navB .fab,body.navC .fab{bottom:calc(128px + env(safe-area-inset-bottom))!important}
 /* ═══ Thu/Chi — màu rực hơn ═══ */
 #topbar .cf-row{opacity:1!important}
 #topbar .cf-cell > span:nth-child(2){color:var(--muted)!important;opacity:1!important}
