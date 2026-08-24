@@ -2853,9 +2853,14 @@ function migrateData(){
     const _ib2=(db.accounts||[]).find(x=>x.type==='credit'&&/vib/i.test(x.name||''));
     if(_ib2){try{_ib2.stmtOverrideKey=cardStmtClosed(_ib2).closeStr;_ib2.stmtOverride=0;}catch(e){}}
   }
-  if(!db._vibDefer1){db._vibDefer1=true;changed=true;ensureAccounts();
-    const _ib=(db.accounts||[]).find(x=>x.type==='credit'&&/vib/i.test(x.name||''));
-    if(_ib){try{_ib.stmtOverrideKey=cardStmtClosed(_ib).closeStr;_ib.stmtOverride=0;}catch(e){}}
+  if(!db._vibDefer2){db._vibDefer2=true;changed=true;ensureAccounts();
+    (db.accounts||[]).filter(x=>x.type==='credit'&&/vib/i.test(x.name||'')).forEach(_ib=>{
+      try{_ib.stmtOverrideKey=cardStmtClosed(_ib).closeStr;}catch(e){_ib.stmtOverrideKey='';}
+      _ib.stmtOverride=0;});
+  }
+  if(!db._vibAvail3){db._vibAvail3=true;changed=true;ensureAccounts();
+    (db.accounts||[]).filter(x=>x.type==='credit'&&/vib/i.test(x.name||'')).forEach(_ib=>{
+      try{_ib.limit=cardTotDebt(_ib)+68702501;}catch(e){}});
   }
   if(!db._ccDemo2){db._ccDemo2=true;changed=true;ensureAccounts();
     if(!db.accounts.some(a=>a.id==='ac_mab'))db.accounts.push({id:'ac_mab',name:'Thẻ MB Bank',type:'credit',opening:0,limit:100000000,stDay:15,dueDay:28,demo:true});
@@ -5805,7 +5810,7 @@ function cardStmtClosed(card){
   const dmp=(db.debts||[]).filter(d=>d.acct===card.id&&d.kind!=='receivable'&&(+d.remaining||0)>0&&+d.monthlyPayment&&d.lastPayMonth!==_mo).reduce((s,d)=>s+(+d.monthlyPayment),0);
   const spend=Math.max(0,bal-spendCur);
   let stmt=Math.max(0,spend+inst+dmp);
-  if(card.stmtOverride&&card.stmtOverrideKey===cStr)stmt=Math.max(0,(+card.stmtOverride)-paidSince);
+  if(card.stmtOverride!=null&&(!card.stmtOverrideKey||card.stmtOverrideKey===cStr))stmt=Math.max(0,(+card.stmtOverride)-paidSince);
   return {stmt,spend,inst:inst+dmp,paidSince,closeStr:cStr};
 }
 function xferSuggest(){

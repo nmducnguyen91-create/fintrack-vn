@@ -5859,12 +5859,15 @@ function cardStmtClosed(card){
   const cStr=fmtD(close);
   ensureInst();
   const bal=Math.max(0,-acctBalance(card));
-  const spendCur=(db.transactions||[]).filter(t=>t.group==='personal'&&t.flow==='out'&&(t.account||'')===card.id&&t.date>=cStr).reduce((s,t)=>s+t.amount,0);
+  const spendCur=(db.transactions||[]).filter(t=>t.group!=='company'&&t.flow==='out'&&(t.account||'')===card.id&&t.date>cStr).reduce((s,t)=>s+t.amount,0);
   const paidSince=(db.transactions||[]).filter(t=>t.flow==='xfer'&&t.to===card.id&&t.date>=cStr).reduce((s,t)=>s+t.amount,0);
-  const inst=db.installments.filter(i=>i.card===card.id&&(i.paid||0)<i.term).reduce((s,i)=>s+i.per,0);
-  const dmp=(db.debts||[]).filter(d=>d.acct===card.id&&d.kind!=='receivable'&&(+d.remaining||0)>0&&+d.monthlyPayment).reduce((s,d)=>s+(+d.monthlyPayment),0);
+  const _mo=today().slice(0,7);
+  const inst=db.installments.filter(i=>i.card===card.id&&(i.paid||0)<i.term&&i.lastPayMonth!==_mo).reduce((s,i)=>s+i.per,0);
+  const dmp=(db.debts||[]).filter(d=>d.acct===card.id&&d.kind!=='receivable'&&(+d.remaining||0)>0&&+d.monthlyPayment&&d.lastPayMonth!==_mo).reduce((s,d)=>s+(+d.monthlyPayment),0);
   const spend=Math.max(0,bal-spendCur);
-  return {stmt:Math.max(0,spend+inst+dmp),spend,inst:inst+dmp,paidSince,closeStr:cStr};
+  let stmt=Math.max(0,spend+inst+dmp);
+  if(card.stmtOverride!=null&&(!card.stmtOverrideKey||card.stmtOverrideKey===cStr))stmt=Math.max(0,(+card.stmtOverride)-paidSince);
+  return {stmt,spend,inst:inst+dmp,paidSince,closeStr:cStr};
 }
 function xferSuggest(){
   const hint=document.getElementById('xfer-hint');if(!hint)return;
