@@ -2827,6 +2827,36 @@ function migrateData(){
       else if(p.includes('mb')||p.includes('mab'))d.acct='ac_mab';
     });
   }
+  if(!db._lionFix3){db._lionFix3=true;changed=true;ensureAccounts();
+    const _lc=(db.accounts||[]).find(x=>x.type==='credit'&&/lion/i.test(x.name||''));
+    if(_lc){const AVAIL=105651715,DUE=17931074;
+      try{const s=cardStmtClosed(_lc);_lc.opening=(_lc.opening||0)-(DUE-s.stmt);}catch(e){}
+      _lc.limit=cardTotDebt(_lc)+AVAIL;}
+  }
+  if(!db._lionFix2){db._lionFix2=true;changed=true;ensureAccounts();
+    const _lc=(db.accounts||[]).find(x=>x.type==='credit'&&/lion/i.test(x.name||''));
+    if(_lc){try{_lc.stmtOverrideKey=cardStmtClosed(_lc).closeStr;_lc.stmtOverride=17931074;}catch(e){}}
+  }
+  if(!db._vpFix2){db._vpFix2=true;changed=true;ensureAccounts();
+    const _vc=(db.accounts||[]).find(x=>x.type==='credit'&&/\bvp/i.test(x.name||''));
+    if(_vc){try{_vc.stmtOverrideKey=cardStmtClosed(_vc).closeStr;_vc.stmtOverride=15386829;}catch(e){}
+      _vc.limit=cardTotDebt(_vc)+1720293;}
+  }
+  if(!db._vibFix1){db._vibFix1=true;changed=true;ensureAccounts();
+    const _ib=(db.accounts||[]).find(x=>x.type==='credit'&&/vib/i.test(x.name||''));
+    if(_ib){const SPENT=27291335,LIMIT=105000000,AVAIL=68702501;
+      _ib.opening=(_ib.opening||0)-(SPENT-Math.max(0,-acctBalance(_ib)));
+      _ib.limit=LIMIT;
+      try{const _t=cardTotDebt(_ib);if(Math.abs((LIMIT-_t)-AVAIL)>1000)_ib.limit=_t+AVAIL;}catch(e){}}
+  }
+  if(!db._vibFix2){db._vibFix2=true;changed=true;ensureAccounts();
+    const _ib2=(db.accounts||[]).find(x=>x.type==='credit'&&/vib/i.test(x.name||''));
+    if(_ib2){try{_ib2.stmtOverrideKey=cardStmtClosed(_ib2).closeStr;_ib2.stmtOverride=0;}catch(e){}}
+  }
+  if(!db._vibDefer1){db._vibDefer1=true;changed=true;ensureAccounts();
+    const _ib=(db.accounts||[]).find(x=>x.type==='credit'&&/vib/i.test(x.name||''));
+    if(_ib){try{_ib.stmtOverrideKey=cardStmtClosed(_ib).closeStr;_ib.stmtOverride=0;}catch(e){}}
+  }
   if(!db._ccDemo2){db._ccDemo2=true;changed=true;ensureAccounts();
     if(!db.accounts.some(a=>a.id==='ac_mab'))db.accounts.push({id:'ac_mab',name:'Thẻ MB Bank',type:'credit',opening:0,limit:100000000,stDay:15,dueDay:28,demo:true});
   }
@@ -4081,12 +4111,12 @@ function forecastData(days){
   ensureInst();
   (db.accounts||[]).forEach(a=>{
     if(a.type!=='credit'||!a.dueDay)return;
-    const stmt=Math.max(0,-acctBalance(a));const inst=cardInstDue(a);
+    const stmt=cardStmtClosed(a).stmt;const inst=cardInstDue(a);
     let d=new Date(td.getFullYear(),td.getMonth(),a.dueDay);
     if(d<td)d=new Date(td.getFullYear(),td.getMonth()+1,a.dueDay);
     let first=true;
     while(d<=end){
-      const amt=(first?stmt:0)+inst; // kỳ đầu: dư nợ hiện tại + góp; kỳ sau: góp
+      const amt=first?stmt:inst; // kỳ đầu: số phải trả kỳ đã chốt (đã gồm góp/nợ); kỳ sau: góp
       if(amt>0)events.push({date:iso(d),name:'Hạn thẻ '+a.name,amt:-amt,type:'Thẻ'});
       d=new Date(d.getFullYear(),d.getMonth()+1,a.dueDay);first=false;
     }});
@@ -4214,19 +4244,21 @@ function renderDebts(){
     if(bal<=0&&!inst.length)return'';
     return`<div style="padding:10px 0;border-bottom:1px solid var(--line,#f2f4f9)">
       <div style="display:flex;justify-content:space-between;font-size:13px"><b>${c.name}</b><b style="color:var(--red)">${fmtK(Math.max(0,bal))} đ dư nợ</b></div>
+      ${(()=>{const s=cardStmtClosed(c);const p=s.closeStr.split('-');const cur=Math.max(0,bal)-s.spend;return `<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:2px"><span>Sao kê chốt ${p[2]}/${p[1]} · cần trả <b style="color:${s.stmt?'var(--red)':'var(--green,#27ae60)'}">${s.stmt?fmtK(s.stmt)+' đ':'đã xong'}</b></span><span>Chi kỳ mới ${fmtK(Math.max(0,cur))} đ</span></div>`})()}
       ${inst.map(i=>`<div onclick="openInstForm('${i.id}')" style="display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted);margin-top:3px;cursor:pointer"><span>↳ ${i.name} (${i.paid||0}/${i.term} kỳ) · <span style="color:var(--navy)">Sửa ›</span></span><span>còn ${fmtK(instRemaining(i))} đ</span></div>`).join('')}
     ${(db.debts||[]).filter(d=>d.acct===c.id&&d.kind!=='receivable'&&!d.settled&&(+d.remaining||0)>0).map(d=>`<div style="display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted);margin-top:3px"><span> ${d.name}${d.term?' ('+(d.paid||0)+'/'+d.term+' kỳ)':''}</span><span>còn ${fmtK(d.remaining)} đ</span></div>`).join('')}
     </div>`}).join('');
-  cc.innerHTML=ccHtml?`<div class="sec-head"><span class="sec-head-title">Nợ thẻ tín dụng &amp; trả góp</span><span class="sec-head-action" onclick="showTab('settings');setTimeout(()=>{const b=document.querySelectorAll('#screen-settings .tab-item')[3];if(b)b.click()},50)">Quản lý ›</span></div><div class="card"><div style="padding:4px 14px">${ccHtml}</div></div>`:'';
+  cc.innerHTML=(ccHtml&&debtFilter!=='receivable')?`<div class="sec-head"><span class="sec-head-title">Nợ thẻ tín dụng &amp; trả góp</span><span class="sec-head-action" onclick="showTab('settings');setTimeout(()=>{const b=document.querySelectorAll('#screen-settings .tab-item')[3];if(b)b.click()},50)">Quản lý ›</span></div><div class="card"><div style="padding:4px 14px">${ccHtml}</div></div>`:'';
   const recv=list.filter(d=>d.kind==='receivable').reduce((s,d)=>s+(+d.remaining||0),0);
   const instActive=db.installments.filter(i=>(i.paid||0)<i.term);
   const pay=list.filter(d=>d.kind!=='receivable').reduce((s,d)=>s+(+d.remaining||0),0)+instActive.reduce((s,i)=>s+instRemaining(i),0);
   const monthly=list.filter(d=>d.kind!=='receivable'&&(+d.remaining||0)>0).reduce((s,d)=>s+(+d.monthlyPayment||0),0)+instActive.reduce((s,i)=>s+i.per,0);
   const rE=document.getElementById('debt-recv');if(rE)rE.textContent=recv?fmtK(recv)+' đ':'—';
+  ['debt-recv','debt-pay','debt-monthly'].forEach(id=>{const n=document.getElementById(id);if(!n)return;const box=n.closest('div');if(!box)return;const dim=(debtFilter==='receivable'&&id!=='debt-recv')||(debtFilter==='payable'&&id==='debt-recv');box.style.opacity=dim?'.35':'1'});
   const pE=document.getElementById('debt-pay');if(pE)pE.textContent=pay?fmtK(pay)+' đ':'—';
   const mE=document.getElementById('debt-monthly');if(mE)mE.textContent=monthly?fmtK(monthly)+' đ':'—';
   const filtered=debtFilter==='all'?list:list.filter(d=>(debtFilter==='receivable'?d.kind==='receivable':d.kind!=='receivable'));
-  if(!filtered.length){el.innerHTML='<div class="empty"><div class="empty-icon"><svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6l-3.45-6.89A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z"/></svg></div>Chưa có khoản nợ nào<div style="font-size:11px;margin-top:6px;opacity:.8">Nhấn “Thêm khoản nợ” để bắt đầu</div></div>';return}
+  if(!filtered.length){el.innerHTML='<div class="empty"><div class="empty-icon"><svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6l-3.45-6.89A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z"/></svg></div>'+(debtFilter==='receivable'?'Chưa có khoản phải thu':debtFilter==='payable'?'Chưa có khoản phải trả':'Chưa có khoản nợ nào')+'<div style="font-size:11px;margin-top:6px;opacity:.8">Nhấn “Thêm khoản nợ” để bắt đầu</div></div>';return}
   const TL={bank:'Ngân hàng',card:'Thẻ tín dụng',personal:'Cá nhân',other:'Khác'};
   const _arch=filtered.filter(d=>d.settled);
   const _shown=window.debtShowArch?filtered:filtered.filter(d=>!d.settled);
@@ -4271,7 +4303,7 @@ function payDebtPeriod(i){
   if(!pmt&&d.term>0){const left=d.term-(d.paid-1);if(left>0)pmt=Math.round((+d.remaining||0)/left)}
   if(pmt>0)d.remaining=Math.max(0,(+d.remaining||0)-pmt);
   if(d.term>0&&(d.paid||0)>=d.term)d.remaining=0;
-  if(pmt>0)db.transactions.push({id:Date.now(),amount:pmt,desc:(d.kind==='receivable'?'Thu nợ · ':'Trả nợ · ')+(d.name||'Khoản nợ')+' (kỳ '+d.paid+(d.term?'/'+d.term:'')+')',category:'Trả nợ',group:'personal',flow:d.kind==='receivable'?'in':'out',date:today(),account:'cash'});
+  if(pmt>0)db.transactions.push({id:Date.now(),amount:pmt,desc:(d.kind==='receivable'?'Thu nợ · ':'Trả nợ · ')+(d.name||'Khoản nợ')+' (kỳ '+d.paid+(d.term?'/'+d.term:'')+')',category:'Trả nợ',group:'personal',flow:d.kind==='receivable'?'in':'out',date:today(),account:(()=>{const a=d.acct?acctById(d.acct):null;return (a&&a.type!=='credit')?a.id:'cash'})()});
   save();renderAll();renderDebts();
   toast(d.kind==='receivable'?'Đã ghi thu 1 kỳ ✓':'Đã ghi trả 1 kỳ ✓');
 }
@@ -5766,12 +5798,15 @@ function cardStmtClosed(card){
   const cStr=fmtD(close);
   ensureInst();
   const bal=Math.max(0,-acctBalance(card));
-  const spendCur=(db.transactions||[]).filter(t=>t.group==='personal'&&t.flow==='out'&&(t.account||'')===card.id&&t.date>=cStr).reduce((s,t)=>s+t.amount,0);
+  const spendCur=(db.transactions||[]).filter(t=>t.group!=='company'&&t.flow==='out'&&(t.account||'')===card.id&&t.date>cStr).reduce((s,t)=>s+t.amount,0);
   const paidSince=(db.transactions||[]).filter(t=>t.flow==='xfer'&&t.to===card.id&&t.date>=cStr).reduce((s,t)=>s+t.amount,0);
-  const inst=db.installments.filter(i=>i.card===card.id&&(i.paid||0)<i.term).reduce((s,i)=>s+i.per,0);
-  const dmp=(db.debts||[]).filter(d=>d.acct===card.id&&d.kind!=='receivable'&&(+d.remaining||0)>0&&+d.monthlyPayment).reduce((s,d)=>s+(+d.monthlyPayment),0);
+  const _mo=today().slice(0,7);
+  const inst=db.installments.filter(i=>i.card===card.id&&(i.paid||0)<i.term&&i.lastPayMonth!==_mo).reduce((s,i)=>s+i.per,0);
+  const dmp=(db.debts||[]).filter(d=>d.acct===card.id&&d.kind!=='receivable'&&(+d.remaining||0)>0&&+d.monthlyPayment&&d.lastPayMonth!==_mo).reduce((s,d)=>s+(+d.monthlyPayment),0);
   const spend=Math.max(0,bal-spendCur);
-  return {stmt:Math.max(0,spend+inst+dmp),spend,inst:inst+dmp,paidSince,closeStr:cStr};
+  let stmt=Math.max(0,spend+inst+dmp);
+  if(card.stmtOverride&&card.stmtOverrideKey===cStr)stmt=Math.max(0,(+card.stmtOverride)-paidSince);
+  return {stmt,spend,inst:inst+dmp,paidSince,closeStr:cStr};
 }
 function xferSuggest(){
   const hint=document.getElementById('xfer-hint');if(!hint)return;
@@ -5816,13 +5851,19 @@ function wipeDemoData(){
   if(!db.accounts.some(a=>a.main))db.accounts[0].main=true;
   save();renderAll();renderSettings();toast('Đã xoá dữ liệu demo ✓');
 }
+function cardTotDebt(a){ensureInst();
+  const val=Math.max(0,-acctBalance(a));
+  const instRem=db.installments.filter(x=>x.card===a.id&&(x.paid||0)<x.term).reduce((s,x)=>s+instRemaining(x),0);
+  const dbtRem=(db.debts||[]).filter(d=>d.acct===a.id&&d.kind!=='receivable'&&!d.settled).reduce((s,d)=>s+(+d.remaining||0),0);
+  return val+instRem+dbtRem;}
 function renderAcctList(){ensureAccounts();const el=document.getElementById('acct-list');if(!el)return;
   el.innerHTML=db.accounts.map((a,i)=>{const b=acctBalance(a);const cr=a.type==='credit';const val=cr?-b:b;
     const color=cr?(val>0?'var(--red)':'var(--muted)'):(b>=0?'var(--text)':'var(--red)');
     ensureInst();const instRem=cr?db.installments.filter(x=>x.card===a.id&&(x.paid||0)<x.term).reduce((s,x)=>s+instRemaining(x),0):0;
     const dbtRem=cr?(db.debts||[]).filter(d=>d.acct===a.id&&d.kind!=='receivable'&&!d.settled).reduce((s,d)=>s+(+d.remaining||0),0):0;
     const totDebt=Math.max(0,val)+instRem+dbtRem;
-    const warn=cr&&a.limit&&totDebt>a.limit*0.7?' · <span style="color:var(--red)">sát hạn mức</span>':'';
+    const _av=cr&&a.limit?Math.max(0,a.limit-totDebt):0;
+    const warn=cr&&a.limit&&_av<a.limit*0.15?' · <span style="color:var(--red)">sát hạn mức</span>':'';
     const limitInfo=cr&&a.limit?' · khả dụng <b style="color:var(--green)">'+fmtK(Math.max(0,a.limit-totDebt))+'</b>/'+fmtK(a.limit)+' đ':'';
     const lkN=(db.debts||[]).filter(d=>d.acct===a.id&&(d.remaining||0)>0).length;
     const lkInfo=lkN?' · '+lkN+' khoản nợ liên kết':'';
@@ -5910,8 +5951,10 @@ function renderAcctReport(){
       </div>`;
     }
     if(cr){
-      const spend=Math.max(0,val);const inst=cardInstDue(a);const due=nextDueDate(a);
-      const pay=spend+inst;
+      const _s=cardStmtClosed(a);const due=nextDueDate(a);
+      const pay=_s.stmt;
+      let inst=_s.inst||cardInstDue(a)+(db.debts||[]).filter(d=>d.acct===a.id&&d.kind!=='receivable'&&(+d.remaining||0)>0&&+d.monthlyPayment).reduce((s,d)=>s+(+d.monthlyPayment),0);
+      inst=Math.min(inst,pay);const spend=Math.max(0,pay-inst);
       if(pay)extra+=`<div style="margin-top:8px;background:var(--light);border-radius:10px;padding:9px 12px">
         <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:13px;font-weight:700">Tổng trả trong kỳ</span><b style="font-size:15px;color:var(--red)">${fmtK(pay)} đ</b></div>
         <div style="font-size:12px;color:var(--muted);margin-top:4px;line-height:1.7">
