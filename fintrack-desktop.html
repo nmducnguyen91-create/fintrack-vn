@@ -2920,6 +2920,10 @@ function migrateData(){
       else if(p.includes('mb')||p.includes('mab'))d.acct='ac_mab';
     });
   }
+  if(!db._vibDue1){db._vibDue1=true;changed=true;ensureAccounts();
+    (db.accounts||[]).filter(x=>x.type==='credit'&&/vib/i.test(x.name||'')).forEach(_ib=>{
+      _ib.stDay=25;_ib.dueDay=18;_ib.stmtOverrideKey='2026-08-25';_ib.stmtOverride=27291335;});
+  }
   if(!db._ccDemo2){db._ccDemo2=true;changed=true;ensureAccounts();
     if(!db.accounts.some(a=>a.id==='ac_mab'))db.accounts.push({id:'ac_mab',name:'Thẻ MB Bank',type:'credit',opening:0,limit:100000000,stDay:15,dueDay:28,demo:true});
   }

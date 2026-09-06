@@ -1,5 +1,5 @@
 // FinTrack VN — service worker (offline app shell)
-const CACHE = 'fintrack-shell-v124';
+const CACHE = 'fintrack-shell-v127';
 const ASSETS = [
   './',
   'fintrack-vn.html',

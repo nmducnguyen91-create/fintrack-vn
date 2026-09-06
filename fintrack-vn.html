@@ -2862,6 +2862,10 @@ function migrateData(){
     (db.accounts||[]).filter(x=>x.type==='credit'&&/vib/i.test(x.name||'')).forEach(_ib=>{
       try{_ib.limit=cardTotDebt(_ib)+68702501;}catch(e){}});
   }
+  if(!db._vibDue1){db._vibDue1=true;changed=true;ensureAccounts();
+    (db.accounts||[]).filter(x=>x.type==='credit'&&/vib/i.test(x.name||'')).forEach(_ib=>{
+      _ib.stDay=25;_ib.dueDay=18;_ib.stmtOverrideKey='2026-08-25';_ib.stmtOverride=27291335;});
+  }
   if(!db._ccDemo2){db._ccDemo2=true;changed=true;ensureAccounts();
     if(!db.accounts.some(a=>a.id==='ac_mab'))db.accounts.push({id:'ac_mab',name:'Thẻ MB Bank',type:'credit',opening:0,limit:100000000,stDay:15,dueDay:28,demo:true});
   }
@@ -5931,10 +5935,30 @@ function renderAcctReport(){
   const ccDebt=db.accounts.filter(a=>a.type==='credit').reduce((s,a)=>s+Math.max(0,-acctBalance(a))
     +db.installments.filter(i=>i.card===a.id&&(i.paid||0)<i.term).reduce((x,i)=>x+instRemaining(i),0)
     +linkedDebts(a).reduce((x,d)=>x+(+d.remaining||0),0),0);
+  const _cards=db.accounts.filter(a=>a.type==='credit');
+  const _ccLim=_cards.reduce((s,a)=>s+(+a.limit||0),0);
+  const _ccAvail=_cards.reduce((s,a)=>{try{return s+(a.limit?Math.max(0,a.limit-cardTotDebt(a)):0)}catch(e){return s}},0);
+  const _ccStmt=_cards.reduce((s,a)=>{try{return s+cardStmtClosed(a).stmt}catch(e){return s}},0);
+  const _dues=_cards.map(a=>{try{const d=nextDueDate(a),st=cardStmtClosed(a).stmt;return d&&st?{a,d,st}:null}catch(e){return null}}).filter(Boolean).sort((x,y)=>x.d-y.d);
+  const _nd=_dues[0];
+  const _ddays=_nd?Math.ceil((_nd.d-new Date(new Date().toDateString()))/864e5):null;
+  const _pct=_ccLim?Math.min(100,Math.round((_ccLim-_ccAvail)/_ccLim*100)):0;
   const summary=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:12px 0 4px">
     <div class="stat-tile"><div class="stat-label">Tiền khả dụng</div><div class="stat-val ${liquid>=0?'g':'r'}">${liquid<0?'−':''}${fmtK(Math.abs(liquid))} đ</div></div>
     <div class="stat-tile"><div class="stat-label">Tổng nợ thẻ</div><div class="stat-val ${ccDebt?'r':''}">${fmtK(ccDebt)} đ</div></div>
-  </div>`;
+  </div>`
+  +(_cards.length?`<div style="background:var(--card);border:1px solid var(--bdr);border-radius:14px;padding:12px 14px;margin-top:4px">
+    <div style="display:flex;justify-content:space-between;align-items:baseline">
+      <span style="font-size:11px;font-weight:800;letter-spacing:.8px;color:var(--muted);text-transform:uppercase">Tổng quan thẻ tín dụng</span>
+      <span style="font-size:11.5px;color:var(--muted)">${_cards.length} thẻ · dùng <b style="color:${_pct>70?'var(--red)':'var(--text)'}">${_pct}%</b></span>
+    </div>
+    <div style="display:flex;gap:14px;margin-top:9px">
+      <div style="flex:1"><div style="font-size:11px;color:var(--muted)">Hạn mức khả dụng</div><div style="font-size:16.5px;font-weight:800;color:var(--green)">${fmtK(_ccAvail)} đ</div><div style="font-size:11px;color:var(--muted)">/ ${fmtK(_ccLim)} đ hạn mức</div></div>
+      <div style="flex:1"><div style="font-size:11px;color:var(--muted)">Phải trả kỳ này</div><div style="font-size:16.5px;font-weight:800;color:${_ccStmt?'var(--red)':'var(--muted)'}">${fmtK(_ccStmt)} đ</div><div style="font-size:11px;color:var(--muted)">${_nd?'gần nhất '+String(_nd.d.getDate()).padStart(2,'0')+'/'+String(_nd.d.getMonth()+1).padStart(2,'0')+(_ddays!=null?' · còn '+Math.max(0,_ddays)+' ngày':''):'không có hạn sắp tới'}</div></div>
+    </div>
+    <div style="height:5px;background:var(--light);border-radius:3px;margin-top:10px;overflow:hidden"><div style="height:100%;width:${_pct}%;background:${_pct>70?'var(--red)':'var(--navy)'}"></div></div>
+    ${_dues.length?'<div style="margin-top:9px;border-top:1px dashed var(--bdr);padding-top:7px;font-size:12.5px;line-height:1.85">'+_dues.slice(0,4).map(x=>{const dd=Math.ceil((x.d-new Date(new Date().toDateString()))/864e5);const urg=dd<=3;return '<div style="display:flex;justify-content:space-between;gap:8px"><span style="color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+x.a.name+' · '+String(x.d.getDate()).padStart(2,'0')+'/'+String(x.d.getMonth()+1).padStart(2,'0')+(urg?' <b style="color:var(--red)">('+(dd<=0?'hôm nay':'còn '+dd+'n')+')</b>':'')+'</span><b style="color:var(--red);white-space:nowrap">'+fmtK(x.st)+' đ</b></div>'}).join('')+'</div>':''}
+  </div>`:'');
   // ── Thẻ tài khoản ──
   const acctCard=a=>{
     const b=acctBalance(a);const cr=a.type==='credit';const val=cr?-b:b;
@@ -5960,13 +5984,28 @@ function renderAcctReport(){
       const pay=_s.stmt;
       let inst=_s.inst||cardInstDue(a)+(db.debts||[]).filter(d=>d.acct===a.id&&d.kind!=='receivable'&&(+d.remaining||0)>0&&+d.monthlyPayment).reduce((s,d)=>s+(+d.monthlyPayment),0);
       inst=Math.min(inst,pay);const spend=Math.max(0,pay-inst);
-      if(pay)extra+=`<div style="margin-top:8px;background:var(--light);border-radius:10px;padding:9px 12px">
-        <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:13px;font-weight:700">Tổng trả trong kỳ</span><b style="font-size:15px;color:var(--red)">${fmtK(pay)} đ</b></div>
+      extra+=`<div style="margin-top:8px;background:var(--light);border-radius:10px;padding:9px 12px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:13px;font-weight:700">Tổng trả trong kỳ</span><b style="font-size:15px;color:${pay?'var(--red)':'var(--muted)'}">${fmtK(pay)} đ</b></div>
         <div style="font-size:12px;color:var(--muted);margin-top:4px;line-height:1.7">
           ${spend?`<div style="display:flex;justify-content:space-between"><span>Nợ chi tiêu</span><b>${fmtK(spend)} đ</b></div>`:''}
           ${inst?`<div style="display:flex;justify-content:space-between"><span>Trả góp trong kỳ</span><b>${fmtK(inst)} đ</b></div>`:''}
           ${due?`<div style="display:flex;justify-content:space-between"><span>Hạn thanh toán</span><b>${String(due.getDate()).padStart(2,'0')}/${String(due.getMonth()+1).padStart(2,'0')}</b></div>`:''}
         </div>
+      </div>`;
+      const _cs=_s.closeStr;
+      const _txs=(db.transactions||[]).filter(t=>t.group!=='company'&&(t.account||'')===a.id&&t.flow==='out'&&(t.date||'')>_cs)
+        .concat((db.transactions||[]).filter(t=>t.flow==='xfer'&&t.to===a.id&&(t.date||'')>_cs))
+        .sort((x,y)=>(y.date||'').localeCompare(x.date||''));
+      const _spendNew=_txs.filter(t=>t.flow==='out').reduce((s,t)=>s+t.amount,0);
+      const _open=!!(window.acctTxOpen&&window.acctTxOpen[a.id]);
+      const _dm=s=>{const p=(s||'').split('-');return p.length===3?p[2]+'/'+p[1]:s||''};
+      extra+=`<div style="margin-top:8px;border-top:1px dashed var(--bdr);padding-top:8px">
+        <div onclick="window.acctTxOpen=window.acctTxOpen||{};window.acctTxOpen['${a.id}']=!window.acctTxOpen['${a.id}'];renderAcctReport()" style="display:flex;justify-content:space-between;align-items:baseline;cursor:pointer">
+          <span style="font-size:12.5px;font-weight:700">Chi tiêu kỳ mới <span style="font-weight:500;color:var(--muted);font-size:11.5px">(từ ${_dm(_cs)})</span></span>
+          <span style="font-size:13px;font-weight:800;color:${_spendNew?'var(--text)':'var(--muted)'}">${fmtK(_spendNew)} đ <span style="color:var(--muted);font-weight:600;font-size:11px">${_txs.length?(_open?'▴':'▾ '+_txs.length+' GD'):''}</span></span>
+        </div>
+        ${_open&&_txs.length?'<div style="margin-top:6px;font-size:12.5px;line-height:1.9">'+_txs.slice(0,15).map(t=>`<div style="display:flex;justify-content:space-between;gap:8px"><span style="color:var(--muted);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${_dm(t.date)} · ${t.note||t.cat||(t.flow==='xfer'?'Thanh toán thẻ':'Chi tiêu')}</span><b style="color:${t.flow==='xfer'?'var(--green)':'var(--text)'};white-space:nowrap">${t.flow==='xfer'?'−':'+'}${fmtK(t.amount)} đ</b></div>`).join('')+(_txs.length>15?'<div style="color:var(--muted);font-size:11.5px">… và '+(_txs.length-15)+' giao dịch khác</div>':'')+'</div>':''}
+        ${!_txs.length?'<div style="font-size:11.5px;color:var(--muted);margin-top:3px">Chưa có giao dịch nào trong kỳ mới</div>':''}
       </div>`;
       a._pay=pay;
     }
