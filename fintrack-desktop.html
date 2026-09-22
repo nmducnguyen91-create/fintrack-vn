@@ -5862,16 +5862,16 @@ function cardStmtClosed(card){
   if(td.getDate()<st)close=new Date(td.getFullYear(),td.getMonth()-1,st);
   const cStr=fmtD(close);
   ensureInst();
-  const bal=Math.max(0,-acctBalance(card));
-  const spendCur=(db.transactions||[]).filter(t=>t.group!=='company'&&t.flow==='out'&&(t.account||'')===card.id&&t.date>cStr).reduce((s,t)=>s+t.amount,0);
+  const pStr=fmtD(new Date(close.getFullYear(),close.getMonth()-1,st));
   const paidSince=(db.transactions||[]).filter(t=>t.flow==='xfer'&&t.to===card.id&&t.date>=cStr).reduce((s,t)=>s+t.amount,0);
   const _mo=today().slice(0,7);
-  const inst=db.installments.filter(i=>i.card===card.id&&(i.paid||0)<i.term&&i.lastPayMonth!==_mo).reduce((s,i)=>s+i.per,0);
-  const dmp=(db.debts||[]).filter(d=>d.acct===card.id&&d.kind!=='receivable'&&(+d.remaining||0)>0&&+d.monthlyPayment&&d.lastPayMonth!==_mo).reduce((s,d)=>s+(+d.monthlyPayment),0);
-  const spend=Math.max(0,bal-spendCur);
-  let stmt=Math.max(0,spend+inst+dmp);
+  const inst=db.installments.filter(i=>i.card===card.id&&(i.paid||0)<i.term&&(i.lastPayDate||i.lastPayMonth||'')<cStr).reduce((s,i)=>s+i.per,0);
+  const dmp=(db.debts||[]).filter(d=>d.acct===card.id&&d.kind!=='receivable'&&(+d.remaining||0)>0&&+d.monthlyPayment&&(d.lastPayDate||d.lastPayMonth||'')<cStr).reduce((s,d)=>s+(+d.monthlyPayment),0);
+  const spend=(db.transactions||[]).filter(t=>t.group!=='company'&&t.flow==='out'&&(t.account||'')===card.id&&t.date>pStr&&t.date<=cStr).reduce((s,t)=>s+t.amount,0);
+  const instFee=(+card.instFeeMonthly||0);
+  let stmt=Math.max(0,spend+inst+dmp+instFee);
   if(card.stmtOverride!=null&&(!card.stmtOverrideKey||card.stmtOverrideKey===cStr))stmt=Math.max(0,(+card.stmtOverride)-paidSince);
-  return {stmt,spend,inst:inst+dmp,paidSince,closeStr:cStr};
+  return {stmt,spend,inst:inst+dmp+instFee,paidSince,closeStr:cStr};
 }
 function xferSuggest(){
   const hint=document.getElementById('xfer-hint');if(!hint)return;
@@ -6056,7 +6056,9 @@ function renderAcctReport(){
   el.innerHTML=summary
     +grp('Tiền mặt & ngân hàng',db.accounts.filter(a=>a.type==='cash'||a.type==='bank'))
     +grp('Ví điện tử',db.accounts.filter(a=>a.type==='ewallet'))
-    +grp('Thẻ tín dụng',db.accounts.filter(a=>a.type==='credit'))
+    +grp('Thẻ tín dụng',db.accounts.filter(a=>a.type==='credit').slice().sort((x,y)=>{
+      const v=a=>{try{const s=cardStmtClosed(a);const nw=(db.transactions||[]).filter(t=>t.group!=='company'&&t.account===a.id&&t.flow==='out'&&t.date>s.closeStr).reduce((n,t)=>n+t.amount,0);return s.stmt+nw}catch(e){return 0}};
+      return v(y)-v(x)}))
     +'<div style="height:6px"></div>';
 }
 // ── INSTALLMENTS & STATEMENT ──

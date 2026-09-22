@@ -2866,6 +2866,31 @@ function migrateData(){
     (db.accounts||[]).filter(x=>x.type==='credit'&&/vib/i.test(x.name||'')).forEach(_ib=>{
       _ib.stDay=25;_ib.dueDay=18;_ib.stmtOverrideKey='2026-08-25';_ib.stmtOverride=27291335;});
   }
+  if(!db._vpSync2609){db._vpSync2609=true;changed=true;ensureAccounts();ensureInst();
+    const _vc=(db.accounts||[]).find(x=>x.type==='credit'&&/\bvp/i.test(x.name||''));
+    if(_vc){ // Sao kê VPBank kỳ 21/08–20/09/2026, hạn 05/10
+      const TOTAL_DEBT=92130295, DUE=18439962, LIMIT=97500000;
+      _vc.limit=LIMIT;
+      _vc.stmtOverrideKey='2026-09-20';_vc.stmtOverride=DUE;_vc.instFeeMonthly=2494190; // lãi trả góp hàng kỳ, để các kỳ sau tự tính đúng khi hết hạn override
+      try{const instRem=db.installments.filter(i=>i.card===_vc.id&&(i.paid||0)<i.term).reduce((s,i)=>s+instRemaining(i),0);
+        const dbtRem=(db.debts||[]).filter(d=>d.acct===_vc.id&&d.kind!=='receivable'&&!d.settled).reduce((s,d)=>s+(+d.remaining||0),0);
+        const target=Math.max(0,TOTAL_DEBT-instRem-dbtRem);
+        _vc.opening=(_vc.opening||0)-(target-Math.max(0,-acctBalance(_vc)));}catch(e){}}
+  }
+  if(!db._vibLimitReal){db._vibLimitReal=true;changed=true;ensureAccounts();
+    (db.accounts||[]).filter(x=>x.type==='credit'&&/vib/i.test(x.name||'')).forEach(c=>{c.limit=105000000});
+  }
+  if(!db._mbSync2609){db._mbSync2609=true;changed=true;ensureAccounts();ensureInst();
+    const _mb=(db.accounts||[]).find(x=>x.type==='credit'&&/\bmb/i.test(x.name||''));
+    if(_mb){ // Sao kê MB kỳ 11/08–10/09/2026, hạn 25/09
+      const TOTAL_DEBT=11708233, DUE=3646232, LIMIT=86925840;
+      _mb.stDay=10;_mb.dueDay=25;_mb.limit=LIMIT;
+      _mb.stmtOverrideKey='2026-09-10';_mb.stmtOverride=DUE;_mb.instFeeMonthly=97200;
+      try{const instRem=db.installments.filter(i=>i.card===_mb.id&&(i.paid||0)<i.term).reduce((s,i)=>s+instRemaining(i),0);
+        const dbtRem=(db.debts||[]).filter(d=>d.acct===_mb.id&&d.kind!=='receivable'&&!d.settled).reduce((s,d)=>s+(+d.remaining||0),0);
+        const target=Math.max(0,TOTAL_DEBT-instRem-dbtRem);
+        _mb.opening=(_mb.opening||0)-(target-Math.max(0,-acctBalance(_mb)));}catch(e){}}
+  }
   if(!db._ccDemo2){db._ccDemo2=true;changed=true;ensureAccounts();
     if(!db.accounts.some(a=>a.id==='ac_mab'))db.accounts.push({id:'ac_mab',name:'Thẻ MB Bank',type:'credit',opening:0,limit:100000000,stDay:15,dueDay:28,demo:true});
   }
@@ -4306,7 +4331,7 @@ function payDebtPeriod(i){
   const d=db.debts[i];if(!d)return;
   const _mo=today().slice(0,7);
   if(d.lastPayMonth===_mo&&!confirm('Khoản này đã ghi trả 1 kỳ trong tháng '+_mo+'.\nGhi thêm 1 kỳ nữa?'))return;
-  d.lastPayMonth=_mo;
+  d.lastPayMonth=_mo;d.lastPayDate=today();
   d.paid=d.term>0?Math.min((d.paid||0)+1,d.term):(d.paid||0)+1;
   let pmt=+d.monthlyPayment||0;
   if(!pmt&&d.term>0){const left=d.term-(d.paid-1);if(left>0)pmt=Math.round((+d.remaining||0)/left)}
@@ -5805,17 +5830,17 @@ function cardStmtClosed(card){
   let close=new Date(td.getFullYear(),td.getMonth(),st);
   if(td.getDate()<st)close=new Date(td.getFullYear(),td.getMonth()-1,st);
   const cStr=fmtD(close);
+  const pStr=fmtD(new Date(close.getFullYear(),close.getMonth()-1,st));
   ensureInst();
-  const bal=Math.max(0,-acctBalance(card));
-  const spendCur=(db.transactions||[]).filter(t=>t.group!=='company'&&t.flow==='out'&&(t.account||'')===card.id&&t.date>cStr).reduce((s,t)=>s+t.amount,0);
+  // Chi tiêu đúng trong kỳ = giao dịch phát sinh (pStr, cStr] — không suy ra từ dư nợ hiện tại (tránh bị hụt khi đã có thanh toán bù trừ)
+  const spend=(db.transactions||[]).filter(t=>t.group!=='company'&&t.flow==='out'&&(t.account||'')===card.id&&t.date>pStr&&t.date<=cStr).reduce((s,t)=>s+t.amount,0);
   const paidSince=(db.transactions||[]).filter(t=>t.flow==='xfer'&&t.to===card.id&&t.date>=cStr).reduce((s,t)=>s+t.amount,0);
-  const _mo=today().slice(0,7);
-  const inst=db.installments.filter(i=>i.card===card.id&&(i.paid||0)<i.term&&i.lastPayMonth!==_mo).reduce((s,i)=>s+i.per,0);
-  const dmp=(db.debts||[]).filter(d=>d.acct===card.id&&d.kind!=='receivable'&&(+d.remaining||0)>0&&+d.monthlyPayment&&d.lastPayMonth!==_mo).reduce((s,d)=>s+(+d.monthlyPayment),0);
-  const spend=Math.max(0,bal-spendCur);
-  let stmt=Math.max(0,spend+inst+dmp);
+  const inst=db.installments.filter(i=>i.card===card.id&&(i.paid||0)<i.term&&(i.lastPayDate||i.lastPayMonth||'')<cStr).reduce((s,i)=>s+i.per,0);
+  const dmp=(db.debts||[]).filter(d=>d.acct===card.id&&d.kind!=='receivable'&&(+d.remaining||0)>0&&+d.monthlyPayment&&(d.lastPayDate||d.lastPayMonth||'')<cStr).reduce((s,d)=>s+(+d.monthlyPayment),0);
+  const instFee=(+card.instFeeMonthly||0);
+  let stmt=Math.max(0,spend+inst+dmp+instFee);
   if(card.stmtOverride!=null&&(!card.stmtOverrideKey||card.stmtOverrideKey===cStr))stmt=Math.max(0,(+card.stmtOverride)-paidSince);
-  return {stmt,spend,inst:inst+dmp,paidSince,closeStr:cStr};
+  return {stmt,spend,inst:inst+dmp+instFee,paidSince,closeStr:cStr};
 }
 function xferSuggest(){
   const hint=document.getElementById('xfer-hint');if(!hint)return;
@@ -5981,14 +6006,15 @@ function renderAcctReport(){
     }
     if(cr){
       const _s=cardStmtClosed(a);const due=nextDueDate(a);
-      const pay=_s.stmt;
-      let inst=_s.inst||cardInstDue(a)+(db.debts||[]).filter(d=>d.acct===a.id&&d.kind!=='receivable'&&(+d.remaining||0)>0&&+d.monthlyPayment).reduce((s,d)=>s+(+d.monthlyPayment),0);
-      inst=Math.min(inst,pay);const spend=Math.max(0,pay-inst);
+      const pay=_s.stmt;let inst=_s.inst,spend=_s.spend;
+      if(inst+spend>pay){const k=pay/(inst+spend||1);inst=Math.round(inst*k);spend=Math.max(0,pay-inst)}
+      const _fee=Math.max(0,pay-spend-inst);
       extra+=`<div style="margin-top:8px;background:var(--light);border-radius:10px;padding:9px 12px">
-        <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:13px;font-weight:700">Tổng trả trong kỳ</span><b style="font-size:15px;color:${pay?'var(--red)':'var(--muted)'}">${fmtK(pay)} đ</b></div>
+        <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:13px;font-weight:700">Tổng trả trong kỳ</span><b style="font-size:15px;color:${pay?'var(--red)':'var(--muted)'}">${formatMoney(pay)} đ</b></div>
         <div style="font-size:12px;color:var(--muted);margin-top:4px;line-height:1.7">
-          ${spend?`<div style="display:flex;justify-content:space-between"><span>Nợ chi tiêu</span><b>${fmtK(spend)} đ</b></div>`:''}
-          ${inst?`<div style="display:flex;justify-content:space-between"><span>Trả góp trong kỳ</span><b>${fmtK(inst)} đ</b></div>`:''}
+          ${spend?`<div style="display:flex;justify-content:space-between"><span>Nợ chi tiêu</span><b>${formatMoney(spend)} đ</b></div>`:''}
+          ${inst?`<div style="display:flex;justify-content:space-between"><span>Trả góp trong kỳ</span><b>${formatMoney(inst)} đ</b></div>`:''}
+          ${_fee?`<div style="display:flex;justify-content:space-between"><span>Lãi &amp; phí trả góp</span><b>${formatMoney(_fee)} đ</b></div>`:''}
           ${due?`<div style="display:flex;justify-content:space-between"><span>Hạn thanh toán</span><b>${String(due.getDate()).padStart(2,'0')}/${String(due.getMonth()+1).padStart(2,'0')}</b></div>`:''}
         </div>
       </div>`;
@@ -6043,7 +6069,9 @@ function renderAcctReport(){
   el.innerHTML=summary
     +grp('Tiền mặt & ngân hàng',db.accounts.filter(a=>a.type==='cash'||a.type==='bank'))
     +grp('Ví điện tử',db.accounts.filter(a=>a.type==='ewallet'))
-    +grp('Thẻ tín dụng',db.accounts.filter(a=>a.type==='credit'))
+    +grp('Thẻ tín dụng',db.accounts.filter(a=>a.type==='credit').slice().sort((x,y)=>{
+      const v=a=>{try{const s=cardStmtClosed(a);const nw=(db.transactions||[]).filter(t=>t.group!=='company'&&t.account===a.id&&t.flow==='out'&&t.date>s.closeStr).reduce((n,t)=>n+t.amount,0);return s.stmt+nw}catch(e){return 0}};
+      return v(y)-v(x)}))
     +'<div style="height:6px"></div>';
 }
 // ── INSTALLMENTS & STATEMENT ──
@@ -6094,8 +6122,9 @@ function maybeAdvanceInst(cardId,date,amount){
     +'\n\nTổng phải trả kỳ này: '+fmtK(due)+' đ'+(amount>=due?'':'\n(Số chuyển '+fmtK(amount)+' đ nhỏ hơn tổng kỳ)')
     +'\n\nOK = ghi nhận đã trả thêm 1 kỳ cho các khoản trên.';
   if(!confirm(msg))return;
-  list.forEach(i=>{i.paid=(i.paid||0)+1;i.lastPayMonth=mo});
-  dlist.forEach(d=>{d.paid=(d.paid||0)+1;d.lastPayMonth=mo;const pmt=+d.monthlyPayment||0;d.remaining=Math.max(0,(+d.remaining||0)-pmt);if(d.term>0&&(d.paid||0)>=d.term)d.remaining=0;if(!(+d.remaining>0))d.settled=true});
+  const _pd=date||today();
+  list.forEach(i=>{i.paid=(i.paid||0)+1;i.lastPayMonth=mo;i.lastPayDate=_pd});
+  dlist.forEach(d=>{d.paid=(d.paid||0)+1;d.lastPayMonth=mo;d.lastPayDate=_pd;const pmt=+d.monthlyPayment||0;d.remaining=Math.max(0,(+d.remaining||0)-pmt);if(d.term>0&&(d.paid||0)>=d.term)d.remaining=0;if(!(+d.remaining>0))d.settled=true});
   save();renderAll();try{renderInstList()}catch(e){}try{renderDebts()}catch(e){}
   toast('Đã cộng 1 kỳ cho '+(list.length+dlist.length)+' khoản ✓');
 }
@@ -6138,7 +6167,7 @@ function saveInst(){ensureInst();
   const term=+document.getElementById('in-term').value;const paid=+document.getElementById('in-paid').value||0;
   if(!total||!term){warnField('in-total','Nhập tổng tiền và số kỳ');return}
   if(!per)per=Math.round(total/term);
-  if(editInstId){const it=db.installments.find(x=>x.id===editInstId);if(it){const bumped=paid>(it.paid||0);Object.assign(it,{name,card,total,per,term,paid});if(bumped)it.lastPayMonth=today().slice(0,7)}}
+  if(editInstId){const it=db.installments.find(x=>x.id===editInstId);if(it){const bumped=paid>(it.paid||0);Object.assign(it,{name,card,total,per,term,paid});if(bumped){it.lastPayMonth=today().slice(0,7);it.lastPayDate=today()}}}
   else db.installments.push({id:'in_'+Date.now(),name,card,total,per,term,paid});
   save();closeInstModal();renderAll();renderInstList();toast('Đã lưu khoản góp ✓')}
 function deleteAcctById(id){editAcctId=id;deleteAcct()}
