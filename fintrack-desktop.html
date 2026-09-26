@@ -1531,6 +1531,19 @@ body.navA .fab.nav-hide-fab,body.navB .fab.nav-hide-fab,body.navC .fab.nav-hide-
 .cf-cell b{font-weight:700!important}
 </style>
 <style id="ah-off-rule">.ah-off,.tab-item.ah-off,.nav-btn.ah-off,.seg button.ah-off,.chip.ah-off{display:none!important}</style>
+<style id="desktop-final">
+/* ═══ DESKTOP — lớp cuối cùng, thắng mọi style mobile thêm sau này (chỉ ≥901px) ═══ */
+@media (min-width:901px){
+html body:not(#_dx){max-width:none!important;width:auto!important;margin:0!important;padding-left:232px!important;padding-bottom:60px!important}
+body:not(#_dx) .bottom-nav{position:fixed!important;left:0!important;top:0!important;bottom:0!important;right:auto!important;margin:0!important;transform:none!important;width:232px!important;max-width:none!important;height:100vh!important;display:flex!important;flex-direction:column!important;flex-wrap:nowrap!important;justify-content:flex-start!important;align-items:stretch!important;border-radius:0!important;border:none!important;border-right:1px solid var(--bdr)!important;padding:18px 12px!important;gap:4px!important;background:var(--card)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;box-shadow:2px 0 16px rgba(16,40,64,.05)!important;opacity:1!important;pointer-events:auto!important;overflow-y:auto!important}
+body.dark:not(#_dx) .bottom-nav{background:#131c2a!important;border-right-color:#22304a!important}
+body:not(#_dx) .nav-btn{flex:0 0 auto!important;width:auto!important;flex-direction:row!important;justify-content:flex-start!important;align-items:center!important;gap:12px!important;padding:12px 14px!important;font-size:15px!important;border-radius:10px!important;min-height:44px!important}
+body:not(#_dx) .nav-btn svg{width:20px!important;height:20px!important}
+body:not(#_dx) .nav-btn.active{background:var(--light)!important}
+body.dark:not(#_dx) .nav-btn.active{background:#1b2637!important}
+body:not(#_dx) .fab{bottom:32px!important;right:32px!important}
+}
+</style>
 </head>
 <body>
 <div id="boot-splash"><div class="bs-mark">₫</div><div class="bs-name">FinTrack</div><div class="bs-spin"></div></div>
@@ -1554,16 +1567,18 @@ body.navA .fab.nav-hide-fab,body.navB .fab.nav-hide-fab,body.navC .fab.nav-hide-
 
 <!-- ① TỔNG QUAN -->
 <div class="screen active" id="screen-home">
-  <div id="overdue-section" style="display:none"></div>
-  <div id="smart-alerts"></div>
+  <div class="sec-head clps" id="canhbao-head" data-clps-head="canhbao" onclick="toggleCollapse('canhbao')" style="display:none"><span class="sec-head-title">Cảnh báo<span class="clps-chev">▾</span></span></div>
+  <div data-clps="canhbao"><div id="overdue-section" style="display:none"></div>
+  <div id="smart-alerts"></div></div>
   <div id="alert-section" style="margin:10px 12px 0;border-radius:14px;border:1px solid var(--bdr);background:var(--card);overflow:hidden;display:none">
-    <div class="sec-head"><span class="sec-head-title">Cảnh báo ngân sách</span></div>
-    <div id="alert-list"></div>
+    <div class="sec-head clps" data-clps-head="budgetalert" onclick="toggleCollapse('budgetalert')"><span class="sec-head-title">Cảnh báo ngân sách<span class="clps-chev">▾</span></span></div>
+    <div id="alert-list" data-clps="budgetalert"></div>
   </div>
 
   <!-- KPI STRIP -->
   <div class="tier-head">Ngay bây giờ</div>
-  <div class="kpi-strip" id="kpi-strip"></div>
+  <div class="sec-head clps" data-clps-head="kpi" onclick="toggleCollapse('kpi')"><span class="sec-head-title">Chỉ số nhanh<span class="clps-chev">▾</span></span></div>
+  <div class="kpi-strip" id="kpi-strip" data-clps="kpi"></div>
   <div id="upcoming-card"></div>
 
   <!-- ══ TIER: THÁNG NÀY ══ -->
@@ -1577,16 +1592,16 @@ body.navA .fab.nav-hide-fab,body.navB .fab.nav-hide-fab,body.navC .fab.nav-hide-
     <button class="btn btn-primary" style="width:100%" onclick="openAddModal()">+ Ghi thu chi ngay</button>
   </div></div>
 
-  <div class="sec-head" style="align-items:center">
-    <span class="sec-head-title" id="mo-title">Dòng tiền</span>
-    <span style="display:flex;gap:5px;align-items:center">
+  <div class="sec-head clps" data-clps-head="monthflow" onclick="toggleCollapse('monthflow')" style="align-items:center">
+    <span class="sec-head-title"><span id="mo-title">Dòng tiền</span><span class="clps-chev">▾</span></span>
+    <span style="display:flex;gap:5px;align-items:center" onclick="event.stopPropagation()">
       <button onclick="shiftOverviewMonth(-1)" style="background:none;border:none;font-size:15px;color:var(--muted);cursor:pointer;padding:0 2px">◀</button>
       <select id="mo-month" class="mo-sel" onchange="setOverviewMonth()"></select>
       <select id="mo-year" class="mo-sel" onchange="setOverviewMonth()"></select>
       <button id="mo-next" onclick="shiftOverviewMonth(1)" style="background:none;border:none;font-size:15px;color:var(--muted);cursor:pointer;padding:0 2px">▶</button>
     </span>
   </div>
-  <div class="card">
+  <div class="card" data-clps="monthflow">
     <div class="seg" id="mo-seg" style="margin:12px 14px 2px;width:calc(100% - 28px)">
       <button class="on" style="flex:1" onclick="switchMonthSeg('personal',this)">Cá nhân</button>
       <button style="flex:1" onclick="switchMonthSeg('iv',this)">Đầu tư</button>
@@ -1599,8 +1614,8 @@ body.navA .fab.nav-hide-fab,body.navB .fab.nav-hide-fab,body.navC .fab.nav-hide-
   <!-- Ngân sách -->
   <div class="sec-head clps" data-clps-head="budget" onclick="toggleCollapse('budget')"><span class="sec-head-title">Ngân sách tháng<span class="clps-chev">▾</span></span><span class="sec-head-action" onclick="event.stopPropagation();showTab('settings')">Chỉnh sửa</span></div>
   <div class="card home-clps" data-clps="budget"><div id="budget-list"></div></div>
-  <div class="sec-head" id="insight-head" style="display:none"><span class="sec-head-title">Trợ lý nhận xét</span></div>
-  <div class="card" id="insight-card" style="display:none"><div id="insight-list" style="padding:4px 14px"></div></div>
+  <div class="sec-head clps" id="insight-head" data-clps-head="insight" onclick="toggleCollapse('insight')" style="display:none"><span class="sec-head-title">Trợ lý nhận xét<span class="clps-chev">▾</span></span></div>
+  <div class="card" id="insight-card" data-clps="insight" style="display:none"><div id="insight-list" style="padding:4px 14px"></div></div>
 
   <!-- Sức khỏe tài chính -->
   <div class="sec-head clps" data-clps-head="health" onclick="toggleCollapse('health')"><span class="sec-head-title">Sức khỏe tài chính<span class="clps-chev">▾</span></span></div>
@@ -1619,24 +1634,24 @@ body.navA .fab.nav-hide-fab,body.navB .fab.nav-hide-fab,body.navC .fab.nav-hide-
   <div class="card home-clps" data-clps="networth"><div id="networth-card"></div></div>
 
   <!-- Dự báo dòng tiền -->
-  <div class="sec-head"><span class="sec-head-title">Dự báo dòng tiền cá nhân</span>
-    <span style="display:flex;gap:4px">
+  <div class="sec-head clps" data-clps-head="cashproj" onclick="toggleCollapse('cashproj')"><span class="sec-head-title">Dự báo dòng tiền cá nhân<span class="clps-chev">▾</span></span>
+    <span style="display:flex;gap:4px" onclick="event.stopPropagation()">
       <button class="proj-seg on" onclick="setProjLen(6,this)">6 tháng</button>
       <button class="proj-seg" onclick="setProjLen(12,this)">12 tháng</button>
     </span>
   </div>
-  <div class="card">
+  <div class="card" data-clps="cashproj">
     <div class="chart-wrap" style="height:190px;padding:10px 12px 4px"><canvas id="cashproj-chart" role="img" aria-label="Dự báo số dư"></canvas></div>
     <div id="cashproj-note" style="padding:2px 14px 12px;font-size:12px;color:var(--muted);line-height:1.6"></div>
   </div>
 
   <!-- Kế hoạch tài chính -->
-  <div class="sec-head" id="finplan-head" style="display:none"><span class="sec-head-title">Kế hoạch tài chính</span></div>
-  <div class="card" id="finplan-card" style="display:none"><div id="finplan-list" style="padding:4px 14px"></div></div>
+  <div class="sec-head clps" id="finplan-head" data-clps-head="finplan" onclick="toggleCollapse('finplan')" style="display:none"><span class="sec-head-title">Kế hoạch tài chính<span class="clps-chev">▾</span></span></div>
+  <div class="card" id="finplan-card" data-clps="finplan" style="display:none"><div id="finplan-list" style="padding:4px 14px"></div></div>
 
   <!-- Mục tiêu -->
-  <div class="sec-head"><span class="sec-head-title">Mục tiêu tài chính</span><span class="sec-head-action" onclick="showTab('settings');switchSettingsTab(document.querySelectorAll('#screen-settings .tab-item')[1],'goal')">+ Thêm</span></div>
-  <div class="card"><div id="goal-list-home"></div></div>
+  <div class="sec-head clps" data-clps-head="goals" onclick="toggleCollapse('goals')"><span class="sec-head-title">Mục tiêu tài chính<span class="clps-chev">▾</span></span><span class="sec-head-action" onclick="event.stopPropagation();showTab('settings');switchSettingsTab(document.querySelectorAll('#screen-settings .tab-item')[1],'goal')">+ Thêm</span></div>
+  <div class="card" data-clps="goals"><div id="goal-list-home"></div></div>
 
   <div style="height:20px"></div>
 
@@ -2924,6 +2939,22 @@ function migrateData(){
     (db.accounts||[]).filter(x=>x.type==='credit'&&/vib/i.test(x.name||'')).forEach(_ib=>{
       _ib.stDay=25;_ib.dueDay=18;_ib.stmtOverrideKey='2026-08-25';_ib.stmtOverride=27291335;});
   }
+  if(!db._vpLimit122){db._vpLimit122=true;changed=true;ensureAccounts();
+    (db.accounts||[]).filter(x=>x.type==='credit'&&/\bvp/i.test(x.name||'')).forEach(c=>{c.limit=122000000});
+  }
+  if(!db._vibSync2509){db._vibSync2509=true;changed=true;ensureAccounts();ensureInst();
+    const _vb=(db.accounts||[]).find(x=>x.type==='credit'&&/vib/i.test(x.name||''));
+    if(_vb){ // Sao kê VIB chốt 25/09/2026, hạn 20/10/2026 — kỳ trước 27.291.335 đã trả đủ
+      const STMT_BAL=12198906, LIMIT=105000000; // 100tr + 5tr dự phòng
+      _vb.stDay=25;_vb.dueDay=20;_vb.limit=LIMIT;
+      _vb.stmtOverrideKey='2026-09-25';_vb.stmtOverride=STMT_BAL;
+      try{db.installments.filter(i=>i.card===_vb.id&&i.term===6&&(i.paid||0)<4).forEach(i=>{i.paid=4;i.lastPayDate='2026-09-25';});
+        const tx=db.transactions||[];
+        const postSpend=tx.filter(t=>t.group!=='company'&&t.flow==='out'&&t.account===_vb.id&&t.date>'2026-09-25').reduce((s,t)=>s+t.amount,0);
+        const postPaid=tx.filter(t=>t.flow==='xfer'&&t.to===_vb.id&&t.date>'2026-09-25').reduce((s,t)=>s+t.amount,0);
+        const target=STMT_BAL+postSpend-postPaid;
+        _vb.opening=(_vb.opening||0)-(target-(-acctBalance(_vb)));}catch(e){}}
+  }
   if(!db._ccDemo2){db._ccDemo2=true;changed=true;ensureAccounts();
     if(!db.accounts.some(a=>a.id==='ac_mab'))db.accounts.push({id:'ac_mab',name:'Thẻ MB Bank',type:'credit',opening:0,limit:100000000,stDay:15,dueDay:28,demo:true});
   }
@@ -3310,6 +3341,7 @@ function renderOverdueBadge(){
   const sec=document.getElementById('overdue-section');
   if(n>0){sec.style.display='';sec.innerHTML=`<div class="overdue-banner">${I.warn}<span>Có <b>${n} hồ sơ quá hạn</b> cần xử lý</span> <span style="margin-left:auto;cursor:pointer;text-decoration:underline" onclick="showTab('service');filterService(document.querySelector('#screen-service .chip:nth-child(3)'),'overdue')">Xem ngay</span></div>`}
   else sec.style.display='none';
+  try{syncAlertHead()}catch(e){}
 }
 
 let reportYear=new Date().getFullYear();
@@ -3399,7 +3431,54 @@ function totalDebt(){return (db.debts||[]).filter(d=>d.kind!=='receivable').redu
 function totalReceivable(){return (db.debts||[]).filter(d=>d.kind==='receivable').reduce((s,d)=>s+(+d.remaining||0),0)}
 function monthlyDebtDue(){return (db.debts||[]).filter(d=>d.kind!=='receivable'&&!d.settled&&(+d.remaining||0)>0).reduce((s,d)=>s+(+d.monthlyPayment||0),0)}
 function curMonthStr(){const n=new Date();return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}`}
-function avgMonthlyExpense(){
+// ── MỨC NỀN THÔNG MINH: loại khoản bất thường khỏi trung bình/dự báo (tổng tháng vẫn giữ số thật) ──
+// Theo từng danh mục: khoản thu có từ khoá (thưởng, lì xì…) hoặc chỉ xuất hiện < nửa số tháng → bất thường;
+// khoản chi thưa (bảo hiểm năm…) → chia đều; giao dịch lẻ vượt xa mức thường của danh mục → bất thường;
+// tháng vọt quá trung vị + 3×MAD → cắt phần vượt. t.oneOff=true/false để ép thủ công.
+const _IRR_IN=/thưởng|bonus|lì ?xì|li xi|quà|hoàn tiền|cashback|thanh lý|trúng|tri ân/i;
+function _med(a){if(!a.length)return 0;const s=[...a].sort((x,y)=>x-y),h=s.length>>1;return s.length%2?s[h]:(s[h-1]+s[h])/2}
+function lastMonths(n,skipCur){const now=new Date(),o=[];for(let i=skipCur?1:0;o.length<n;i++){const d=new Date(now.getFullYear(),now.getMonth()-i,1);o.push(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'))}return o}
+function baselineStats(flow,months,filt){
+  const N=months.length,mi={};months.forEach((m,i)=>mi[m]=i);
+  const tx=(db.transactions||[]).filter(t=>t.flow===flow&&mi[monthOf(t.date)]!=null&&(!filt||filt(t)));
+  const byCat={};tx.forEach(t=>{(byCat[t.category||'Khác']=byCat[t.category||'Khác']||[]).push(t)});
+  const per=new Array(N).fill(0),raw=new Array(N).fill(0),excluded=[],catAvg={};
+  Object.entries(byCat).forEach(([c,list])=>{
+    const v=new Array(N).fill(0),keep=[];
+    list.forEach(t=>{raw[mi[monthOf(t.date)]]+=t.amount;
+      const forced=t.oneOff===true,kw=flow==='in'&&t.oneOff!==false&&(_IRR_IN.test(c)||_IRR_IN.test(t.desc||''));
+      if(forced||kw)excluded.push({t,why:forced?'đánh dấu':'thưởng/khoản một lần'});else keep.push(t)});
+    // giao dịch lẻ vượt xa mức thường của danh mục
+    const amts=keep.map(t=>t.amount),mA=_med(amts);
+    const big=keep.length>=4?keep.filter(t=>t.oneOff!==false&&t.amount>Math.max(mA*3,2000000)):[];
+    big.forEach(t=>excluded.push({t,why:'lớn bất thường'}));
+    keep.filter(t=>!big.includes(t)).forEach(t=>v[mi[monthOf(t.date)]]+=t.amount);
+    const present=v.filter(x=>x>0).length;let contrib;
+    if(present===0)contrib=v;
+    else if(present<N/2){ // danh mục thưa
+      if(flow==='in'){contrib=new Array(N).fill(0);list.filter(t=>!excluded.some(e=>e.t===t)).forEach(t=>excluded.push({t,why:'không thường xuyên'}))}
+      else{const s=v.reduce((a,b)=>a+b,0);contrib=new Array(N).fill(s/N)}
+    }else{
+      const med=_med(v),mad=_med(v.map(x=>Math.abs(x-med)));
+      const cap=med+Math.max(3*1.4826*mad,0.5*med);
+      contrib=v.map((x,i)=>{if(x>cap&&x-cap>=500000)excluded.push({t:{desc:c+' vượt mức',category:c,amount:x-cap,date:months[i]+'-01'},why:'tháng vọt'});return Math.min(x,cap)});
+    }
+    contrib.forEach((x,i)=>per[i]+=x);
+    catAvg[c]=contrib.reduce((a,b)=>a+b,0)/N;
+  });
+  const act=raw.map((x,i)=>x>0?i:-1).filter(i=>i>=0);
+  const avg=act.length?act.reduce((s,i)=>s+per[i],0)/act.length:0;
+  const rawAvg=act.length?act.reduce((s,i)=>s+raw[i],0)/act.length:0;
+  return {avg,rawAvg,per,raw,excluded,catAvg,months:act.length};
+}
+function baselineNote(bs){
+  const ex=bs.excluded.filter(e=>e.t.amount>=500000).sort((a,b)=>b.t.amount-a.t.amount);
+  if(!ex.length||Math.abs(bs.rawAvg-bs.avg)<1)return '';
+  const top=ex.slice(0,3).map(e=>(e.t.desc||e.t.category)+' '+fmtK(e.t.amount)+' (T'+(+monthOf(e.t.date).slice(5))+')').join(', ');
+  return 'Đã bỏ '+ex.length+' khoản bất thường khỏi mức trung bình: '+top+(ex.length>3?'…':'')+'.';
+}
+function avgMonthlyExpense(){return baselineStats('out',lastMonths(6,true)).avg}
+function _oldAvgMonthlyExpense(){
   const now=new Date();const months=[];
   for(let i=0;i<6;i++){const d=new Date(now.getFullYear(),now.getMonth()-i,1);months.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`)}
   const vals=months.map(m=>db.transactions.filter(t=>monthOf(t.date)===m&&t.flow==='out').reduce((s,t)=>s+t.amount,0));
@@ -3410,8 +3489,7 @@ function healthScore(){
   const cash=liquidCash();const avgExp=avgMonthlyExpense();const months=avgExp>0?cash/avgExp:99;
   const efScore=Math.max(0,Math.min(40,months/6*40));
   const now=new Date();const mm=[];for(let i=0;i<6;i++){const d=new Date(now.getFullYear(),now.getMonth()-i,1);mm.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`)}
-  const incVals=mm.map(m=>db.transactions.filter(t=>monthOf(t.date)===m&&t.flow==='in').reduce((s,t)=>s+t.amount,0)).filter(v=>v>0);
-  const avgInc=incVals.length?incVals.reduce((a,b)=>a+b,0)/incVals.length:0;
+  const avgInc=baselineStats('in',lastMonths(6,true)).avg;
   const monthlyPay=(db.debts||[]).reduce((s,d)=>s+(+d.monthlyPayment||0),0);
   const dti=avgInc>0?monthlyPay/avgInc*100:0;
   const dtiScore=dti<=35?30:dti<=43?20:10;
@@ -3453,8 +3531,12 @@ function renderUpcoming(){
   items.sort((a,b)=>String(a.sort).localeCompare(String(b.sort)));
   if(!items.length){el.style.display='none';el.innerHTML='';return}
   el.style.display='';
-  el.innerHTML=`<div class="sec-head"><span class="sec-head-title">Sắp tới</span></div><div class="card" style="overflow:hidden">`+items.slice(0,5).map((it,i)=>`<div style="display:flex;align-items:center;gap:11px;padding:11px 14px;${i>0?'border-top:1px solid var(--bdr);':''}cursor:pointer" onclick="${it.onclick}"><span style="display:inline-flex;font-size:17px;color:${it.color}">${it.icon}</span><div style="flex:1;min-width:0"><div style="font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${it.title}</div><div style="font-size:11px;color:var(--muted)">${it.sub}</div></div>${it.amt?`<div style="font-size:13px;font-weight:700;color:${it.color}">${it.amt}</div>`:`<div style="font-size:18px;color:${it.color}">›</div>`}</div>`).join('')+`</div>`;
+  el.innerHTML=`<div class="sec-head clps" data-clps-head="upcoming" onclick="toggleCollapse('upcoming')"><span class="sec-head-title">Sắp tới<span class="clps-chev">▾</span></span></div><div class="card" data-clps="upcoming" style="overflow:hidden">`+items.slice(0,5).map((it,i)=>`<div style="display:flex;align-items:center;gap:11px;padding:11px 14px;${i>0?'border-top:1px solid var(--bdr);':''}cursor:pointer" onclick="${it.onclick}"><span style="display:inline-flex;font-size:17px;color:${it.color}">${it.icon}</span><div style="flex:1;min-width:0"><div style="font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${it.title}</div><div style="font-size:11px;color:var(--muted)">${it.sub}</div></div>${it.amt?`<div style="font-size:13px;font-weight:700;color:${it.color}">${it.amt}</div>`:`<div style="font-size:18px;color:${it.color}">›</div>`}</div>`).join('')+`</div>`;
+  try{const st=homeCollapsed(),man=ahMan();const w=el.querySelector('[data-clps]'),hd=el.querySelector('[data-clps-head]');
+    if(st.upcoming){w.classList.add('hidden');hd.classList.add('collapsed')}
+    if(man.upcoming===1){w.classList.add('ah-hidden');hd.classList.add('ah-hidden');const s=document.createElement('div');s.className='ah-strip';s.setAttribute('data-ah','upcoming');s.innerHTML='<span style="opacity:.55">·</span> Sắp tới <span class="ah-tag">đã ẩn — bấm để mở</span>';s.onclick=()=>ahClearHide('upcoming');el.insertBefore(s,hd)}}catch(e){}
 }
+function syncAlertHead(){const h=document.getElementById('canhbao-head');if(!h)return;const vis=id=>{const e=document.getElementById(id);return e&&e.style.display!=='none'&&e.innerHTML.trim()!==''};const want=(vis('smart-alerts')||vis('overdue-section'))?'':'none';if(h.style.display!==want)h.style.display=want}
 function applyCollapse(){
   const st=homeCollapsed();
   document.querySelectorAll('[data-clps]').forEach(w=>{
@@ -3658,7 +3740,7 @@ function renderAhSettings(){
   const el=document.getElementById('ah-settings');if(!el)return;
   const cfg=ahCfg();const u=ahUsage(),p=ahPins();const now=Date.now();
   const keys=[...document.querySelectorAll('[data-clps-head]')].map(h=>h.getAttribute('data-clps-head'));
-  const uniq=[...new Set(keys)].filter(k=>!ahIsSafe(k));
+  const uniq=[...new Set(keys)];
   const hidden=uniq.filter(k=>cfg.on&&!p[k]&&(u[k]||0)>0&&(now-(u[k]||0))>cfg.days*864e5);
   el.innerHTML='<div style="padding:13px 15px">'
     +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><div style="flex:1"><div style="font-size:13.5px;font-weight:700">Tự ẩn mục ít dùng</div><div style="font-size:11.5px;color:var(--muted)">Bấm Ẩn/Hiện để chủ động, hoặc bật tự thu gọn theo thời gian</div></div>'
@@ -3833,10 +3915,9 @@ function renderCashProj(){
   const monthsFwd=n=>{const[y,m]=cur.split('-').map(Number);const d=new Date(y,m-1+n,1);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')};
   const sumM=(mo,flow)=>db.transactions.filter(t=>per(t)&&t.flow===flow&&monthOf(t.date)===mo).reduce((s,t)=>s+t.amount,0);
   // Trung bình 3 tháng gần nhất có dữ liệu
-  let ains=[],aouts=[];
-  for(let i=1;i<=6&&ains.length<3;i++){const mo=monthsBack(i);const ti=sumM(mo,'in'),to=sumM(mo,'out');if(ti||to){ains.push(ti);aouts.push(to)}}
-  const avgIn=ains.length?ains.reduce((a,b)=>a+b,0)/ains.length:0;
-  const avgOut=aouts.length?aouts.reduce((a,b)=>a+b,0)/aouts.length:0;
+  const _bm=lastMonths(6,true),_bi=baselineStats('in',_bm,per),_bo=baselineStats('out',_bm,per);
+  const ains={length:Math.max(_bi.months,_bo.months)};
+  const avgIn=_bi.avg,avgOut=_bo.avg;
   const base=db.transactions.filter(per).reduce((s,t)=>s+(t.flow==='in'?t.amount:t.flow==='out'?-t.amount:0),0);
   const delta=avgIn-avgOut;
   const labels=[],data=[];
@@ -3848,7 +3929,8 @@ function renderCashProj(){
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmtK(c.raw)+' đ'}}},
       scales:{y:{ticks:{callback:v=>fmtK(v),font:{size:10}},grid:{color:isDark?'#2a3a4e':'#eef1f6'}},x:{grid:{display:false},ticks:{font:{size:10}}}}}});
   const note=document.getElementById('cashproj-note');
-  let msg='Dựa trên số dư hiện tại '+fmtK(base)+' đ và trung bình '+ains.length+' tháng gần nhất (thu '+fmtK(avgIn)+' − chi '+fmtK(avgOut)+' đ/tháng).';
+  let msg='Dựa trên số dư hiện tại '+fmtK(base)+' đ và mức thường xuyên '+ains.length+' tháng gần nhất (thu '+fmtK(avgIn)+' − chi '+fmtK(avgOut)+' đ/tháng).';
+  {const _n=[baselineNote(_bi),baselineNote(_bo)].filter(Boolean).join(' ');if(_n)msg+=' <span style="opacity:.85">'+_n+'</span>';}
   if(delta<0){
     const zeroIn=base>0?Math.ceil(base/(-delta)):0;
     msg+=base>0?' <b style="color:var(--red)">Cảnh báo: nhịp hiện tại âm '+fmtK(-delta)+' đ/tháng — số dư về 0 sau ~'+zeroIn+' tháng.</b>':' <b style="color:var(--red)">Dòng tiền đang âm.</b>';
@@ -3904,14 +3986,15 @@ function renderInsights(){
   // 1. Danh mục lệch >20% so TB 3 tháng trước
   const cats=[...new Set(db.transactions.filter(t=>per(t)&&t.flow==='out'&&monthOf(t.date)===cur).map(t=>t.category))];
   const dayNow=new Date().getDate(),dim=daysInMonth(cur);
+  const _ca=baselineStats('out',lastMonths(6,true),per).catAvg;
   cats.forEach(c=>{
-    const avg=(sumM(monthsBack(1),'out',c)+sumM(monthsBack(2),'out',c)+sumM(monthsBack(3),'out',c))/3;
+    const avg=_ca[c]||0;
     if(avg<500000)return;
     const now=sumM(cur,'out',c);
     const projected=now/dayNow*dim;
     const pc=Math.round((projected-avg)/avg*100);
-    if(pc>=20)add('up',`Chi <b>${c}</b> tháng này ${fmtK(now)} đ — theo nhịp hiện tại sẽ vượt <b>${pc}%</b> so với trung bình 3 tháng trước (${fmtK(avg)} đ)`);
-    else if(pc<=-25&&now>0)add('down',`Chi <b>${c}</b> đang thấp hơn <b>${Math.abs(pc)}%</b> so với trung bình 3 tháng — giữ vững nhé`);
+    if(pc>=20)add('up',`Chi <b>${c}</b> tháng này ${fmtK(now)} đ — theo nhịp hiện tại sẽ vượt <b>${pc}%</b> so với mức thường (${fmtK(avg)} đ)`);
+    else if(pc<=-25&&now>0)add('down',`Chi <b>${c}</b> đang thấp hơn <b>${Math.abs(pc)}%</b> so với mức thường — giữ vững nhé`);
   });
   // 2. Chuỗi tháng tiết kiệm dương
   let streak=0;
@@ -4000,14 +4083,14 @@ function renderSmartAlerts(mTx,thu,chi){
   else if(thu>0&&rate<0)out.push([DOT_R,`Tháng này chi vượt thu ${fmtK(Math.abs(net))} đ`,'#ff3b30']);
   // Quỹ dự phòng thấp
   const cash=liquidCash();const avgExp=avgMonthlyExpense();const months=avgExp>0?cash/avgExp:99;
-  if(months<3&&avgExp>0)out.push([DOT_O,`Quỹ dự phòng chỉ ${months.toFixed(1)} tháng — nên tích lũy thêm`,'#e67e22']);
+  if(months<3&&avgExp>0)out.push(cash<=0?[DOT_R,`Tiền mặt đang âm ${fmtK(-cash)} đ — chưa có quỹ dự phòng`,'#e74c3c']:[DOT_O,`Quỹ dự phòng chỉ ${months.toFixed(1)} tháng — nên tích lũy thêm`,'#e67e22']);
   // Cảnh báo danh mục chi bất thường (tháng này vs TB 3 tháng trước)
   if(isCur){
     const pm=[];for(let i=1;i<=3;i++){const d=new Date(now.getFullYear(),now.getMonth()-i,1);pm.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`)}
     const curCat={};mTx.filter(t=>t.flow==='out').forEach(t=>{curCat[t.category]=(curCat[t.category]||0)+t.amount});
+    const _ca2=baselineStats('out',lastMonths(6,true)).catAvg;
     Object.entries(curCat).forEach(([cat,val])=>{
-      const avgs=pm.map(m=>db.transactions.filter(t=>monthOf(t.date)===m&&t.flow==='out'&&t.category===cat).reduce((s,t)=>s+t.amount,0)).filter(v=>v>0);
-      const avg=avgs.length?avgs.reduce((a,b)=>a+b,0)/avgs.length:0;
+      const avg=_ca2[cat]||0;
       if(avg>0&&val>avg*1.5&&(val-avg)>=500000){const pct=Math.round((val-avg)/avg*100);out.push([DOT_O,`<b>${cat}</b> tháng này cao hơn ${pct}% so với bình thường (${fmtK(val)} vs TB ${fmtK(avg)})`,'#e67e22'])}
     });
   }
@@ -4017,7 +4100,8 @@ function renderSmartAlerts(mTx,thu,chi){
   Object.entries(fm).forEach(([k,v])=>{if(v.m.size>=3&&!recurKeys.has(k)){out.push([DOT_B,`"${v.desc}" (${fmtK(v.amount)} đ) lặp lại ${v.m.size} tháng — cân nhắc đặt <b>giao dịch định kỳ</b>`,'#2980b9'])}});
   // Mục tiêu chưa đóng góp
   // (giữ ngắn gọn — chỉ hiển thị tối đa 3)
-  if(!out.length){el.style.display='none';el.innerHTML='';return}
+  if(!out.length){el.style.display='none';el.innerHTML='';try{syncAlertHead()}catch(e){}return}
+  setTimeout(()=>{try{syncAlertHead()}catch(e){}},0);
   el.style.display='';
   el.innerHTML=`<div style="margin:10px 12px 0;background:var(--card);border:1px solid var(--bdr);border-radius:14px;overflow:hidden"><div style="padding:9px 14px;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid var(--bdr)">Nhận định tháng này</div>`+out.slice(0,4).map((a,i)=>`<div style="display:flex;gap:10px;align-items:flex-start;padding:11px 14px;${i>0?'border-top:1px solid var(--line,#f2f4f9);':''}"><span style="font-size:15px;line-height:1.3">${a[0]}</span><span style="font-size:12.5px;line-height:1.45">${a[1]}</span></div>`).join('')+`</div>`;
 }
@@ -4916,7 +5000,8 @@ function renderCashflow(){
   if(!document.getElementById('cf-avg-thu'))return;
   const months=[];const now=new Date();for(let i=5;i>=0;i--){const d=new Date(now.getFullYear(),now.getMonth()-i,1);months.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`)}
   const data=months.map(m=>{const tx=db.transactions.filter(t=>monthOf(t.date)===m);return{m,thu:tx.filter(t=>t.flow==='in').reduce((s,t)=>s+t.amount,0),chi:tx.filter(t=>t.flow==='out').reduce((s,t)=>s+t.amount,0)}});
-  const avgThu=data.reduce((s,d)=>s+d.thu,0)/6;const avgChi=data.reduce((s,d)=>s+d.chi,0)/6;
+  const _cm=lastMonths(6,true),_ct=baselineStats('in',_cm),_cc=baselineStats('out',_cm);const avgThu=_ct.avg,avgChi=_cc.avg;
+  {const _n=[baselineNote(_ct),baselineNote(_cc)].filter(Boolean).join(' ');const _e=document.getElementById('cf-avg-thu');if(_e&&_e.parentElement&&_e.parentElement.parentElement)_e.parentElement.parentElement.title=_n?'Mức thường xuyên (6 tháng đã qua). '+_n:'Mức thường xuyên (6 tháng đã qua)';}
   document.getElementById('cf-avg-thu').textContent=fmtK(avgThu)+' đ';
   document.getElementById('cf-avg-chi').textContent=fmtK(avgChi)+' đ';
   const maxVal=Math.max(...data.map(d=>Math.max(d.thu,d.chi)),1);

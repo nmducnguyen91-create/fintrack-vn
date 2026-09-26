@@ -43,6 +43,20 @@
   mkNav('settings','Cài đặt','<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',()=>showTab('settings'));
 
   // Screens
+  // Bảng kê: tự tạo nếu HTML thiếu
+  if(!document.getElementById('screen-table')){
+    const s=document.createElement('div');s.className='screen';s.id='screen-table';
+    s.innerHTML=`<div class="card" id="tt-controls" style="padding:12px 16px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+      <input id="tt-search" class="tt-sel" placeholder="Tìm nội dung, danh mục…" style="flex:1;min-width:200px" oninput="renderTxTable()">
+      <input type="month" id="tt-month" class="tt-sel" onchange="renderTxTable()">
+      <select id="tt-group" class="tt-sel" onchange="renderTxTable()"><option value="">Tất cả nhóm</option><option value="personal">Cá nhân</option><option value="company">Công ty</option><option value="project">Công việc</option></select>
+      <select id="tt-flow" class="tt-sel" onchange="renderTxTable()"><option value="">Thu &amp; chi</option><option value="in">Thu</option><option value="out">Chi</option><option value="xfer">Chuyển khoản</option></select>
+      <select id="tt-acct" class="tt-sel" onchange="renderTxTable()"></select>
+    </div>
+    <div class="card"><div id="tt-summary"></div><div style="overflow:auto;max-height:calc(100vh - 260px)"><table class="tt-table" id="tt-table"></table></div></div>`;
+    const home=document.getElementById('screen-home');(home||document.querySelector('.screen')).after(s);
+  }
+  if(!document.getElementById('nav-table'))mkNav('table','Bảng kê','<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="14" x2="21" y2="14"/><line x1="9" y1="9" x2="9" y2="20"/></svg>',()=>{showTab('table');renderTxTable()});
   const tableScr=document.getElementById('screen-table');
   const repScr=document.createElement('div');repScr.className='screen';repScr.id='screen-report';
   repScr.innerHTML=`
