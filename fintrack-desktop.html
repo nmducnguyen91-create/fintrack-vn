@@ -8066,7 +8066,7 @@ function v3Intent(t,n){
 const AIP={
  claude:{name:'Claude',pre:/^sk-ant-/,ph:'sk-ant-api03-…',url:'console.anthropic.com → API Keys',models:[['claude-haiku-4-5','Haiku · nhanh, rẻ (~50đ/lần)'],['claude-sonnet-4-5','Sonnet · thông minh hơn (~300đ/lần)']]},
  openai:{name:'ChatGPT',pre:/^sk-/,ph:'sk-proj-…',url:'platform.openai.com → API keys',models:[['gpt-4o-mini','GPT-4o mini · nhanh, rẻ (~30đ/lần)'],['gpt-4.1-mini','GPT-4.1 mini · chính xác hơn (~80đ/lần)']]},
- gemini:{name:'Gemini',pre:/^AIza/,ph:'AIza…',url:'aistudio.google.com → Get API key',models:[['gemini-2.5-flash-lite','Flash-Lite · nhanh, có gói miễn phí'],['gemini-2.5-flash','Flash · thông minh hơn']]}
+ gemini:{name:'Gemini',pre:/^(AIza|AQ\.)\S{10,}$/,ph:'AQ.… hoặc AIza…',hint:'AQ. hoặc AIza',url:'aistudio.google.com → Get API key',models:[['gemini-2.5-flash-lite','Flash-Lite · nhanh, có gói miễn phí'],['gemini-2.5-flash','Flash · thông minh hơn']]}
 };
 const lsG=k=>{try{return localStorage.getItem(k)||''}catch(e){return ''}},lsS=(k,v)=>{try{v?localStorage.setItem(k,v):localStorage.removeItem(k)}catch(e){}};
 (function(){const old=lsG('ftClaudeKey');if(old&&!lsG('ftAI_claude_key')){lsS('ftAI_claude_key',old);const m=lsG('ftClaudeModel');if(m)lsS('ftAI_claude_model',m);if(!lsG('ftAI_active'))lsS('ftAI_active','claude')}if(old)lsS('ftClaudeKey','')})();
@@ -8208,7 +8208,7 @@ window.aiToggle=function(p){
   if(!pKey(p)){aiOpen=p;aiRender();toast('Nhập API key '+AIP[p].name+' trước');const i=$('ai-key-'+p);if(i)i.focus();return}
   const prev=aiActive();lsS('ftAI_active',p);aiRender();renderAiHome();toast('Đã bật '+AIP[p].name+(prev?' · tắt '+AIP[prev].name:''))};
 window.aiSaveKey=function(p){const i=$('ai-key-'+p);const v=(i&&i.value||'').trim();if(!v){toast('Chưa nhập key');return}
-  if(!AIP[p].pre.test(v)){toast('Key '+AIP[p].name+' thường bắt đầu bằng '+AIP[p].ph.replace('…',''));return}
+  if(!AIP[p].pre.test(v)){toast('Key '+AIP[p].name+' thường bắt đầu bằng '+(AIP[p].hint||AIP[p].ph.replace('…','')));return}
   lsS('ftAI_'+p+'_key',v);if(!aiActive())lsS('ftAI_active',p);aiRender();renderAiHome();toast('Đã lưu key ✓');aiTest(p)};
 window.aiClear=function(p){if(!confirm('Xoá API key '+AIP[p].name+' trên máy này?'))return;lsS('ftAI_'+p+'_key','');if(lsG('ftAI_active')===p)lsS('ftAI_active','');aiRender();renderAiHome();toast('Đã xoá key')};
 window.aiSetModel=function(p,v){lsS('ftAI_'+p+'_model',v);aiRender();toast('Đã chọn '+mLabel(p,v))};
