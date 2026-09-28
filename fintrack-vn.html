@@ -8284,28 +8284,54 @@ window.aiReviewNow=async function(silent){
 function rvNotify(j){try{if(!('Notification' in window)||Notification.permission!=='granted')return;const o={body:j.tom_tat,icon:'icon-192.png',tag:'ft-review'};
   if(navigator.serviceWorker&&navigator.serviceWorker.getRegistration)navigator.serviceWorker.getRegistration().then(r=>{if(r)r.showNotification('FinTrack · AI soát sổ',o);else new Notification('FinTrack · AI soát sổ',o)});else new Notification('FinTrack · AI soát sổ',o)}catch(e){}}
 window.rvAskNotif=function(){try{Notification.requestPermission().then(()=>renderAiHome())}catch(e){}};
-const LV={cao:'#e0342a',vua:'#e08a00',thap:'#8a97a8'};
-function reviewBody(rv){
+let rvMore=false;
+window.rvToggleMore=()=>{rvMore=!rvMore;renderAiHome()};
+const rvClean=s=>String(s||'').replace(/\s*\((?:giao dịch|gd)?\s*#[\d,\s#và]+\)/gi,'').replace(/\s*#\d+(?:\s*,\s*#\d+)*/g,'').replace(/(^|[^\d\/])(\d{2})-(\d{2})(?![\d\/-])/g,(m,a,mo,d)=>a+d+'/'+mo).replace(/\s+/g,' ').trim();
+const RVT={the:'Thẻ',no:'Nợ',trung:'Trùng',sai_muc:'Sai mục',thieu:'Thiếu',chi_tieu:'Chi tiêu'};
+const RVL={cao:['#e0342a','#fdecea','Khẩn'],vua:['#c77700','#fff3dc','Nên xem'],thap:['#5b6b80','#eef1f6','Lưu ý']};
+function reviewBody(rv,chat){
   const j=rv.data||{};const p=String(rv.at||'').split('-');
-  let h='<div style="font-size:16px;font-weight:600;line-height:1.5">'+esc(j.tom_tat||'')+'</div><div style="font-size:13px;color:var(--muted);margin-top:2px">Soát ngày '+(p[2]||'')+'/'+(p[1]||'')+' · tự soát lại sau 7 ngày</div>';
-  const vd=(j.van_de||[]);
-  if(vd.length)h+='<div style="display:flex;flex-direction:column;gap:8px;margin-top:10px">'+vd.map((v,n)=>'<div style="display:flex;gap:9px;align-items:flex-start"><span style="width:8px;height:8px;border-radius:50%;background:'+(LV[v.muc_do]||LV.thap)+';margin-top:6px;flex-shrink:0"></span><div style="flex:1;font-size:15px;line-height:1.5'+(v.done?';opacity:.5;text-decoration:line-through':'')+'">'+esc(v.noi_dung||'')+'</div>'+(v.sua&&!v.done?'<button type="button" onclick="aiFix('+n+')" style="border:1px solid var(--bdr,#dfe5ee);background:var(--light,#f0f2f8);color:var(--navy);border-radius:8px;padding:4px 10px;font:600 13.5px inherit;font-family:inherit;cursor:pointer;flex-shrink:0">'+(v.sua.hanh_dong==='xoa'?'Xoá bản trùng':'Sửa')+'</button>':'')+'</div>').join('')+'</div>';
-  if(j.du_bao)h+='<div style="font-size:15px;margin-top:10px;line-height:1.5"><b>Dự báo:</b> '+esc(j.du_bao)+'</div>';
-  if((j.loi_khuyen||[]).length)h+='<div style="font-size:15px;margin-top:8px;line-height:1.55"><b>Tuần này nên:</b><br>'+j.loi_khuyen.map(x=>'• '+esc(x)).join('<br>')+'</div>';
-  if(j.thang_truoc)h+='<div style="font-size:15px;margin-top:8px;line-height:1.55;padding-top:8px;border-top:1px dashed var(--bdr,#e3e8ef)"><b>Tháng trước:</b> '+esc(j.thang_truoc)+'</div>';
+  const lab=t=>'<div style="font-size:12.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin:18px 0 8px">'+t+'</div>';
+  let h=(rv.demo&&!chat?'<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px"><span style="font-size:12.5px;font-weight:700;color:#8a4f00;background:#fff1dc;border-radius:6px;padding:3px 8px">DỮ LIỆU MẪU</span><a onclick="rvDemoClear()" style="font-size:14px;font-weight:600;color:var(--navy);cursor:pointer">Xoá mẫu</a></div>':'')+'<div style="background:linear-gradient(135deg,#eaf1fb,#f4f7fc);border-radius:14px;padding:14px 16px"><div style="font-size:16.5px;font-weight:700;line-height:1.45;color:var(--text)">'+esc(rvClean(j.tom_tat))+'</div><div style="font-size:13px;color:var(--muted);margin-top:6px">Soát ngày '+(p[2]||'')+'/'+(p[1]||'')+' · tự soát lại sau 7 ngày</div></div>';
+  const vd=(j.van_de||[]).map((v,n)=>({v,n})).sort((a,b)=>(['cao','vua','thap'].indexOf(a.v.muc_do)+9)%9-(['cao','vua','thap'].indexOf(b.v.muc_do)+9)%9);
+  if(vd.length){const lim=chat||rvMore?vd.length:3;
+    h+=lab('Cần chú ý · '+vd.length)+'<div style="display:flex;flex-direction:column;gap:10px">'+vd.slice(0,lim).map(({v,n})=>{const L=RVL[v.muc_do]||RVL.thap;const done=v.done;
+      return '<div style="border:1px solid var(--bdr);border-left:4px solid '+L[0]+';border-radius:12px;padding:12px 14px;background:var(--card,#fff)'+(done?';opacity:.55':'')+'">'
+        +'<div style="display:flex;gap:6px;align-items:center;margin-bottom:6px"><span style="font-size:12px;font-weight:700;color:'+L[0]+';background:'+L[1]+';border-radius:6px;padding:2px 8px">'+L[2]+'</span>'+(RVT[v.loai]?'<span style="font-size:12px;font-weight:600;color:var(--muted);background:var(--light);border-radius:6px;padding:2px 8px">'+RVT[v.loai]+'</span>':'')+(done?'<span style="font-size:12px;font-weight:700;color:#00904a">✓ Đã xử lý</span>':'')+'</div>'
+        +'<div style="font-size:15px;line-height:1.55'+(done?';text-decoration:line-through':'')+'">'+esc(rvClean(v.noi_dung))+'</div>'
+        +(v.sua&&!done&&!chat?'<button type="button" onclick="aiFix('+n+')" style="margin-top:10px;min-height:38px;padding:0 16px;border-radius:10px;border:1px solid var(--navy);background:var(--card,#fff);color:var(--navy);font:600 14px inherit;font-family:inherit;cursor:pointer">'+(v.sua.hanh_dong==='xoa'?'Xoá bản trùng':'Sửa: đổi sang '+esc(v.sua.muc||''))+'</button>':'')+'</div>'}).join('')+'</div>'
+      +(vd.length>3&&!chat?'<button type="button" onclick="rvToggleMore()" style="width:100%;margin-top:10px;min-height:40px;border:none;background:var(--light);border-radius:10px;color:var(--navy);font:600 14px inherit;font-family:inherit;cursor:pointer">'+(rvMore?'Thu gọn':'Xem thêm '+(vd.length-3)+' mục')+'</button>':'')}
+  if(j.du_bao)h+=lab('Dự báo cuối tháng')+'<div style="font-size:15px;line-height:1.6;background:var(--light);border-radius:12px;padding:12px 14px">'+esc(rvClean(j.du_bao))+'</div>';
+  if((j.loi_khuyen||[]).length)h+=lab('Tuần này nên')+'<div style="display:flex;flex-direction:column;gap:12px">'+j.loi_khuyen.map((x,i)=>'<div style="display:flex;gap:12px;align-items:flex-start"><span style="width:26px;height:26px;border-radius:50%;background:var(--navy);color:#fff;font-size:13.5px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">'+(i+1)+'</span><div style="font-size:15px;line-height:1.55;padding-top:2px">'+esc(rvClean(x))+'</div></div>').join('')+'</div>';
+  if(j.thang_truoc)h+='<details style="margin-top:18px;border-top:1px solid var(--bdr);padding-top:12px"><summary style="font-size:14.5px;font-weight:700;color:var(--navy);cursor:pointer;list-style-position:inside">Nhận xét tháng trước</summary><div style="font-size:15px;line-height:1.6;margin-top:10px">'+esc(rvClean(j.thang_truoc))+'</div></details>';
   return h;
 }
+window.rvDemo=function(){const ym=tdy().slice(0,7);{const cur=rvGet();if(cur&&!cur.demo)try{localStorage.setItem('ftAiReviewBak',JSON.stringify(cur))}catch(e){}}rvSet({at:tdy(),ym,demo:true,idx:[],data:{
+ tom_tat:'Chi tháng này 8,2tr, vượt ngân sách 12%. Thẻ VP còn 18,4tr phải trả trong 5 ngày.',
+ van_de:[
+  {loai:'the',muc_do:'cao',noi_dung:'Thẻ VP phải trả 18,4tr trước 05/10 (còn 5 ngày). Chưa có khoản thanh toán nào kỳ này.',sua:null},
+  {loai:'chi_tieu',muc_do:'cao',noi_dung:'Ăn uống 3,9tr — cao hơn mức thường 45% (~2,7tr/tháng).',sua:null},
+  {loai:'trung',muc_do:'vua',noi_dung:'18/09 có 2 khoản Ăn uống 22k giống hệt nhau trên thẻ VP — có thể ghi trùng.',sua:{hanh_dong:'xoa',i:0}},
+  {loai:'sai_muc',muc_do:'vua',noi_dung:'23/09 “Khách sạn Vũng Tàu” 1,8tr đang ở mục Gia đình — nên chuyển sang Du lịch.',sua:{hanh_dong:'doi_muc',i:1,muc:'Du lịch'}},
+  {loai:'thieu',muc_do:'thap',noi_dung:'Tiền điện tháng này chưa ghi — thường ~850k quanh ngày 12.',sua:null}
+ ],
+ du_bao:'Theo nhịp hiện tại, cuối tháng chi khoảng 11,5tr — vượt ngân sách 10tr khoảng 1,5tr.',
+ loi_khuyen:['Trả thẻ VP 18,4tr trước 05/10 để tránh lãi ~2,5%/tháng.','Giữ Ăn uống dưới 150k/ngày trong 10 ngày còn lại.','Quẹt thẻ VIB cho khoản lớn tuần này — được thêm ~38 ngày miễn lãi.'],
+ thang_truoc:'Tháng 8 chi 9,1tr: Ăn uống 2,9tr, Di chuyển 1,6tr, Mua sắm 1,4tr. Mua sắm giảm 30% so với tháng 7. Bài học: đặt hạn mức riêng cho Ăn uống.'
+}});rvMore=false;renderAiHome();toast('Đã hiện nhận xét mẫu')};
+window.rvDemoClear=function(){const rv=rvGet();if(rv&&rv.demo){try{const b=localStorage.getItem('ftAiReviewBak');if(b){localStorage.setItem(RV_LS,b);localStorage.removeItem('ftAiReviewBak')}else localStorage.removeItem(RV_LS)}catch(e){}}renderAiHome();toast('Đã xoá mẫu')};
 function renderAiHome(err){
   const el=$('ai-review-home');if(!el)return;
-  if(!aiKey()){el.innerHTML='';return}
   const rv=rvGet();
-  let body=rvBusy?'<div style="font-size:15px;color:var(--muted);font-style:italic">AI đang soát sổ…</div>':rv&&rv.data?reviewBody(rv):'<div style="font-size:15px;color:var(--muted)">Chưa soát lần nào.</div>';
+  if(!aiKey()&&!(rv&&rv.demo)){el.innerHTML='';return}
+  let body=rvBusy?'<div style="font-size:15px;color:var(--muted);font-style:italic">AI đang soát sổ…</div>':rv&&rv.data?reviewBody(rv):'<div style="font-size:15px;color:var(--muted);display:flex;align-items:center;justify-content:space-between;gap:10px">Chưa soát lần nào.<button type="button" onclick="rvDemo()" style="min-height:36px;padding:0 14px;border-radius:10px;border:1px solid var(--bdr);background:var(--light);color:var(--navy);font:600 14px inherit;font-family:inherit;cursor:pointer">Xem mẫu</button></div>';
   if(err)body+='<div style="font-size:14px;color:#e0342a;margin-top:8px">'+esc(err)+'</div>';
   if('Notification' in window&&Notification.permission==='default')body+='<button type="button" onclick="rvAskNotif()" style="margin-top:10px;border:1px solid var(--bdr,#dfe5ee);background:var(--card);color:var(--navy);border-radius:10px;padding:8px 12px;font:600 14px inherit;font-family:inherit;cursor:pointer">Bật thông báo khi Claude soát xong</button>';
-  el.innerHTML='<div class="sec-head"><span class="sec-head-title">AI nhận xét</span><span class="sec-head-action" onclick="aiReviewNow()">'+(rvBusy?'Đang soát…':'Soát ngay')+'</span></div><div class="card" style="padding:12px 14px">'+body+'</div>';
+  el.innerHTML='<div class="sec-head"><span class="sec-head-title">AI nhận xét</span><span class="sec-head-action" onclick="aiReviewNow()">'+(rvBusy?'Đang soát…':'Soát ngay')+'</span></div><div class="card" style="padding:16px">'+body+'</div>';
 }
 window.aiFix=function(n){
   const rv=rvGet();if(!rv||!rv.data)return;const v=(rv.data.van_de||[])[n];if(!v||!v.sua||v.done)return;
+  if(rv.demo){v.done=1;rvSet(rv);renderAiHome();toast('Mẫu: đã đánh dấu xử lý (không đổi dữ liệu thật)');return}
   const id=(rv.idx||[])[v.sua.i];const t=(db.transactions||[]).find(x=>x.id===id);if(!t){toast('Không còn giao dịch này');v.done=1;rvSet(rv);renderAiHome();return}
   if(v.sua.hanh_dong==='doi_muc'){const ok=catNames(t.flow==='in'?'in':'out').includes(v.sua.muc);if(!ok){toast('Danh mục không hợp lệ');return}
     const old=t.category;t.category=v.sua.muc;v.done=1;rvSet(rv);try{save();renderAll()}catch(e){}renderAiHome();
@@ -8315,8 +8341,9 @@ window.aiFix=function(n){
     try{toastUndo('Đã xoá bản trùng',()=>{db.transactions.splice(i,0,t);delete v.done;rvSet(rv);save();renderAll();renderAiHome()})}catch(e){toast('Đã xoá ✓')}}
 };
 function rvIntent(n){
-  if(/^(soat so|soat ngay|claude soat|kiem tra so)$/.test(n)){if(!aiKey())return {msg:'Trợ lý AI đang tắt (Cài đặt → Dữ liệu → Trợ lý AI).'};aiReviewNow().then(()=>{const rv=rvGet();if(rv&&rv.data)botLog(reviewBody(rv))});return {msg:'AI đang soát sổ…'}}
-  if(/^(xem )?nhan xet( claude| tuan( nay)?)?$/.test(n)){const rv=rvGet();return {msg:rv&&rv.data?reviewBody(rv):'Chưa có nhận xét.'+chipsQ(['soát sổ'])}}
+  if(/^(soat so|soat ngay|claude soat|kiem tra so)$/.test(n)){if(!aiKey())return {msg:'Trợ lý AI đang tắt (Cài đặt → Dữ liệu → Trợ lý AI).'};aiReviewNow().then(()=>{const rv=rvGet();if(rv&&rv.data)botLog(reviewBody(rv,true))});return {msg:'AI đang soát sổ…'}}
+  if(/^(nhan xet|ai nhan xet|xem nhan xet) mau$/.test(n)){rvDemo();const rv=rvGet();return {msg:'Đã hiện nhận xét mẫu ở Tổng quan.'}}
+  if(/^(xem )?nhan xet( claude| tuan( nay)?)?$/.test(n)){const rv=rvGet();return {msg:rv&&rv.data?reviewBody(rv,true):'Chưa có nhận xét.'+chipsQ(['soát sổ'])}}
   return null;
 }
 setTimeout(()=>{renderAiHome();try{const rv=rvGet();const due=!rv||(Date.now()-new Date(rv.at).getTime())>=7*864e5;if(aiKey()&&due&&(db.transactions||[]).length)aiReviewNow(true)}catch(e){}},5000);
