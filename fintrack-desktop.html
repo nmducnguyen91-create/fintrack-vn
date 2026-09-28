@@ -8066,12 +8066,12 @@ function v3Intent(t,n){
 const AIP={
  claude:{name:'Claude',pre:/^sk-ant-/,ph:'sk-ant-api03-…',url:'console.anthropic.com → API Keys',models:[['claude-haiku-4-5','Haiku · nhanh, rẻ (~50đ/lần)'],['claude-sonnet-4-5','Sonnet · thông minh hơn (~300đ/lần)']]},
  openai:{name:'ChatGPT',pre:/^sk-/,ph:'sk-proj-…',url:'platform.openai.com → API keys',models:[['gpt-4o-mini','GPT-4o mini · nhanh, rẻ (~30đ/lần)'],['gpt-4.1-mini','GPT-4.1 mini · chính xác hơn (~80đ/lần)']]},
- gemini:{name:'Gemini',pre:/^(AIza|AQ\.)\S{10,}$/,ph:'AQ.… hoặc AIza…',hint:'AQ. hoặc AIza',url:'aistudio.google.com → Get API key',models:[['gemini-2.5-flash-lite','Flash-Lite · nhanh, có gói miễn phí'],['gemini-2.5-flash','Flash · thông minh hơn']]}
+ gemini:{name:'Gemini',pre:/^(AIza|AQ\.)\S{10,}$/,ph:'AQ.… hoặc AIza…',hint:'AQ. hoặc AIza',url:'aistudio.google.com → Get API key',models:[['gemini-3.5-flash-lite','3.5 Flash-Lite · nhanh, có gói miễn phí'],['gemini-3.8-flash','3.8 Flash · thông minh hơn']]}
 };
 const lsG=k=>{try{return localStorage.getItem(k)||''}catch(e){return ''}},lsS=(k,v)=>{try{v?localStorage.setItem(k,v):localStorage.removeItem(k)}catch(e){}};
 (function(){const old=lsG('ftClaudeKey');if(old&&!lsG('ftAI_claude_key')){lsS('ftAI_claude_key',old);const m=lsG('ftClaudeModel');if(m)lsS('ftAI_claude_model',m);if(!lsG('ftAI_active'))lsS('ftAI_active','claude')}if(old)lsS('ftClaudeKey','')})();
 const pKey=p=>lsG('ftAI_'+p+'_key');
-const pModel=p=>lsG('ftAI_'+p+'_model')||AIP[p].models[0][0];
+const pModel=p=>{const m=lsG('ftAI_'+p+'_model');return m&&AIP[p].models.some(x=>x[0]===m)?m:AIP[p].models[0][0]};
 const aiActive=()=>{const p=lsG('ftAI_active');return AIP[p]&&pKey(p)?p:''};
 const aiKey=()=>{const p=aiActive();return p?pKey(p):''};
 const aiModel=()=>{const p=aiActive();return p?pModel(p):''};
@@ -8088,7 +8088,7 @@ async function aiCall(p,messages,system,max){
   else if(p==='openai'){const msgs=(system?[{role:'system',content:system}]:[]).concat(messages.map(m=>({role:m.role,content:typeof m.content==='string'?m.content:m.content.map(c=>c.type==='image'?{type:'image_url',image_url:{url:'data:'+c.source.media_type+';base64,'+c.source.data}}:c.type==='document'?{type:'file',file:{filename:'saoke.pdf',file_data:'data:application/pdf;base64,'+c.source.data}}:{type:'text',text:c.text})})));
     url='https://api.openai.com/v1/chat/completions';headers={'content-type':'application/json',authorization:'Bearer '+key};body={model,max_tokens:max||1024,messages:msgs};pick=j=>(((j.choices||[])[0]||{}).message||{}).content||''}
   else{const contents=messages.map(m=>({role:m.role==='assistant'?'model':'user',parts:typeof m.content==='string'?[{text:m.content}]:m.content.map(c=>(c.type==='image'||c.type==='document')?{inline_data:{mime_type:c.source.media_type,data:c.source.data}}:{text:c.text})}));
-    body={contents,generationConfig:{maxOutputTokens:Math.max(max||1024,32),thinkingConfig:{thinkingBudget:0}}};if(system)body.systemInstruction={parts:[{text:system}]};
+    body={contents,generationConfig:{maxOutputTokens:Math.max(max||1024,256),thinkingConfig:{thinkingLevel:'low'}}};if(system)body.systemInstruction={parts:[{text:system}]};
     url='https://generativelanguage.googleapis.com/v1beta/models/'+model+':generateContent';headers={'content-type':'application/json','x-goog-api-key':key};pick=j=>((((j.candidates||[])[0]||{}).content||{}).parts||[]).map(x=>x.text||'').join('')}
   let r;try{r=await fetch(url,{method:'POST',headers,body:JSON.stringify(body)})}catch(e){throw new Error('Không kết nối được '+AIP[p].name+' — kiểm tra mạng.')}
   let j={};try{j=await r.json()}catch(e){}
