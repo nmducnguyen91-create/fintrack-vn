@@ -7366,24 +7366,28 @@ window.wgToggle=async function(){if(wgOn()){localStorage.setItem('ftWidgetOn','0
 window.wgRegen=async function(){if(!confirm('Tạo mã mới? Widget/phím tắt đang dùng sẽ ngừng hiển thị — phải chép lại script.'))return;try{await wgWrite(wgTok(),BLANK)}catch(e){}localStorage.removeItem('ftWidgetTok');wgLast='';renderWgBox();wgPush(true)};
 function wgScript(){const app=location.href.split('#')[0].split('?')[0];return `// FinTrack widget · dán vào app Scriptable
 const URL="${wgUrl()}";
+const KH="ftWgHide";if(args.queryParameters&&args.queryParameters.eye){Keychain.set(KH,Keychain.contains(KH)&&Keychain.get(KH)==="1"?"0":"1")}
+const HIDE=Keychain.contains(KH)&&Keychain.get(KH)==="1";
 let f={};try{f=(await new Request(URL).loadJSON()).fields||{}}catch(e){}
-const g=k=>(f[k]&&f[k].stringValue)||"—";
+const g=k=>{const v=(f[k]&&f[k].stringValue)||"—";return HIDE&&k!=="cap_nhat"&&k!=="han_the"&&v!=="—"?"••••••":v};
+const EYE="scriptable:///run/"+encodeURIComponent(Script.name())+"?eye=1";
 const fam=config.widgetFamily||"large",small=fam==="small",large=fam==="large";
-const C=h=>new Color(h),MUT=C("#b8c7d9"),DIM=C("#8aa0b8");
-const w=new ListWidget();const bg=new LinearGradient();bg.colors=[C("#16395f"),C("#0f2a47")];bg.locations=[0,1];w.backgroundGradient=bg;
+const C=h=>new Color(h),INK=C("#14213a"),MUT=C("#6b7a90"),NAVY=C("#1d4f7a"),RED=C("#d93a2f"),AMB=C("#b86a00"),CARD=C("#f2f5fa");
+const w=new ListWidget();w.backgroundColor=Color.white();
 w.setPadding(large?18:14,large?18:15,large?16:12,large?18:15);w.url=small?"${app}#chat":"${app}";
 function txt(p,s,sz,col,bold){const t=p.addText(s);t.font=bold?Font.boldSystemFont(sz):Font.systemFont(sz);t.textColor=col;t.lineLimit=1;t.minimumScaleFactor=.55;return t}
-function cell(p,l,v,wd,card){const c=p.addStack();c.layoutVertically();if(wd)c.size=new Size(wd,0);if(card){c.backgroundColor=new Color("#ffffff",.08);c.cornerRadius=14;c.setPadding(10,12,10,12)}txt(c,l,large?13:11,MUT);c.addSpacer(2);txt(c,v,large?19:15,Color.white(),true);return c}
-function btn(p){const b=p.addStack();b.backgroundColor=C("#2d6cdf");b.cornerRadius=12;b.setPadding(large?9:6,14,large?9:6,14);b.url="${app}#chat";b.centerAlignContent();txt(b,"＋ Ghi nhanh",large?15:12,Color.white(),true);return b}
-const hd=w.addStack();hd.centerAlignContent();txt(hd,"FinTrack",large?14:11,C("#9cc3ec"),true);hd.addSpacer();if(!small)txt(hd,g("cap_nhat"),large?11:9,DIM);
+function cell(p,l,v,col,wd,card,ht){const c=p.addStack();c.layoutVertically();if(wd)c.size=new Size(wd,ht||0);if(card){c.backgroundColor=CARD;c.cornerRadius=16;c.setPadding(12,14,12,14)}txt(c,l,large?13:11,MUT);if(ht)c.addSpacer();else c.addSpacer(2);txt(c,v,large?22:15,col||INK,true);return c}
+function eye(p){const e=p.addStack();e.url=EYE;if(large){e.backgroundColor=CARD;e.cornerRadius=8;e.setPadding(3,8,3,8)}e.centerAlignContent();const im=e.addImage(SFSymbol.named(HIDE?"eye.slash":"eye").image);im.imageSize=new Size(large?16:12,large?16:12);im.tintColor=NAVY;return e}
+function btn(p){const b=p.addStack();b.backgroundColor=NAVY;b.cornerRadius=12;b.setPadding(large?9:6,14,large?9:6,14);b.url="${app}#chat";b.centerAlignContent();txt(b,"＋ Ghi nhanh",large?15:12,Color.white(),true);return b}
+const hd=w.addStack();hd.centerAlignContent();const dot=hd.addStack();dot.size=new Size(8,8);dot.cornerRadius=4;dot.backgroundColor=NAVY;hd.addSpacer(6);txt(hd,"FinTrack",large?14:11,NAVY,true);hd.addSpacer();if(!small){txt(hd,g("cap_nhat"),large?11:9,MUT);hd.addSpacer(8)}eye(hd);
 w.addSpacer(large?12:6);
-if(small){txt(w,"Số dư",11,MUT);txt(w,g("so_du"),22,Color.white(),true);w.addSpacer();cell(w,"Chi hôm nay",g("chi_hom_nay"));w.addSpacer(4);cell(w,"Nợ thẻ",g("no_the"))}
-else if(!large){const r=w.addStack();const L=r.addStack();L.layoutVertically();L.size=new Size(140,0);txt(L,"Số dư",11,MUT);txt(L,g("so_du"),24,Color.white(),true);L.addSpacer(6);cell(L,"Chi hôm nay",g("chi_hom_nay"));L.addSpacer();btn(L);r.addSpacer(10);
- const R=r.addStack();R.layoutVertically();cell(R,"Nợ thẻ",g("no_the"));R.addSpacer(5);cell(R,"Chi tháng",g("chi_thang"));R.addSpacer(5);cell(R,"Hạn thẻ gần nhất",g("han_the"))}
-else{txt(w,"Số dư",14,MUT);txt(w,g("so_du"),38,Color.white(),true);w.addSpacer(14);
- const W=140;const r1=w.addStack();cell(r1,"Chi hôm nay",g("chi_hom_nay"),W,1);r1.addSpacer();cell(r1,"Nợ thẻ",g("no_the"),W,1);w.addSpacer(10);
- const r2=w.addStack();cell(r2,"Chi tháng",g("chi_thang"),W,1);r2.addSpacer();cell(r2,"Hạn thẻ gần nhất",g("han_the"),W,1);
- w.addSpacer();const bt=w.addStack();bt.centerAlignContent();btn(bt);bt.addSpacer();txt(bt,"Chạm để mở app",11,DIM)}
+if(small){txt(w,"Số dư",11,MUT);txt(w,g("so_du"),22,INK,true);w.addSpacer();cell(w,"Chi hôm nay",g("chi_hom_nay"),RED);w.addSpacer(4);cell(w,"Nợ thẻ",g("no_the"),AMB)}
+else if(!large){const r=w.addStack();const L=r.addStack();L.layoutVertically();L.size=new Size(140,0);txt(L,"Số dư",11,MUT);txt(L,g("so_du"),24,INK,true);L.addSpacer(6);cell(L,"Chi hôm nay",g("chi_hom_nay"),RED);L.addSpacer();btn(L);r.addSpacer(10);
+ const R=r.addStack();R.layoutVertically();R.backgroundColor=CARD;R.cornerRadius=14;R.setPadding(9,12,9,12);cell(R,"Nợ thẻ",g("no_the"),AMB);R.addSpacer(5);cell(R,"Chi tháng",g("chi_thang"));R.addSpacer(5);cell(R,"Hạn thẻ gần nhất",g("han_the"),NAVY)}
+else{txt(w,"Số dư",14,MUT);txt(w,g("so_du"),38,INK,true);w.addSpacer(14);
+ const W=150,H=86;const r1=w.addStack();cell(r1,"Chi hôm nay",g("chi_hom_nay"),RED,W,1,H);r1.addSpacer();cell(r1,"Nợ thẻ",g("no_the"),AMB,W,1,H);w.addSpacer(10);
+ const r2=w.addStack();cell(r2,"Chi tháng",g("chi_thang"),INK,W,1,H);r2.addSpacer();cell(r2,"Hạn thẻ gần nhất",g("han_the"),NAVY,W,1,H);
+ w.addSpacer();const bt=w.addStack();bt.centerAlignContent();btn(bt);bt.addSpacer();txt(bt,"Chạm để mở app",11,MUT)}
 w.refreshAfterDate=new Date(Date.now()+15*60000);
 if(config.runsInWidget)Script.setWidget(w);else await w.presentLarge();
 Script.complete();`}
@@ -7392,12 +7396,12 @@ window.renderWgBox=function(){
   const el=document.getElementById('wg-box');if(!el)return;const on=wgOn();const at=+localStorage.getItem('ftWidgetAt')||0;
   let d={};try{d=wgData()}catch(e){}
   const sw='<button type="button" role="switch" aria-checked="'+on+'" aria-label="Bật/tắt widget" onclick="wgToggle()" style="flex-shrink:0;width:52px;height:32px;border-radius:16px;border:none;padding:3px;cursor:pointer;background:'+(on?'#00a553':'#c9d1dc')+';transition:background .2s"><span style="display:block;width:26px;height:26px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transform:translateX('+(on?20:0)+'px);transition:transform .2s"></span></button>';
-  const cell=(l,v,big)=>'<div style="min-width:0"><div style="font-size:13px;color:#b8c7d9">'+l+'</div><div style="font-size:'+(big?21:15)+'px;font-weight:'+(big?800:700)+';color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+escH(v||'—')+'</div></div>';
-  const prev='<div style="background:linear-gradient(160deg,#16395f,#0f2a47);border-radius:20px;padding:14px 16px;margin:12px 0 4px;display:grid;grid-template-columns:1fr 1fr;gap:10px 14px;box-shadow:0 6px 18px rgba(15,42,71,.18)">'
-    +'<div style="grid-column:1/-1;display:flex;justify-content:space-between;align-items:center"><b style="font-size:13px;color:#9cc3ec;letter-spacing:.3px">FinTrack</b><span style="font-size:13px;color:#8aa0b8">'+(on?'Cập nhật '+escH(d.cap_nhat||''):'Xem trước')+'</span></div>'
-    +'<div style="grid-column:1/-1">'+cell('Số dư',d.so_du,true)+'</div>'+cell('Chi hôm nay',d.chi_hom_nay)+cell('Nợ thẻ',d.no_the)+cell('Chi tháng',d.chi_thang)+cell('Hạn thẻ gần nhất',d.han_the)
-    +'<div style="grid-column:1/-1;margin-top:2px"><span style="display:inline-block;background:#2d6cdf;color:#fff;border-radius:10px;padding:6px 12px;font-size:14.5px;font-weight:700">＋ Ghi nhanh</span></div></div>'
-    +'<div style="font-size:13px;color:var(--muted);text-align:center;margin-bottom:6px">Cỡ vừa: đủ 5 mục + nút Ghi nhanh · Cỡ nhỏ: 3 mục đầu, chạm để mở chat</div>';
+  const cell=(l,v,col,big)=>'<div style="min-width:0;'+(big?'':'background:#f2f5fa;border-radius:12px;padding:9px 11px')+'"><div style="font-size:13px;color:#6b7a90">'+l+'</div><div style="font-size:'+(big?26:16)+'px;font-weight:'+(big?800:700)+';color:'+(col||'#14213a')+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px">'+escH(v||'—')+'</div></div>';
+  const prev='<div style="background:#fff;border:1px solid #e3e8ef;border-radius:20px;padding:16px;margin:12px 0 4px;display:grid;grid-template-columns:1fr 1fr;gap:10px;box-shadow:0 6px 18px rgba(20,40,70,.08)">'
+    +'<div style="grid-column:1/-1;display:flex;justify-content:space-between;align-items:center"><span style="display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:#1d4f7a"></span><b style="font-size:13px;color:#1d4f7a">FinTrack</b></span><span style="font-size:13px;color:#6b7a90">'+(on?escH(d.cap_nhat||''):'Xem trước')+'</span></div>'
+    +'<div style="grid-column:1/-1">'+cell('Số dư',d.so_du,'#14213a',true)+'</div>'+cell('Chi hôm nay',d.chi_hom_nay,'#d93a2f')+cell('Nợ thẻ',d.no_the,'#b86a00')+cell('Chi tháng',d.chi_thang)+cell('Hạn thẻ gần nhất',d.han_the,'#1d4f7a')
+    +'<div style="grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;margin-top:2px"><span style="background:#1d4f7a;color:#fff;border-radius:10px;padding:7px 14px;font-size:14.5px;font-weight:700">＋ Ghi nhanh</span><span style="font-size:13px;color:#6b7a90">Chạm để mở app</span></div></div>'
+    +'<div style="font-size:13px;color:var(--muted);text-align:center;margin-bottom:6px">Cỡ lớn: như trên · Cỡ vừa: 2 cột · Cỡ nhỏ: Số dư, Chi hôm nay, Nợ thẻ</div>';
   const step=(n,t)=>'<div style="display:flex;gap:10px;align-items:flex-start"><span style="width:24px;height:24px;border-radius:50%;background:var(--navy);color:#fff;font-size:14.5px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">'+n+'</span><div style="font-size:15px;line-height:1.5;padding-top:1px">'+t+'</div></div>';
   el.innerHTML='<div style="display:flex;align-items:center;gap:12px;min-height:52px"><div style="flex:1;min-width:0"><div style="font-size:16px;font-weight:600">'+(on?'Đang bật':'Đang tắt')+'</div><div style="font-size:14.5px;color:var(--muted);margin-top:2px;display:flex;align-items:center;gap:6px">'+(on?'<span style="width:8px;height:8px;border-radius:50%;background:#00a553;flex-shrink:0"></span><span id="wg-msg">'+(at?'Cập nhật lúc '+dtf(at):'Đang cập nhật…')+'</span>':'Bật để xem nhanh số liệu ngoài màn hình chính')+'</div></div>'+sw+'</div>'
    +prev
