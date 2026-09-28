@@ -1525,6 +1525,10 @@ body.navA .fab.nav-hide-fab,body.navB .fab.nav-hide-fab,body.navC .fab.nav-hide-
   <div class="sec-head clps" data-clps-head="forecast" onclick="toggleCollapse('forecast')"><span class="sec-head-title">Dự báo dòng tiền<span class="clps-chev">▾</span></span></div>
   <div class="card home-clps" data-clps="forecast"><div id="forecast-card"></div></div>
 
+  <!-- Lịch trả thẻ -->
+  <div class="sec-head clps" id="cardcal-head" data-clps-head="cardcal" onclick="toggleCollapse('cardcal')" style="display:none"><span class="sec-head-title">Lịch trả thẻ<span class="clps-chev">▾</span></span></div>
+  <div class="card home-clps" id="cardcal-card" data-clps="cardcal" style="display:none"><div id="cardcal-list"></div></div>
+
 
   <!-- ══ TIER: TÀI SẢN & TƯƠNG LAI ══ -->
   <div class="tier-head">Tài sản &amp; tương lai</div>
@@ -2000,13 +2004,19 @@ body.navA .fab.nav-hide-fab,body.navB .fab.nav-hide-fab,body.navC .fab.nav-hide-
     <div id="demo-wipe-wrap" style="padding:0 16px 8px;display:none"><button class="btn" style="width:100%;background:#fdecea;color:#b03a2e" onclick="wipeDemoData()">Xoá toàn bộ dữ liệu demo</button></div>
   </div>
   <div id="settings-export" style="display:none">
+    <div class="card" style="margin-top:14px;padding:14px 16px 0">
+      <div style="font-size:15px;font-weight:700;margin-bottom:3px">Trợ lý AI</div>
+      <div id="ai-status" style="font-size:12.5px;color:var(--muted);margin-bottom:10px">Đang tắt</div>
+      <div id="ai-box"></div>
+      <div style="font-size:11.5px;color:var(--muted);padding:10px 0 14px;line-height:1.55;border-top:1px solid var(--bdr,#e3e8ef)">Chỉ bật một trợ lý mỗi lúc — bật cái này sẽ tắt cái kia. Tắt hết thì chat vẫn ghi bình thường, không tốn phí. Key chỉ lưu trên máy này, không đồng bộ lên Firebase.</div>
+    </div>
     <div class="card" style="margin-top:14px;padding:14px 16px">
-      <div style="font-size:15px;font-weight:700;margin-bottom:3px">Trợ lý AI · Claude</div>
-      <div id="ai-status" style="font-size:12.5px;color:var(--muted);margin-bottom:10px">Chưa có key trên máy này</div>
-      <input class="form-input" id="ai-key" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Dán API key: sk-ant-api03-…" style="margin-bottom:8px">
-      <select class="form-input form-select" id="ai-model" onchange="aiSetModel(this.value)" style="margin-bottom:10px"><option value="claude-haiku-4-5">Haiku · nhanh, rẻ (~50đ/lần)</option><option value="claude-sonnet-4-5">Sonnet · thông minh hơn (~300đ/lần)</option></select>
-      <div style="display:flex;gap:8px"><button class="btn btn-primary" style="flex:1" onclick="aiSaveKey()">Lưu</button><button class="btn" style="flex:1" onclick="aiTest()">Kiểm tra</button><button class="btn" onclick="aiClear()">Xoá</button></div>
-      <div style="font-size:11.5px;color:var(--muted);margin-top:8px;line-height:1.55">Key chỉ lưu trên máy này, không đồng bộ lên Firebase. Tạo key tại console.anthropic.com → API Keys. Dùng trong chat: nút máy ảnh để đọc hoá đơn, gõ “hỏi: …” để được tư vấn.</div>
+      <div style="font-size:15px;font-weight:700;margin-bottom:8px">Sao lưu dữ liệu</div>
+      <div id="bk-box"></div>
+    </div>
+    <div class="card" style="margin-top:14px;padding:10px 16px 14px">
+      <div style="font-size:15px;font-weight:700;margin:4px 0 2px">Widget iPhone</div>
+      <div id="wg-box"></div>
     </div>
     <div class="card" style="margin-top:14px">
       <div class="set-row"><div class="set-ic" style="background:var(--bbg,#e8f0fe)"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 10h-1.26A8 8 0 109 20h9a5 5 0 000-10z"/></svg></div>
@@ -4251,6 +4261,7 @@ function forecastData(days){
       events.push({date:iso(d),name:'Trả nợ'+(dd.name?' · '+dd.name:''),amt:-pay,type:'Nợ'});
       rem-=pay;d=new Date(d.getFullYear(),d.getMonth()+1,day);
     }});
+  try{fcAddLiving(events,td,end,iso)}catch(e){}
   events.sort((a,b)=>a.date.localeCompare(b.date));
   let bal=(db.accounts||[]).filter(a=>a.type!=='credit').reduce((s,a)=>s+acctBalance(a),0);
   const series=[{date:tdS,bal}];let minBal=bal,minDate=tdS;
@@ -4274,7 +4285,7 @@ function renderForecast(){
   const el=document.getElementById('forecast-card');if(!el)return;
   const f=forecastData(fcDays);
   const btn=n=>'<button onclick="setFcDays('+n+')" style="flex:1;padding:6px 0;border-radius:8px;border:1px solid '+(fcDays===n?'var(--navy)':'var(--bdr)')+';background:'+(fcDays===n?'var(--navy)':'var(--light)')+';color:'+(fcDays===n?'#fff':'var(--muted)')+';font-size:12px;font-weight:700;cursor:pointer">'+n+' ngày</button>';
-  const rows=f.events.slice(0,6).map(e=>'<div style="display:flex;gap:9px;align-items:baseline;padding:7px 0;border-bottom:1px dashed var(--bdr);font-size:12.5px">'
+  const rows=f.events.filter(e=>e.type!=='Ước tính').slice(0,6).map(e=>'<div style="display:flex;gap:9px;align-items:baseline;padding:7px 0;border-bottom:1px dashed var(--bdr);font-size:12.5px">'
     +'<span style="color:var(--muted);white-space:nowrap">'+fmtDMY(e.date)+'</span>'
     +'<span style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+e.name+'</span>'
     +'<b style="color:'+(e.amt>=0?'var(--green)':'var(--red)')+';white-space:nowrap">'+(e.amt>=0?'+':'−')+fmtK(Math.abs(e.amt))+'</b>'
@@ -4287,6 +4298,7 @@ function renderForecast(){
     +fcSvg(f,340,84)
     +(f.minBal<0?'<div style="margin-top:9px;background:var(--dbg);border-radius:10px;padding:9px 12px;font-size:12.5px;color:var(--red)"><b>⚠ Dự kiến thiếu '+fmtK(-f.minBal)+' đ</b> vào khoảng '+fmtDMY(f.minDate)+'. Cần chuẩn bị tiền hoặc dời khoản chi.</div>'
       :'<div style="margin-top:9px;font-size:12px;color:var(--muted)">Số dư thấp nhất trong kỳ: <b style="color:var(--text)">'+(f.minBal<0?'−':'')+fmtK(Math.abs(f.minBal))+' đ</b> ('+fmtDMY(f.minDate)+')</div>')
+    +(window.fcMonths?fcMonths(f):'')+(window.fcLivingRow?fcLivingRow():'')
     +(rows?'<div style="margin-top:10px;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">Khoản sắp tới</div>'+rows:'<div style="margin-top:10px;font-size:12.5px;color:var(--muted)">Chưa có khoản định kỳ / hạn thẻ / nợ nào trong kỳ dự báo. Thêm giao dịch định kỳ để dự báo chính xác hơn.</div>')
     +'</div>';
 }
@@ -7192,6 +7204,196 @@ document.body.classList.add('tbB','navC');
 })();
 </script>
 <script>
+/* ═══ Lịch trả thẻ · dòng tiền 3 tháng · sao lưu · widget ═══ */
+(function(){
+const escH=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const isoD=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const dm=d=>String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0');
+const sg=v=>(v<0?'−':'')+fmtK(Math.abs(v));
+const cName=a=>String((a&&a.name)||'').replace(/^thẻ\s+/i,'');
+function cardDebt(a){let d=Math.max(0,-acctBalance(a));try{ensureInst();d+=db.installments.filter(x=>x.card===a.id&&(x.paid||0)<x.term).reduce((s,x)=>s+instRemaining(x),0)+(db.debts||[]).filter(x=>x.acct===a.id&&x.kind!=='receivable'&&!x.settled).reduce((s,x)=>s+(+x.remaining||0),0)}catch(e){}return d}
+
+/* ── dòng tiền: chi sinh hoạt & thu nhập ước tính ── */
+window.fcLivingOn=()=>localStorage.getItem('fcLiving')!=='0';
+window.setFcLiving=on=>{localStorage.setItem('fcLiving',on?'1':'0');renderForecast()};
+window.livingEst=function(){
+  const tS=today(),f=new Date();f.setDate(f.getDate()-90);const fS=isoD(f);
+  const tx=(db.transactions||[]).filter(t=>t.group==='personal'&&t.date>fS&&t.date<=tS);if(!tx.length)return null;
+  const first=tx.reduce((m,t)=>t.date<m?t.date:m,tS);const span=Math.round((new Date(tS)-new Date(first))/864e5)+1;if(span<14)return null;
+  const out=tx.filter(t=>t.flow==='out'&&!t.recurringId&&t.category!=='Trả nợ').reduce((s,t)=>s+t.amount,0);
+  const hasRecIn=(db.recurring||[]).some(r=>(r.flow||(r.type==='income'?'in':'out'))==='in');
+  let inc=0,day=5;
+  if(!hasRecIn){const ins=tx.filter(t=>t.flow==='in'&&!t.recurringId);inc=ins.reduce((s,t)=>s+t.amount,0)/(span/30);const big=ins.slice().sort((a,b)=>b.amount-a.amount).slice(0,3).map(t=>+t.date.slice(8,10)).sort((a,b)=>a-b);if(big.length)day=big[Math.floor(big.length/2)]}
+  return {daily:out/span,inc,day:Math.min(day,28)};
+};
+window.fcAddLiving=function(events,td,end,iso){
+  if(!fcLivingOn())return;const L=livingEst();if(!L)return;
+  if(L.daily>0){const d=new Date(td);d.setDate(d.getDate()+7);while(d<=end){events.push({date:iso(d),name:'Chi sinh hoạt (ước tính 7 ngày)',amt:-Math.round(L.daily*7),type:'Ước tính'});d.setDate(d.getDate()+7)}}
+  if(L.inc>0){let m=new Date(td.getFullYear(),td.getMonth(),L.day);if(m<=td)m=new Date(td.getFullYear(),td.getMonth()+1,L.day);while(m<=end){events.push({date:iso(m),name:'Thu nhập (ước tính)',amt:Math.round(L.inc),type:'Ước tính'});m=new Date(m.getFullYear(),m.getMonth()+1,L.day)}}
+};
+function fcMonthRows(f){
+  const ms=[],d0=new Date();for(let i=0;i<3;i++){const d=new Date(d0.getFullYear(),d0.getMonth()+i,1);ms.push(isoD(d).slice(0,7))}
+  let bal=f.start;return ms.map(m=>{let i=0,o=0,lo=bal,loD=null;f.events.filter(e=>e.date.slice(0,7)===m).forEach(e=>{if(e.amt>=0)i+=e.amt;else o-=e.amt;bal+=e.amt;if(bal<lo){lo=bal;loD=e.date}});return {m,i,o,end:bal,lo,loD}});
+}
+window.fcMonths=function(f){
+  if(f.days<60)return '';
+  const R=fcMonthRows(f);
+  return '<div style="margin-top:12px;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">3 tháng tới</div>'
+   +'<div style="display:grid;grid-template-columns:auto 1fr 1fr 1fr;gap:6px 10px;align-items:baseline;font-size:12.5px;margin-top:6px"><span></span><span style="color:var(--muted);font-size:11px;text-align:right">Vào</span><span style="color:var(--muted);font-size:11px;text-align:right">Ra</span><span style="color:var(--muted);font-size:11px;text-align:right">Cuối tháng</span>'
+   +R.map(r=>'<b>T'+(+r.m.slice(5))+'</b><span style="text-align:right;color:var(--green)">+'+fmtK(r.i)+'</span><span style="text-align:right;color:var(--red)">−'+fmtK(r.o)+'</span><b style="text-align:right;color:'+(r.end<0?'var(--red)':'var(--text)')+'">'+sg(r.end)+'</b>'
+     +(r.lo<0?'<span style="grid-column:1/-1;font-size:12px;color:var(--red);margin-top:-2px">Có thể thiếu '+fmtK(-r.lo)+' quanh '+fmtDMY(r.loD)+'</span>':'')).join('')+'</div>';
+};
+window.fcLivingRow=function(){const L=fcLivingOn()?livingEst():null;return '<label style="display:flex;align-items:flex-start;gap:8px;margin-top:12px;font-size:12px;color:var(--muted);cursor:pointer;line-height:1.45"><input type="checkbox" style="margin-top:2px"'+(fcLivingOn()?' checked':'')+' onchange="setFcLiving(this.checked)"><span>Tính cả chi sinh hoạt'+(L&&L.inc?' và thu nhập':'')+' ước tính theo 90 ngày gần nhất'+(L?' (~'+fmtK(L.daily*30)+'/tháng'+(L.inc?' · thu ~'+fmtK(L.inc)+'/tháng':'')+')':'')+'</span></label>'};
+window.fcChat=function(){
+  const f=forecastData(92),R=fcMonthRows(f);
+  let h='<b>Dòng tiền 3 tháng tới</b> · hiện có '+sg(f.start)+'<br>'+R.map(r=>'T'+(+r.m.slice(5))+': vào +'+fmtK(r.i)+' · ra −'+fmtK(r.o)+' · cuối tháng <b style="color:'+(r.end<0?'#e0342a':'inherit')+'">'+sg(r.end)+'</b>'+(r.lo<0?' · <b style="color:#e0342a">thiếu '+fmtK(-r.lo)+' quanh '+fmtDMY(r.loD).slice(0,5)+'</b>':'')).join('<br>');
+  const big=f.events.filter(e=>e.type!=='Ước tính'&&e.amt<0).sort((a,b)=>a.amt-b.amt).slice(0,3);
+  if(big.length)h+='<br>Khoản lớn: '+big.map(e=>escH(e.name)+' '+fmtK(-e.amt)+' ('+fmtDMY(e.date).slice(0,5)+')').join(' · ');
+  if(fcLivingOn())h+='<br><span class="qa-why">Đã gồm chi sinh hoạt ước tính theo 90 ngày gần nhất.</span>';
+  return h;
+};
+
+/* ── Lịch trả thẻ ── */
+function cardCalData(){
+  ensureInst();const td=new Date();td.setHours(0,0,0,0);const out=[];
+  (db.accounts||[]).filter(a=>a.type==='credit'&&a.dueDay).forEach(a=>{
+    const st=a.stDay||1;let nextClose=new Date(td.getFullYear(),td.getMonth(),st);if(nextClose<=td)nextClose=new Date(td.getFullYear(),td.getMonth()+1,st);
+    let d=new Date(td.getFullYear(),td.getMonth(),a.dueDay);if(d<td)d=new Date(td.getFullYear(),td.getMonth()+1,a.dueDay);
+    let stmt=0;try{stmt=cardStmtClosed(a).stmt||0}catch(e){}
+    let cyc=0;try{cyc=cardSpendCycle(a)||0}catch(e){}
+    const insts=db.installments.filter(i=>i.card===a.id&&(i.paid||0)<i.term);
+    const g=k=>insts.filter(i=>i.term-(i.paid||0)>k).reduce((s,i)=>s+i.per,0);
+    const cycFirst=nextClose<d; // hạn gần nhất thuộc kỳ đang mở
+    for(let k=0;k<3;k++){
+      let amt,parts;
+      if(k===0&&!cycFirst){amt=stmt;parts=stmt>0?'Sao kê đã chốt':'Kỳ này đã trả đủ'}
+      else if((k===0&&cycFirst)||(k===1&&!cycFirst)){const gg=g(cycFirst?0:1);const ov=cycFirst?stmt:0;amt=ov+cyc+gg;parts=[ov?'Còn nợ kỳ trước '+fmtK(ov):'',cyc?'Quẹt kỳ này '+fmtK(cyc):'',gg?'Góp '+fmtK(gg):''].filter(Boolean).join(' + ')||'Chưa phát sinh'}
+      else{const gg=g(k);amt=gg;parts=(gg?'Góp '+fmtK(gg)+' · ':'')+'chưa gồm quẹt mới'}
+      out.push({a,d:new Date(d),amt,parts,k,days:Math.round((d-td)/864e5)});
+      d=new Date(d.getFullYear(),d.getMonth()+1,a.dueDay);
+    }
+  });
+  return out.sort((x,y)=>x.d-y.d);
+}
+window.renderCardCal=function(){
+  const el=document.getElementById('cardcal-list');if(!el)return;
+  const D=cardCalData(),show=D.length>0;
+  ['cardcal-head','cardcal-card'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display=show?'':'none'});
+  if(!show){el.innerHTML='';return}
+  const by={};D.forEach(r=>{const m=isoD(r.d).slice(0,7);(by[m]=by[m]||[]).push(r)});
+  const cards=(db.accounts||[]).filter(a=>a.type==='credit');
+  const debt=cards.reduce((s,a)=>s+cardDebt(a),0);
+  let h='<div style="padding:12px 15px 6px"><div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px"><span style="font-size:12px;color:var(--muted)">Tổng dư nợ '+cards.length+' thẻ</span><b style="font-size:15px">'+fmtK(debt)+' đ</b></div>';
+  Object.keys(by).slice(0,3).forEach(m=>{const L=by[m],tot=L.reduce((s,r)=>s+r.amt,0);
+    h+='<div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:10px;padding-bottom:4px;border-bottom:1px solid var(--bdr)"><span style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">Tháng '+(+m.slice(5))+'/'+m.slice(0,4)+'</span><b style="font-size:13px">'+fmtK(tot)+' đ</b></div>';
+    h+=L.map(r=>{const hot=r.k===0&&r.amt>0&&r.days<=5;const nm=cName(r.a);
+      return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px dashed var(--bdr)"><div style="width:50px;flex-shrink:0;text-align:center;line-height:1.15;white-space:nowrap"><b style="font-size:14px;color:'+(hot?'var(--red)':'var(--text)')+'">'+dm(r.d)+'</b>'+(r.k===0?'<div style="font-size:10px;color:'+(hot?'var(--red)':'var(--muted)')+'">'+(r.days<=0?'hôm nay':r.days+' ngày')+'</div>':'')+'</div>'
+        +'<div style="flex:1;min-width:0"><div style="font-size:13.5px;font-weight:600">'+escH(nm)+'</div><div style="font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+escH(r.parts)+'</div></div>'
+        +'<b style="font-size:13.5px;white-space:nowrap;color:'+(r.amt?'var(--text)':'var(--muted)')+'">'+fmtK(r.amt)+'</b>'
+        +(r.k===0&&r.amt>0?'<button type="button" onclick="openQaChat(\'Trả thẻ '+escH(nm).replace(/'/g,'')+'\')" style="border:1px solid var(--bdr);background:var(--light);color:var(--navy);border-radius:8px;padding:5px 10px;font:600 12px inherit;font-family:inherit;cursor:pointer">Trả</button>':'')+'</div>'}).join('');
+  });
+  ensureInst();const inst=db.installments.filter(i=>(i.paid||0)<i.term&&cards.some(a=>a.id===i.card));
+  if(inst.length){h+='<div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-top:12px">Trả góp đang chạy</div>'+inst.map(i=>{const left=i.term-(i.paid||0);const e=new Date();e.setMonth(e.getMonth()+left);const a=cards.find(x=>x.id===i.card);return '<div style="display:flex;gap:8px;font-size:12.5px;padding:6px 0"><span style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+escH(i.name||'Trả góp')+' · '+escH(cName(a))+'</span><span style="color:var(--muted);white-space:nowrap">'+fmtK(i.per)+'/th · còn '+left+' kỳ · hết ~'+(e.getMonth()+1)+'/'+e.getFullYear()+'</span></div>'}).join('')}
+  h+='<div style="font-size:11px;color:var(--muted);padding:8px 0 4px">Tháng sau chỉ gồm trả góp và phần đã quẹt, chưa gồm chi tiêu mới.</div></div>';
+  el.innerHTML=h;
+};
+window.cardCalChat=function(){
+  const D=cardCalData();if(!D.length)return 'Chưa có thẻ tín dụng nào có ngày hạn trả.';
+  const by={};D.forEach(r=>{const m=isoD(r.d).slice(0,7);(by[m]=by[m]||[]).push(r)});
+  return '<b>Lịch trả thẻ</b><br>'+Object.keys(by).slice(0,3).map(m=>{const L=by[m];return '<b>T'+(+m.slice(5))+'</b> · tổng '+fmtK(L.reduce((s,r)=>s+r.amt,0))+'<br>'+L.map(r=>dm(r.d)+' · '+escH(cName(r.a))+' · <b>'+fmtK(r.amt)+'</b> <span class="qa-why">'+escH(r.parts)+'</span>').join('<br>')}).join('<br>');
+};
+
+/* ── Sao lưu ── */
+let BKDB=null;
+function bkOpen(){return new Promise((ok,no)=>{if(BKDB)return ok(BKDB);if(!window.indexedDB)return no(new Error('Trình duyệt không hỗ trợ'));const r=indexedDB.open('ftBackup',1);r.onupgradeneeded=()=>r.result.createObjectStore('snaps',{keyPath:'at'});r.onsuccess=()=>{BKDB=r.result;ok(BKDB)};r.onerror=()=>no(r.error)})}
+async function bkList(){const d=await bkOpen();return new Promise(ok=>{const q=d.transaction('snaps').objectStore('snaps').getAll();q.onsuccess=()=>ok((q.result||[]).sort((a,b)=>b.at-a.at));q.onerror=()=>ok([])})}
+async function bkTx(fn){const d=await bkOpen();return new Promise(ok=>{const tx=d.transaction('snaps','readwrite');fn(tx.objectStore('snaps'));tx.oncomplete=()=>ok();tx.onerror=()=>ok()})}
+const dtf=at=>{const d=new Date(at);return dm(d)+'/'+d.getFullYear()+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')};
+window.bkSnap=async function(reason){try{const data=JSON.stringify(db);await bkTx(s=>s.put({at:Date.now(),n:(db.transactions||[]).length,size:data.length,reason:reason||'Lưu tay',data}));const L=await bkList();if(L.length>8)await bkTx(s=>L.slice(8).forEach(x=>s.delete(x.at)));localStorage.setItem('ftBkAuto',String(Date.now()));renderBackup();if(reason==='Lưu tay')toast('Đã tạo bản lưu trên máy ✓')}catch(e){toast('Không lưu được: '+e.message)}};
+window.backupShare=async function(){
+  const name='fintrack-'+today()+'.json',blob=new Blob([JSON.stringify(db,null,1)],{type:'application/json'});
+  const mark=()=>{localStorage.setItem('ftBkExport',String(Date.now()));renderBackup()};
+  try{const file=new File([blob],name,{type:'application/json'});if(matchMedia('(pointer:coarse)').matches&&navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:'Sao lưu FinTrack'});mark();toast('Đã sao lưu ✓');return}}catch(e){if(e&&e.name==='AbortError')return}
+  const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);mark();toast('Đã tải file sao lưu ✓');
+};
+window.bkDownload=async function(at){const s=(await bkList()).find(x=>x.at===at);if(!s)return;const u=URL.createObjectURL(new Blob([s.data],{type:'application/json'})),a=document.createElement('a');a.href=u;a.download='fintrack-'+isoD(new Date(at))+'.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000)};
+window.bkRestore=async function(at){const s=(await bkList()).find(x=>x.at===at);if(!s)return;
+  if(!confirm('Khôi phục bản '+dtf(at)+' ('+s.n+' giao dịch)?\n\nDữ liệu hiện tại được lưu thành một bản trước khi thay. Thay đổi sẽ đồng bộ sang các máy khác.'))return;
+  let d;try{d=JSON.parse(s.data)}catch(e){toast('Bản lưu bị hỏng');return}if(!d||!Array.isArray(d.transactions)){toast('Bản lưu không hợp lệ');return}
+  await bkSnap('Trước khi khôi phục');db=d;save();renderAll();toast('Đã khôi phục ✓')};
+window.bkExportDays=()=>{const ex=+localStorage.getItem('ftBkExport')||0;return ex?Math.floor((Date.now()-ex)/864e5):null};
+window.renderBackup=async function(){
+  const el=document.getElementById('bk-box');if(!el)return;let L=[];try{L=await bkList()}catch(e){}
+  const days=bkExportDays(),ex=+localStorage.getItem('ftBkExport')||0,late=days==null||days>7;
+  el.innerHTML='<div style="font-size:12.5px;color:var(--muted);margin-bottom:10px;line-height:1.5">Sao lưu ra ngoài gần nhất: <b style="color:'+(late?'var(--red)':'var(--text)')+'">'+(ex?dtf(ex)+(days?' · '+days+' ngày trước':' · hôm nay'):'chưa có')+'</b></div>'
+   +'<button class="btn btn-primary" style="width:100%" onclick="backupShare()">Sao lưu ra Tệp / iCloud / Drive</button>'
+   +'<div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin:14px 0 2px">Bản lưu tự động trên máy · mỗi tuần</div>'
+   +(L.length?L.map(s=>'<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px dashed var(--bdr)"><div style="flex:1;min-width:0;font-size:13px"><b>'+dtf(s.at)+'</b><div style="font-size:11.5px;color:var(--muted)">'+escH(s.reason)+' · '+s.n+' giao dịch · '+Math.max(1,Math.round(s.size/1024))+' KB</div></div><button class="btn" style="padding:6px 10px;font-size:12px" onclick="bkRestore('+s.at+')">Khôi phục</button><button class="btn" style="padding:6px 10px;font-size:12px" onclick="bkDownload('+s.at+')">Tải</button></div>').join(''):'<div style="font-size:12.5px;color:var(--muted);padding:6px 0">Chưa có bản nào — app tự lưu mỗi tuần.</div>')
+   +'<button class="btn" style="width:100%;margin-top:10px" onclick="bkSnap(\'Lưu tay\')">Tạo bản lưu trên máy ngay</button>'
+   +'<div style="font-size:11.5px;color:var(--muted);margin-top:8px;line-height:1.5">Bản trên máy giữ 8 bản gần nhất, dùng khi lỡ xoá hoặc đồng bộ sai. Nên sao lưu ra Tệp/iCloud mỗi tuần để phòng mất máy.</div>';
+};
+setTimeout(async()=>{try{if(!(db.transactions||[]).length)return;const last=+localStorage.getItem('ftBkAuto')||0;if(Date.now()-last>=7*864e5)await bkSnap('Tự động hằng tuần');else renderBackup()}catch(e){}},9000);
+
+/* ── Widget iPhone ── */
+const WG_KEY='AIzaSyAwpp6UWe7yMLqhQlOmGc2lWHOVUqQFkYQ';
+const wgOn=()=>localStorage.getItem('ftWidgetOn')==='1';
+function wgTok(){let t=localStorage.getItem('ftWidgetTok');if(!t){const a=new Uint8Array(16);crypto.getRandomValues(a);t=[...a].map(b=>b.toString(16).padStart(2,'0')).join('');localStorage.setItem('ftWidgetTok',t)}return t}
+const wgUrl=()=>'https://firestore.googleapis.com/v1/projects/fintrack-vn/databases/(default)/documents/widget/'+wgTok()+'?key='+WG_KEY;
+function wgData(){
+  const td=today(),m0=td.slice(0,8)+'01',P=t=>t.group==='personal'&&t.flow==='out',tx=db.transactions||[];
+  const cash=(db.accounts||[]).filter(a=>a.type!=='credit').reduce((s,a)=>s+acctBalance(a),0);
+  const tday=tx.filter(t=>P(t)&&t.date===td).reduce((s,t)=>s+t.amount,0),mon=tx.filter(t=>P(t)&&t.date>=m0&&t.date<=td).reduce((s,t)=>s+t.amount,0);
+  const B=+((db.budgets||{}).personal)||0,cards=(db.accounts||[]).filter(a=>a.type==='credit');
+  let nd=null;cards.forEach(a=>{let st=0;try{st=cardStmtClosed(a).stmt||0}catch(e){}let d=null;try{d=a.dueDay?nextDueDate(a):null}catch(e){}if(st>0&&d&&(!nd||d<nd.d))nd={d,a,st}});
+  const n=new Date();
+  return {so_du:sg(cash),chi_hom_nay:fmtK(tday),chi_thang:fmtK(mon)+(B?' / '+fmtK(B):''),no_the:fmtK(cards.reduce((s,a)=>s+cardDebt(a),0)),han_the:nd?cName(nd.a)+' '+dm(nd.d)+' · '+fmtK(nd.st):'Không có',cap_nhat:String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0')+' '+dm(n)};
+}
+let wgT=null,wgLast='';
+function wgMsg(h){const e=document.getElementById('wg-msg');if(e)e.innerHTML=h}
+async function wgWrite(tok,data){if(!firebaseReady||!_stTools||!AUTH_UID)throw new Error('Chưa đăng nhập đồng bộ');await _stTools.setDoc(_stTools.doc(firestoreDb,'widget',tok),Object.assign({},data,{uid:AUTH_UID,updatedAt:Date.now()}))}
+async function wgPush(force){
+  if(!wgOn())return;try{const d=wgData(),s=JSON.stringify(Object.assign({},d,{cap_nhat:''}));if(!force&&s===wgLast)return;await wgWrite(wgTok(),d);wgLast=s;localStorage.setItem('ftWidgetAt',String(Date.now()));wgMsg('<b style="color:#00a553">Đã cập nhật lúc '+d.cap_nhat+'</b>')}
+  catch(e){wgMsg('<b style="color:#e0342a">'+(/permission/i.test(String(e.code||e.message))?'Firestore chưa cho phép — thêm quy tắc widget (xem hướng dẫn Firebase).':escH(e.message))+'</b>')}
+}
+window.wgSchedule=()=>{if(!wgOn())return;clearTimeout(wgT);wgT=setTimeout(()=>wgPush(false),4000)};
+const BLANK={so_du:'—',chi_hom_nay:'—',chi_thang:'—',no_the:'—',han_the:'—',cap_nhat:'đã tắt'};
+window.wgToggle=async function(){if(wgOn()){localStorage.setItem('ftWidgetOn','0');try{await wgWrite(wgTok(),BLANK)}catch(e){}renderWgBox();toast('Đã tắt widget');return}localStorage.setItem('ftWidgetOn','1');renderWgBox();wgPush(true)};
+window.wgRegen=async function(){if(!confirm('Tạo mã mới? Widget/phím tắt đang dùng sẽ ngừng hiển thị — phải chép lại script.'))return;try{await wgWrite(wgTok(),BLANK)}catch(e){}localStorage.removeItem('ftWidgetTok');wgLast='';renderWgBox();wgPush(true)};
+function wgScript(){const app=location.href.split('#')[0].split('?')[0];return `// FinTrack widget · dán vào app Scriptable
+const URL="${wgUrl()}";
+let f={};try{f=(await new Request(URL).loadJSON()).fields||{}}catch(e){}
+const g=k=>(f[k]&&f[k].stringValue)||"—";
+const w=new ListWidget();w.backgroundColor=new Color("#0f2a47");w.setPadding(12,14,12,14);
+const small=config.widgetFamily==="small";
+const h=w.addText("FinTrack");h.font=Font.boldSystemFont(11);h.textColor=new Color("#9cc3ec");w.addSpacer(4);
+function row(l,v,big){const a=w.addText(l);a.font=Font.systemFont(10);a.textColor=new Color("#b8c7d9");const b=w.addText(v);b.font=big?Font.boldSystemFont(20):Font.semiboldSystemFont(13);b.textColor=Color.white();b.minimumScaleFactor=.5;b.lineLimit=1;w.addSpacer(3)}
+row("Số dư",g("so_du"),true);row("Chi hôm nay",g("chi_hom_nay"));row("Nợ thẻ",g("no_the"));
+if(!small){row("Chi tháng",g("chi_thang"));row("Hạn thẻ gần nhất",g("han_the"))}
+w.addSpacer();
+if(!small){const b=w.addStack();b.backgroundColor=new Color("#2d6cdf");b.cornerRadius=10;b.setPadding(6,10,6,10);b.url="${app}#chat";const bt=b.addText("＋ Ghi nhanh");bt.font=Font.boldSystemFont(12);bt.textColor=Color.white();w.addSpacer(4)}
+const u=w.addText("Cập nhật "+g("cap_nhat"));u.font=Font.systemFont(8);u.textColor=new Color("#8aa0b8");
+w.url=small?"${app}#chat":"${app}";w.refreshAfterDate=new Date(Date.now()+15*60000);
+if(config.runsInWidget)Script.setWidget(w);else await w.presentMedium();
+Script.complete();`}
+window.wgCopy=async function(what){const t=what==='url'?wgUrl():wgScript();try{await navigator.clipboard.writeText(t);toast(what==='url'?'Đã chép link dữ liệu ✓':'Đã chép script ✓')}catch(e){prompt('Chép thủ công:',t)}};
+window.renderWgBox=function(){
+  const el=document.getElementById('wg-box');if(!el)return;const on=wgOn();const at=+localStorage.getItem('ftWidgetAt')||0;
+  el.innerHTML='<div style="display:flex;align-items:center;gap:12px;min-height:48px"><div style="flex:1;min-width:0"><div style="font-size:14.5px;font-weight:600">Cập nhật số liệu cho widget</div><div style="font-size:12px;color:var(--muted);margin-top:1px">Số dư · chi hôm nay · chi tháng · nợ thẻ · hạn gần nhất</div></div>'
+   +'<button type="button" role="switch" aria-checked="'+on+'" aria-label="Bật/tắt widget" onclick="wgToggle()" style="flex-shrink:0;width:50px;height:30px;border-radius:15px;border:none;padding:3px;cursor:pointer;background:'+(on?'#00a553':'#c9d1dc')+'"><span style="display:block;width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transform:translateX('+(on?20:0)+'px);transition:transform .2s"></span></button></div>'
+   +(on?'<div id="wg-msg" style="font-size:12px;color:var(--muted);margin:4px 0 10px">'+(at?'Cập nhật gần nhất '+dtf(at):'Đang cập nhật…')+'</div>'
+     +'<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-primary" style="flex:1" onclick="wgCopy(\'script\')">Chép script Scriptable</button><button class="btn" style="flex:1" onclick="wgCopy(\'url\')">Chép link dữ liệu</button></div>'
+     +'<ol style="font-size:12px;color:var(--muted);line-height:1.6;margin:10px 0 4px;padding-left:18px"><li>Cài app <b>Scriptable</b> (miễn phí) trên App Store.</li><li>Scriptable → <b>+</b> → dán script vừa chép → đặt tên “FinTrack”.</li><li>Màn hình chính: giữ → <b>+</b> → Scriptable → chọn cỡ nhỏ/vừa → chạm widget → Script: <b>FinTrack</b>.</li></ol><div style="font-size:11.5px;color:var(--muted);line-height:1.5;margin-bottom:6px">Cỡ vừa có nút <b>＋ Ghi nhanh</b> mở thẳng khung chat; cỡ nhỏ chạm là mở chat.</div>'
+     +'<div style="font-size:11.5px;color:var(--muted);line-height:1.5">Widget tự làm mới khoảng 15 phút/lần; số liệu cập nhật mỗi khi app có thay đổi. Ai có link đều xem được 5 con số này — <a onclick="wgRegen()" style="cursor:pointer;color:var(--navy);font-weight:600">tạo mã mới</a> nếu lỡ lộ.</div>'
+    :'<div style="font-size:11.5px;color:var(--muted);line-height:1.5;padding-bottom:4px">Bật để xem nhanh số dư, chi tiêu, nợ thẻ ngoài màn hình chính iPhone mà không cần mở app.</div>');
+};
+setTimeout(()=>{renderWgBox();renderBackup();wgSchedule()},1200);
+
+/* móc vào renderAll */
+if(typeof renderAll==='function'&&!renderAll.__x){const _ra=renderAll;renderAll=function(){const r=_ra.apply(this,arguments);try{renderCardCal()}catch(e){}try{wgSchedule()}catch(e){}return r};renderAll.__x=1}
+setTimeout(()=>{try{renderCardCal()}catch(e){}},600);
+})();
+</script>
+<script>
 /* ═══ NHẬP NHANH (chat) · dán SMS ngân hàng · link #add/#chat · che số tiền ═══ */
 (function(){
 const $=id=>document.getElementById(id);
@@ -7383,7 +7585,7 @@ function answer(t){
 }
 function parseText(t){
   t=(t||'').trim();if(!t)return [];
-  if(isSms(t)){const r=parseOne(t,true);return r?[r]:[]}
+  if(isSms(t)){const ch=smsSplit(t);if(ch.length>1){const out=[],seen=new Set();ch.forEach(c=>{const r=parseOne(c,true);if(!r)return;const key=[r.amount,r.date,r.account||'',r.flow,nz(r.desc||'').slice(0,24)].join('|');if(seen.has(key))return;seen.add(key);r._p=c;out.push(r)});return out}const r=parseOne(t,true);return r?[r]:[]}
   const parts=t.split(/\n|;|,\s+/).map(p=>p.trim()).filter(Boolean);
   const res=[],ctx={};
   parts.forEach(p=>{const r=parseOne(p,false);if(r){r._p=p;res.push(r)}else{const n=nz(p);const a=findAcct(n,[]);if(a)ctx.account=a;const d=parseOne(p+' 1k',false);if(d&&d.date!==tdy())ctx.date=d.date}});
@@ -7583,10 +7785,11 @@ function projIntent(t,n){
   return {kind:'proj',proj:hit.p,flow,amount:r.amount,desc,date:r.date,raw:t};
 }
 
-function helpHtml(){return '<b>Chat làm được:</b><br>Ghi thu chi (gắn chuyến đi) · trả thẻ / chuyển tiền · nợ · crypto · góp mục tiêu · chi công việc · hỏi sâu · sửa / xoá bằng lời · lệnh tắt riêng · tìm giao dịch · mở tab / form. Gõ <b>xoá lịch sử</b> để dọn chat.'+chips(['ăn trưa 85k vib','soát sổ','xem nhận xét','hỏi: hôm nay nên quẹt thẻ nào?','hỏi: tháng này tiêu hoang ở đâu?','so với tháng trước','còn tiêu được bao nhiêu?','tuần nào chi nhiều nhất?','sửa khoản cafe vừa rồi thành 40k','xoá khoản grab hôm qua','đặt lệnh sáng = cafe 35k, gửi xe 5k','lệnh','tìm grab','hôm qua đi Vũng Tàu xăng 300k, ăn 450k','trả thẻ vib 5tr từ vp','rút 2tr vcb','chuyển 1tr vcb sang momo','trả nợ anh Nam 2tr','cho Hùng mượn 1tr','mua 0.01 btc giá 65000','góp quỹ du lịch 500k','nợ thẻ bao nhiêu?','hạn trả thẻ vib','mở sổ nợ','thêm mục tiêu','hoàn tác'])}
+function helpHtml(){return '<b>Chat làm được:</b><br>Ghi thu chi (gắn chuyến đi) · trả thẻ / chuyển tiền · nợ · crypto · góp mục tiêu · chi công việc · hỏi sâu · sửa / xoá bằng lời · lệnh tắt riêng · tìm giao dịch · mở tab / form. Gõ <b>xoá lịch sử</b> để dọn chat.'+chips(['ăn trưa 85k vib','lịch trả thẻ','dòng tiền 3 tháng','du lịch thb','tỷ giá','sao lưu','soát sổ','xem nhận xét','hỏi: hôm nay nên quẹt thẻ nào?','hỏi: tháng này tiêu hoang ở đâu?','so với tháng trước','còn tiêu được bao nhiêu?','tuần nào chi nhiều nhất?','sửa khoản cafe vừa rồi thành 40k','xoá khoản grab hôm qua','đặt lệnh sáng = cafe 35k, gửi xe 5k','lệnh','tìm grab','hôm qua đi Vũng Tàu xăng 300k, ăn 450k','trả thẻ vib 5tr từ vp','rút 2tr vcb','chuyển 1tr vcb sang momo','trả nợ anh Nam 2tr','cho Hùng mượn 1tr','mua 0.01 btc giá 65000','góp quỹ du lịch 500k','nợ thẻ bao nhiêu?','hạn trả thẻ vib','mở sổ nợ','thêm mục tiêu','hoàn tác'])}
 function extIntent(t){
   const n=nz(t).trim();
   if(/^(giup|help|huong dan|lam duoc gi|biet lam gi|\?)$/.test(n))return {msg:helpHtml()};
+  {const mi=miscIntent(n);if(mi)return mi}
   {const rvi=rvIntent(n);if(rvi)return rvi}
   {const am=/^(hoi claude|hoi ai|hoi|tu van|claude)\s*[:,]?\s+/.exec(n);if(am&&aiKey())return {ai:t.slice(am[0].length)||t}}
   if(aiKey()&&/(?<![a-z])(nen|tu van|loi khuyen|lam sao|co nen|tieu hoang|lang phi)(?![a-z])/.test(n)&&!findAmount(n))return {ai:t};
@@ -7730,6 +7933,8 @@ function showSummary(){
   const L2=[],ch=[];
   const tt=(db.transactions||[]).filter(t=>t.date===td&&pOut(t));
   L2.push(tt.length?'Hôm nay đã ghi <b>'+tt.length+'</b> khoản · chi <b>'+fmtK(tt.reduce((s,t)=>s+t.amount,0))+'</b>':'Hôm nay chưa ghi khoản nào');
+  {const tv=travel();if(tv){L2.push('Chế độ du lịch: <b>'+tv+'</b> · 1 '+tv+' ≈ '+fxRate(tv).toLocaleString('vi-VN')+'đ');ch.push('tắt du lịch')}}
+  try{const bd=window.bkExportDays?bkExportDays():0;if((bd==null||bd>14)&&(db.transactions||[]).length>20){L2.push(bd==null?'Chưa sao lưu dữ liệu ra ngoài lần nào':'Đã '+bd+' ngày chưa sao lưu ra ngoài');ch.push('sao lưu')}}catch(e){}
   const t0=new Date();t0.setHours(0,0,0,0);
   accts().filter(a=>a.type==='credit').forEach(a=>{const c=cardLine(a);if(c.st>0&&c.due<9e15){const d=Math.round((c.due-t0)/864e5);if(d<=5){L2.push('Thẻ <b>'+esc(cardNm(a))+'</b> '+(d<=0?'đến hạn hôm nay':'đến hạn sau '+d+' ngày')+' · còn phải trả <b style="color:#e0342a">'+fmtK(c.st)+'</b>');ch.push(payChip(a))}}});
   const B=+((db.budgets||{}).personal)||0;
@@ -7870,23 +8075,40 @@ function v3Intent(t,n){
   return editIntent(t,n)||delIntent(t,n)||null;
 }
 
-/* ── Claude: đọc ảnh hoá đơn · hiểu câu khó · tư vấn ── */
-const AI_LS='ftClaudeKey',AI_MLS='ftClaudeModel';
-const aiKey=()=>{try{return localStorage.getItem(AI_LS)||''}catch(e){return ''}};
-const aiModel=()=>{try{return localStorage.getItem(AI_MLS)||'claude-haiku-4-5'}catch(e){return 'claude-haiku-4-5'}};
-async function claude(messages,system,max){
-  const key=aiKey();if(!key)throw new Error('Chưa có API key Claude (Cài đặt → Dữ liệu → Trợ lý AI).');
-  let r;
-  try{r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:aiModel(),max_tokens:max||1024,system,messages})})}
-  catch(e){throw new Error('Không kết nối được Claude — kiểm tra mạng.')}
+/* ── Trợ lý AI: Claude · ChatGPT · Gemini (bật 1 cái mỗi lúc) ── */
+const AIP={
+ claude:{name:'Claude',pre:/^sk-ant-/,ph:'sk-ant-api03-…',url:'console.anthropic.com → API Keys',models:[['claude-haiku-4-5','Haiku · nhanh, rẻ (~50đ/lần)'],['claude-sonnet-4-5','Sonnet · thông minh hơn (~300đ/lần)']]},
+ openai:{name:'ChatGPT',pre:/^sk-/,ph:'sk-proj-…',url:'platform.openai.com → API keys',models:[['gpt-4o-mini','GPT-4o mini · nhanh, rẻ (~30đ/lần)'],['gpt-4.1-mini','GPT-4.1 mini · chính xác hơn (~80đ/lần)']]},
+ gemini:{name:'Gemini',pre:/^AIza/,ph:'AIza…',url:'aistudio.google.com → Get API key',models:[['gemini-2.5-flash-lite','Flash-Lite · nhanh, có gói miễn phí'],['gemini-2.5-flash','Flash · thông minh hơn']]}
+};
+const lsG=k=>{try{return localStorage.getItem(k)||''}catch(e){return ''}},lsS=(k,v)=>{try{v?localStorage.setItem(k,v):localStorage.removeItem(k)}catch(e){}};
+(function(){const old=lsG('ftClaudeKey');if(old&&!lsG('ftAI_claude_key')){lsS('ftAI_claude_key',old);const m=lsG('ftClaudeModel');if(m)lsS('ftAI_claude_model',m);if(!lsG('ftAI_active'))lsS('ftAI_active','claude')}if(old)lsS('ftClaudeKey','')})();
+const pKey=p=>lsG('ftAI_'+p+'_key');
+const pModel=p=>lsG('ftAI_'+p+'_model')||AIP[p].models[0][0];
+const aiActive=()=>{const p=lsG('ftAI_active');return AIP[p]&&pKey(p)?p:''};
+const aiKey=()=>{const p=aiActive();return p?pKey(p):''};
+const aiModel=()=>{const p=aiActive();return p?pModel(p):''};
+const aiName=()=>{const p=aiActive();return p?AIP[p].name:'AI'};
+function aiErr(p,s,m){const n=AIP[p].name;
+  if(s===401||/API key not valid|invalid.*api.?key|Incorrect API key/i.test(m))return n+': API key không hợp lệ hoặc đã bị xoá.';
+  if(/credit|balance|billing|insufficient_quota|exceeded your current quota/i.test(m))return n+': hết credit / hạn mức — kiểm tra tài khoản.';
+  if(s===429)return n+': gọi quá nhanh hoặc chạm giới hạn — thử lại sau.';
+  return n+' báo lỗi '+s+(m?': '+String(m).slice(0,160):'')}
+async function aiCall(p,messages,system,max){
+  const key=pKey(p),model=pModel(p);if(!key)throw new Error('Chưa có API key '+AIP[p].name+'.');
+  let url,headers,body,pick;
+  if(p==='claude'){url='https://api.anthropic.com/v1/messages';headers={'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'};body={model,max_tokens:max||1024,system,messages};pick=j=>(j.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('')}
+  else if(p==='openai'){const msgs=(system?[{role:'system',content:system}]:[]).concat(messages.map(m=>({role:m.role,content:typeof m.content==='string'?m.content:m.content.map(c=>c.type==='image'?{type:'image_url',image_url:{url:'data:'+c.source.media_type+';base64,'+c.source.data}}:c.type==='document'?{type:'file',file:{filename:'saoke.pdf',file_data:'data:application/pdf;base64,'+c.source.data}}:{type:'text',text:c.text})})));
+    url='https://api.openai.com/v1/chat/completions';headers={'content-type':'application/json',authorization:'Bearer '+key};body={model,max_tokens:max||1024,messages:msgs};pick=j=>(((j.choices||[])[0]||{}).message||{}).content||''}
+  else{const contents=messages.map(m=>({role:m.role==='assistant'?'model':'user',parts:typeof m.content==='string'?[{text:m.content}]:m.content.map(c=>(c.type==='image'||c.type==='document')?{inline_data:{mime_type:c.source.media_type,data:c.source.data}}:{text:c.text})}));
+    body={contents,generationConfig:{maxOutputTokens:Math.max(max||1024,32),thinkingConfig:{thinkingBudget:0}}};if(system)body.systemInstruction={parts:[{text:system}]};
+    url='https://generativelanguage.googleapis.com/v1beta/models/'+model+':generateContent';headers={'content-type':'application/json','x-goog-api-key':key};pick=j=>((((j.candidates||[])[0]||{}).content||{}).parts||[]).map(x=>x.text||'').join('')}
+  let r;try{r=await fetch(url,{method:'POST',headers,body:JSON.stringify(body)})}catch(e){throw new Error('Không kết nối được '+AIP[p].name+' — kiểm tra mạng.')}
   let j={};try{j=await r.json()}catch(e){}
-  if(!r.ok){const m=(j.error&&j.error.message)||'';
-    if(r.status===401)throw new Error('API key không hợp lệ hoặc đã bị xoá.');
-    if(r.status===429)throw new Error('Gọi quá nhanh hoặc chạm giới hạn chi tiêu — thử lại sau.');
-    if(/credit|balance|billing/i.test(m))throw new Error('Tài khoản Claude hết credit — nạp thêm ở console.anthropic.com.');
-    throw new Error('Claude báo lỗi '+r.status+(m?': '+m:''));}
-  return (j.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('').trim();
+  if(!r.ok)throw new Error(aiErr(p,r.status,(j.error&&(j.error.message||j.error.status))||''));
+  return String(pick(j)||'').trim();
 }
+async function claude(messages,system,max){const p=aiActive();if(!p)throw new Error('Trợ lý AI đang tắt. Bật trong Cài đặt → Dữ liệu → Trợ lý AI.');return aiCall(p,messages,system,max)}
 function md(s){return esc(s).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/^\s*[-*•]\s+/gm,'• ').replace(/\n/g,'<br>')}
 function thinking(txt){const id='qa-think-'+Date.now();log('<div class="qa-bot qa-think" id="'+id+'">'+txt+'</div>');return ()=>{const e=$(id);if(e)e.remove()}}
 function aiBase(){
@@ -7894,37 +8116,70 @@ function aiBase(){
     +'\nDanh mục chi: '+catNames('out').join(', ')+'\nDanh mục thu: '+catNames('in').join(', ');
 }
 const XSYS=()=>'Bạn là bộ tách giao dịch cho app sổ thu chi FinTrack (Việt Nam).\n'+aiBase()+`
-Trả về DUY NHẤT một JSON, không giải thích: {"items":[...],"note":""}
+Trả về DUY NHẤT một JSON, không giải thích: {"loai":"hoa_don|chuyen_khoan|sao_ke|khac","items":[...],"note":""}
 Mỗi item: {"type":"out"|"in"|"xfer","amount":số VND nguyên,"desc":"ngắn gọn, tên nơi bán/người nhận nếu có","category":"đúng 1 tên trong danh mục","account":"id tài khoản hoặc null","from":"id (xfer)","to":"id (xfer)","date":"YYYY-MM-DD"}
-Quy tắc: hoá đơn → 1 item với TỔNG THANH TOÁN cuối cùng (không tách từng món). Màn hình chuyển khoản: chuyển cho người/cửa hàng → out; giữa 2 tài khoản của tôi → xfer. Nhận tiền → in. Đoán account từ tên ngân hàng/4 số cuối thẻ nếu thấy. k/nghìn/cành=1.000, tr/củ/triệu=1.000.000, lít=100.000. Không có năm thì dùng năm nay. Không đọc được thì items rỗng và note nói lý do.`;
+Quy tắc: hoá đơn → 1 item với TỔNG THANH TOÁN cuối cùng (không tách từng món). Màn hình chuyển khoản: chuyển cho người/cửa hàng → out; giữa 2 tài khoản của tôi → xfer. Nhận tiền → in. Đoán account từ tên ngân hàng/4 số cuối thẻ nếu thấy. k/nghìn/cành=1.000, tr/củ/triệu=1.000.000, lít=100.000. Không có năm thì dùng năm nay. Không đọc được thì items rỗng và note nói lý do.
+Nếu là SAO KÊ thẻ tín dụng / tài khoản (bảng nhiều giao dịch, có thể nhiều trang): loai="sao_ke", thêm "the":"id tài khoản khớp tên ngân hàng hoặc 4 số cuối, không chắc thì null","tu":"YYYY-MM-DD","den":"YYYY-MM-DD","tong_phai_tra":số hoặc null; items liệt kê MỌI giao dịch chi tiêu/phí/lãi (type out) và hoàn tiền (type in), date là ngày giao dịch; BỎ QUA dòng thanh toán thẻ, trả nợ thẻ, số dư đầu/cuối kỳ.`;
 function aiJson(s){const a=s.indexOf('{'),b=s.lastIndexOf('}');if(a<0||b<a)return null;try{return JSON.parse(s.slice(a,b+1))}catch(e){return null}}
 function aiShow(j,src){
   const list=(j&&j.items)||[];const ks=[];let nx=0;
   list.forEach(x=>{const amt=Math.round(+x.amount||0);if(!amt)return;const date=/^\d{4}-\d{2}-\d{2}$/.test(x.date||'')?x.date:tdy();
-    if(x.type==='xfer'){const it={kind:'xfer',from:acctOf(x.from)?x.from:mainAcctId(),to:acctOf(x.to)?x.to:null,amount:amt,date,guess:'Claude đọc'};it.desc=xferDesc(it);const k=++xseq;X[k]=it;log(xcard(k));nx++;return}
+    if(x.type==='xfer'){const it={kind:'xfer',from:acctOf(x.from)?x.from:mainAcctId(),to:acctOf(x.to)?x.to:null,amount:amt,date,guess:aiName()+' đọc'};it.desc=xferDesc(it);const k=++xseq;X[k]=it;log(xcard(k));nx++;return}
     const flow=x.type==='in'?'in':'out';const desc=cap(String(x.desc||'').trim().slice(0,80));const g=smartGuess(desc,flow);
     const category=catNames(flow).includes(x.category)?x.category:(g.category||pickCat(desc,flow,null));
     const account=acctOf(x.account)?x.account:(g.account||mainAcctId());
-    const k=++seq;items[k]={amount:amt,flow,desc:desc||category,category,account,date,src:'ai',why:'Claude đọc'+(src==='img'?' từ ảnh':'')};ks.push(k);log(card(k))});
+    const k=++seq;items[k]={amount:amt,flow,desc:desc||category,category,account,date,src:'ai',why:aiName()+' đọc'+(src==='img'?' từ ảnh':'')};ks.push(k);log(card(k))});
   if(ks.length>1)log(`<div class="qa-btns"><button type="button" class="qa-save" onclick="qaSaveAll('${ks.join(',')}',this)">Lưu tất cả (${ks.length}) · ${fmtK(ks.reduce((s,k)=>s+items[k].amount,0))}</button></div>`);
-  if(!ks.length&&!nx)botLog(esc((j&&j.note)||'Claude không tìm thấy giao dịch nào.'));
+  if(!ks.length&&!nx)botLog(esc((j&&j.note)||aiName()+' không tìm thấy giao dịch nào.'));
   else if(j&&j.note)log('<div class="qa-bot">'+esc(j.note)+'</div>');
 }
 async function aiParse(t){
-  const done=thinking('Claude đang đọc câu…');
+  const done=thinking(aiName()+' đang đọc câu…');
   try{const s=await claude([{role:'user',content:t}],XSYS(),800);done();aiShow(aiJson(s),'text')}
   catch(e){done();botLog(esc(e.message))}
 }
 function shrink(file){return new Promise((ok,no)=>{const u=URL.createObjectURL(file);const im=new Image();im.onload=()=>{const M=1600,s=Math.min(1,M/Math.max(im.width,im.height));const c=document.createElement('canvas');c.width=Math.round(im.width*s);c.height=Math.round(im.height*s);c.getContext('2d').drawImage(im,0,0,c.width,c.height);URL.revokeObjectURL(u);ok(c.toDataURL('image/jpeg',.85))};im.onerror=()=>no(new Error('Không mở được ảnh.'));im.src=u})}
-window.qaCam=function(){if(!aiKey()){botLog('Đọc ảnh cần API key Claude. Vào <b>Cài đặt → Dữ liệu → Trợ lý AI</b> để nhập.'+chipsQ(['mở dữ liệu']));return}const f=$('qa-file');if(f)f.click()};
+window.qaCam=function(){if(!aiKey()){botLog('Đọc ảnh cần bật một trợ lý AI. Vào <b>Cài đặt → Dữ liệu → Trợ lý AI</b> để nhập.'+chipsQ(['mở dữ liệu']));return}const f=$('qa-file');if(f)f.click()};
 window.qaImg=async function(inp){
-  const file=inp.files&&inp.files[0];inp.value='';if(!file)return;
-  let url;try{url=await shrink(file)}catch(e){botLog(esc(e.message));return}
-  log('<div class="qa-me"><img src="'+url+'" alt="" style="display:block;max-width:180px;max-height:240px;border-radius:10px"></div>');histPush('me','[Ảnh hoá đơn]');
-  const done=thinking('Claude đang đọc ảnh…');
-  try{const s=await claude([{role:'user',content:[{type:'image',source:{type:'base64',media_type:'image/jpeg',data:url.split(',')[1]}},{type:'text',text:'Đọc giao dịch trong ảnh này.'}]}],XSYS(),800);done();aiShow(aiJson(s),'img')}
+  const files=[...(inp.files||[])].slice(0,6);inp.value='';if(!files.length)return;
+  const parts=[];let thumbs='',hasDoc=false;
+  try{for(const f of files){
+    if(f.type==='application/pdf'||/\.pdf$/i.test(f.name)){if(f.size>9e6)throw new Error('PDF quá lớn (tối đa khoảng 9MB).');hasDoc=true;
+      const b64=await new Promise((ok,no)=>{const r=new FileReader();r.onload=()=>ok(String(r.result).split(',')[1]);r.onerror=()=>no(new Error('Không đọc được file.'));r.readAsDataURL(f)});
+      parts.push({type:'document',source:{type:'base64',media_type:'application/pdf',data:b64}});thumbs+='<div style="padding:8px 12px;border-radius:10px;background:rgba(255,255,255,.18);font-size:13px;font-weight:600">PDF · '+esc(f.name)+'</div>'}
+    else{const url=await shrink(f);parts.push({type:'image',source:{type:'base64',media_type:'image/jpeg',data:url.split(',')[1]}});thumbs+='<img src="'+url+'" alt="" style="display:block;max-width:'+(files.length>1?110:180)+'px;max-height:240px;border-radius:10px">'}}}
+  catch(e){botLog(esc(e.message));return}
+  log('<div class="qa-me" style="display:flex;flex-wrap:wrap;gap:6px">'+thumbs+'</div>');histPush('me','['+files.length+' tệp ảnh/PDF]');
+  const big=hasDoc||files.length>1;
+  const done=thinking(aiName()+' đang đọc '+(big?'chứng từ…':'ảnh…'));
+  parts.push({type:'text',text:'Đọc giao dịch trong '+(files.length>1?'các trang này (cùng một chứng từ)':'tệp này')+'.'});
+  try{const s=await claude([{role:'user',content:parts}],XSYS(),big?6000:1500);done();const j=aiJson(s);if(j&&j.loai==='sao_ke')stmtRecon(j);else aiShow(j,'img')}
   catch(e){done();botLog(esc(e.message))}
 };
+function stmtRecon(j){
+  const list=(j.items||[]).map(x=>({amount:Math.round(+x.amount||0),flow:x.type==='in'?'in':'out',desc:cap(String(x.desc||'').trim().slice(0,80)),category:x.category,date:/^\d{4}-\d{2}-\d{2}$/.test(x.date||'')?x.date:null})).filter(x=>x.amount>0&&x.date);
+  if(!list.length){botLog('Không đọc được giao dịch nào trong sao kê.'+(j.note?' '+esc(j.note):''));return}
+  let acc=acctOf(j.the)?j.the:null;
+  const from=/^\d{4}-\d{2}-\d{2}$/.test(j.tu||'')?j.tu:list.reduce((m,x)=>x.date<m?x.date:m,list[0].date);
+  const to=/^\d{4}-\d{2}-\d{2}$/.test(j.den||'')?j.den:list.reduce((m,x)=>x.date>m?x.date:m,list[0].date);
+  const pad=(d,k)=>iso(new Date(new Date(d+'T00:00:00').getTime()+k*864e5)),dd=(a,b)=>Math.abs(new Date(a)-new Date(b))/864e5;
+  let pool=(db.transactions||[]).filter(t=>t.flow!=='xfer'&&t.group!=='company'&&t.date>=pad(from,-3)&&t.date<=pad(to,3));
+  if(!acc){const sc={};list.forEach(x=>pool.forEach(t=>{if(t.account&&t.amount===x.amount&&dd(t.date,x.date)<=3)sc[t.account]=(sc[t.account]||0)+1}));const b=Object.entries(sc).sort((a,b)=>b[1]-a[1])[0];if(b&&b[1]>=2)acc=b[0]}
+  if(acc)pool=pool.filter(t=>t.account===acc);
+  const used=new Set(),matched=[],miss=[],diff=[];
+  list.forEach(x=>{const m=pool.find(t=>!used.has(t.id)&&t.flow===x.flow&&t.amount===x.amount&&dd(t.date,x.date)<=3);if(m){used.add(m.id);matched.push(x)}else miss.push(x)});
+  const miss2=[];miss.forEach(x=>{const m=pool.find(t=>!used.has(t.id)&&t.flow===x.flow&&dd(t.date,x.date)<=2&&Math.abs(t.amount-x.amount)<=Math.max(t.amount,x.amount)*.3);if(m){used.add(m.id);diff.push([x,m])}else miss2.push(x)});
+  const extra=acc?pool.filter(t=>!used.has(t.id)&&t.flow==='out'&&t.date>=from&&t.date<=to):[];
+  const an=acc?acctOf(acc).name:'';
+  let h='<b>Đối chiếu sao kê'+(an?' '+esc(an):'')+'</b> · '+dmy(from).slice(0,5)+'–'+dmy(to)+'<br>'+list.length+' dòng: <b style="color:#00a553">'+matched.length+' khớp</b> · <b style="color:#e0342a">'+miss2.length+' chưa ghi</b> · <b style="color:#e08a00">'+diff.length+' lệch số</b>'+(acc?' · '+extra.length+' khoản trong app không có trên sao kê':'');
+  if(+j.tong_phai_tra)h+='<br>Tổng phải trả theo sao kê: <b>'+fmtK(+j.tong_phai_tra)+'</b>';
+  if(!acc)h+='<br><span class="qa-why">Chưa xác định được thẻ — kiểm tra thẻ trên từng khoản trước khi lưu.</span>';
+  botLog(h);
+  diff.forEach(([x,t])=>{const k=++xseq;X[k]={kind:'edit',txid:t.id,ch:{amount:x.amount},amount:x.amount,date:t.date};log(xcard(k))});
+  if(extra.length)botLog('Có trong app nhưng không thấy trên sao kê:<br>'+extra.slice(0,10).map(t=>dmy(t.date).slice(0,5)+' · '+esc(t.desc||t.category)+' · <b>'+fmtK(t.amount)+'</b>').join('<br>')+(extra.length>10?'<br>…và '+(extra.length-10)+' khoản khác':'')+'<br><span class="qa-why">Có thể ghi nhầm thẻ, hoặc chưa lên sao kê.</span>');
+  if(miss2.length)aiShow({items:miss2.map(x=>({type:x.flow,amount:x.amount,desc:x.desc,category:x.category,account:acc,date:x.date}))},'img');
+  else if(!diff.length)botLog('Sao kê khớp hoàn toàn với sổ ✓');
+}
 function swipeDue(a){
   if(!a.stDay||!a.dueDay)return null;const d=new Date(),t0=new Date(d.getFullYear(),d.getMonth(),d.getDate());
   let close=new Date(d.getFullYear(),d.getMonth(),a.stDay);if(close<t0)close=new Date(d.getFullYear(),d.getMonth()+1,a.stDay);
@@ -7943,17 +8198,36 @@ function aiContext(){
     muc_tieu:(db.goals||[]).map(g=>({ten:g.name,da_co:g.current||0,muc_tieu:g.target||0})),giao_dich_thang_nay:recent});
 }
 async function aiAsk(q){
-  const done=thinking('Claude đang xem số liệu…');
+  const done=thinking(aiName()+' đang xem số liệu…');
   const sys='Bạn là trợ lý tài chính cá nhân trong app FinTrack của một người dùng Việt Nam. Trả lời bằng tiếng Việt, ngắn gọn (tối đa khoảng 150 từ), đi thẳng vào con số, dùng gạch đầu dòng khi liệt kê. Viết tiền dạng 850k, 1,2tr. Chỉ dùng số liệu có trong dữ liệu, không bịa. Hỏi nên quẹt thẻ nào: ưu tiên thẻ có neu_quet_hom_nay_han_tra xa nhất và còn hạn mức. Hỏi trả thẻ nào trước: ưu tiên thẻ có han_tra_tiep gần nhất.\nDữ liệu: '+aiContext();
   try{const s=await claude([{role:'user',content:q}],sys,700);done();botLog(md(s))}
   catch(e){done();botLog(esc(e.message))}
 }
 /* Cài đặt */
-function aiRender(){const st=$('ai-status');if(!st)return;const k=aiKey();st.innerHTML=k?'Đã có key <b>••••'+esc(k.slice(-4))+'</b> trên máy này':'Chưa có key trên máy này';const m=$('ai-model');if(m)m.value=aiModel();const i=$('ai-key');if(i)i.value=''}
-window.aiSaveKey=function(){const i=$('ai-key');const v=(i&&i.value||'').trim();if(!/^sk-ant-/.test(v)){toast('Key phải bắt đầu bằng sk-ant-');return}try{localStorage.setItem(AI_LS,v)}catch(e){}aiRender();toast('Đã lưu key ✓');aiTest();renderAiHome()};
-window.aiClear=function(){if(!confirm('Xoá API key Claude trên máy này?'))return;try{localStorage.removeItem(AI_LS)}catch(e){}aiRender();toast('Đã xoá key');renderAiHome()};
-window.aiSetModel=function(v){try{localStorage.setItem(AI_MLS,v)}catch(e){}toast('Đã chọn '+(v.includes('haiku')?'Haiku':'Sonnet'))};
-window.aiTest=async function(){const st=$('ai-status');if(!aiKey()){toast('Chưa có key');return}if(st)st.textContent='Đang kiểm tra…';try{await claude([{role:'user',content:'Trả lời đúng 1 từ: OK'}],'',5);aiRender();if(st)st.innerHTML+=' · <b style="color:#00a553">kết nối thành công</b>'}catch(e){aiRender();if(st)st.innerHTML+=' · <b style="color:#e0342a">'+esc(e.message)+'</b>'}};
+let aiOpen=null;
+const mLabel=(p,v)=>((AIP[p].models.find(m=>m[0]===v)||[0,v])[1]).split(' · ')[0];
+function aiRender(){
+  const box=$('ai-box');if(!box)return;const act=aiActive();
+  const st=$('ai-status');if(st)st.innerHTML=act?'Đang dùng <b>'+AIP[act].name+'</b> · '+esc(mLabel(act,pModel(act))):'Đang tắt · chat vẫn ghi bình thường, không gọi AI';
+  box.innerHTML=Object.keys(AIP).map(p=>{const P=AIP[p],k=pKey(p),on=act===p,open=aiOpen===p;
+    const sw='<button type="button" role="switch" aria-checked="'+on+'" aria-label="Bật/tắt '+P.name+'" onclick="aiToggle(\''+p+'\')" style="flex-shrink:0;width:50px;height:30px;border-radius:15px;border:none;padding:3px;cursor:pointer;background:'+(on?'#00a553':'#c9d1dc')+';transition:background .2s"><span style="display:block;width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transform:translateX('+(on?20:0)+'px);transition:transform .2s"></span></button>';
+    const sub=on?'<span style="color:#00a553;font-weight:600">Đang kết nối</span> · '+esc(mLabel(p,pModel(p))):k?'Đã ngắt · key ••••'+esc(k.slice(-4)):'Chưa có key';
+    const body=open?'<div style="padding:2px 0 12px;display:flex;flex-direction:column;gap:8px"><input class="form-input" id="ai-key-'+p+'" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="'+(k?'Dán key mới nếu muốn thay':'Dán API key: '+P.ph)+'"><select class="form-input form-select" onchange="aiSetModel(\''+p+'\',this.value)">'+P.models.map(m=>'<option value="'+m[0]+'"'+(m[0]===pModel(p)?' selected':'')+'>'+m[1]+'</option>').join('')+'</select><div style="display:flex;gap:8px"><button class="btn btn-primary" style="flex:1" onclick="aiSaveKey(\''+p+'\')">Lưu</button><button class="btn" style="flex:1" onclick="aiTest(\''+p+'\')">Kiểm tra</button>'+(k?'<button class="btn" onclick="aiClear(\''+p+'\')">Xoá key</button>':'')+'</div><div id="ai-msg-'+p+'" style="font-size:12px;color:var(--muted);line-height:1.5">Tạo key tại '+P.url+'.'+(p==='gemini'?' Gói miễn phí có thể dùng dữ liệu gửi lên để cải thiện sản phẩm.':'')+'</div></div>':'';
+    return '<div style="border-top:1px solid var(--bdr,#e3e8ef)"><div style="display:flex;align-items:center;gap:12px;min-height:58px"><div onclick="aiOpenP(\''+p+'\')" style="flex:1;min-width:0;cursor:pointer;display:flex;align-items:center;gap:8px"><div style="flex:1;min-width:0"><div style="font-size:14.5px;font-weight:600">'+P.name+'</div><div style="font-size:12px;color:var(--muted);margin-top:1px">'+sub+'</div></div><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;opacity:.45;transform:rotate('+(open?180:0)+'deg)"><path d="M6 9l6 6 6-6"/></svg></div>'+sw+'</div>'+body+'</div>'}).join('');
+}
+window.aiOpenP=p=>{aiOpen=aiOpen===p?null:p;aiRender()};
+window.aiToggle=function(p){
+  if(aiActive()===p){lsS('ftAI_active','');aiRender();renderAiHome();toast('Đã ngắt '+AIP[p].name);return}
+  if(!pKey(p)){aiOpen=p;aiRender();toast('Nhập API key '+AIP[p].name+' trước');const i=$('ai-key-'+p);if(i)i.focus();return}
+  const prev=aiActive();lsS('ftAI_active',p);aiRender();renderAiHome();toast('Đã bật '+AIP[p].name+(prev?' · tắt '+AIP[prev].name:''))};
+window.aiSaveKey=function(p){const i=$('ai-key-'+p);const v=(i&&i.value||'').trim();if(!v){toast('Chưa nhập key');return}
+  if(!AIP[p].pre.test(v)){toast('Key '+AIP[p].name+' thường bắt đầu bằng '+AIP[p].ph.replace('…',''));return}
+  lsS('ftAI_'+p+'_key',v);if(!aiActive())lsS('ftAI_active',p);aiRender();renderAiHome();toast('Đã lưu key ✓');aiTest(p)};
+window.aiClear=function(p){if(!confirm('Xoá API key '+AIP[p].name+' trên máy này?'))return;lsS('ftAI_'+p+'_key','');if(lsG('ftAI_active')===p)lsS('ftAI_active','');aiRender();renderAiHome();toast('Đã xoá key')};
+window.aiSetModel=function(p,v){lsS('ftAI_'+p+'_model',v);aiRender();toast('Đã chọn '+mLabel(p,v))};
+window.aiTest=async function(p){p=p||aiActive();if(!p||!pKey(p)){toast('Chưa có key');return}const el=()=>$('ai-msg-'+p);if(el())el().textContent='Đang kiểm tra…';
+  try{await aiCall(p,[{role:'user',content:'Trả lời đúng 1 từ: OK'}],'',16);if(el())el().innerHTML='<b style="color:#00a553">Kết nối thành công</b>';toast(AIP[p].name+' kết nối thành công ✓')}
+  catch(e){if(el())el().innerHTML='<b style="color:#e0342a">'+esc(e.message)+'</b>';else toast(e.message)}};
 document.addEventListener('DOMContentLoaded',aiRender);setTimeout(aiRender,800);
 
 /* ── Claude soát sổ hằng tuần ── */
@@ -7982,17 +8256,17 @@ Soát 14 ngày gần nhất và tình hình thẻ, nợ, ngân sách. Trả về
 Quy tắc: tối đa 6 vấn đề, xếp theo mức độ. i là số thứ tự trong giao_dich_14_ngay. "sai_muc" chỉ khi rõ ràng sai; muc phải đúng tên trong danh mục. "trung" lấy từ kha_nang_trung, sửa = xoá bản sau (j). "thieu" lấy từ khoan_hang_thang_chua_ghi. "the": dùng quet_the_chua_toi_uu và thẻ có han_tra_tiep trong 7 ngày còn phai_tra_ky_nay. Không bịa số.
 Danh mục chi: ${catNames('out').join(', ')}. Danh mục thu: ${catNames('in').join(', ')}.`;
 window.aiReviewNow=async function(silent){
-  if(rvBusy)return;if(!aiKey()){if(!silent)toast('Cần API key Claude');return}
+  if(rvBusy)return;if(!aiKey()){if(!silent)toast('Trợ lý AI đang tắt');return}
   rvBusy=true;renderAiHome();
   const prev=rvGet(),ym=tdy().slice(0,7),monthly=!prev||prev.ym!==ym;
-  try{const c=reviewCtx();const s=await claude([{role:'user',content:c.text}],RVSYS(monthly),1400);const j=aiJson(s);if(!j||!j.tom_tat)throw new Error('Claude trả kết quả không đọc được — thử lại.');
+  try{const c=reviewCtx();const s=await claude([{role:'user',content:c.text}],RVSYS(monthly),1400);const j=aiJson(s);if(!j||!j.tom_tat)throw new Error('AI trả kết quả không đọc được — thử lại.');
     if(!monthly&&prev&&prev.data&&prev.data.thang_truoc)j.thang_truoc=prev.data.thang_truoc;
     rvSet({at:tdy(),ym,data:j,idx:c.idx});rvBusy=false;renderAiHome();
-    if(silent)rvNotify(j);else toast('Claude đã soát xong ✓');
+    if(silent)rvNotify(j);else toast(aiName()+' đã soát xong ✓');
   }catch(e){rvBusy=false;renderAiHome(e.message);if(!silent)toast(e.message)}
 };
 function rvNotify(j){try{if(!('Notification' in window)||Notification.permission!=='granted')return;const o={body:j.tom_tat,icon:'icon-192.png',tag:'ft-review'};
-  if(navigator.serviceWorker&&navigator.serviceWorker.getRegistration)navigator.serviceWorker.getRegistration().then(r=>{if(r)r.showNotification('FinTrack · Claude soát sổ',o);else new Notification('FinTrack · Claude soát sổ',o)});else new Notification('FinTrack · Claude soát sổ',o)}catch(e){}}
+  if(navigator.serviceWorker&&navigator.serviceWorker.getRegistration)navigator.serviceWorker.getRegistration().then(r=>{if(r)r.showNotification('FinTrack · AI soát sổ',o);else new Notification('FinTrack · AI soát sổ',o)});else new Notification('FinTrack · AI soát sổ',o)}catch(e){}}
 window.rvAskNotif=function(){try{Notification.requestPermission().then(()=>renderAiHome())}catch(e){}};
 const LV={cao:'#e0342a',vua:'#e08a00',thap:'#8a97a8'};
 function reviewBody(rv){
@@ -8009,7 +8283,7 @@ function renderAiHome(err){
   const el=$('ai-review-home');if(!el)return;
   if(!aiKey()){el.innerHTML='';return}
   const rv=rvGet();
-  let body=rvBusy?'<div style="font-size:13.5px;color:var(--muted);font-style:italic">Claude đang soát sổ…</div>':rv&&rv.data?reviewBody(rv):'<div style="font-size:13.5px;color:var(--muted)">Chưa soát lần nào.</div>';
+  let body=rvBusy?'<div style="font-size:13.5px;color:var(--muted);font-style:italic">AI đang soát sổ…</div>':rv&&rv.data?reviewBody(rv):'<div style="font-size:13.5px;color:var(--muted)">Chưa soát lần nào.</div>';
   if(err)body+='<div style="font-size:12.5px;color:#e0342a;margin-top:8px">'+esc(err)+'</div>';
   if('Notification' in window&&Notification.permission==='default')body+='<button type="button" onclick="rvAskNotif()" style="margin-top:10px;border:1px solid var(--bdr,#dfe5ee);background:var(--card);color:var(--navy);border-radius:10px;padding:8px 12px;font:600 12.5px inherit;font-family:inherit;cursor:pointer">Bật thông báo khi Claude soát xong</button>';
   el.innerHTML='<div class="sec-head"><span class="sec-head-title">AI nhận xét</span><span class="sec-head-action" onclick="aiReviewNow()">'+(rvBusy?'Đang soát…':'Soát ngay')+'</span></div><div class="card" style="padding:12px 14px">'+body+'</div>';
@@ -8025,13 +8299,69 @@ window.aiFix=function(n){
     try{toastUndo('Đã xoá bản trùng',()=>{db.transactions.splice(i,0,t);delete v.done;rvSet(rv);save();renderAll();renderAiHome()})}catch(e){toast('Đã xoá ✓')}}
 };
 function rvIntent(n){
-  if(/^(soat so|soat ngay|claude soat|kiem tra so)$/.test(n)){if(!aiKey())return {msg:'Cần API key Claude (Cài đặt → Dữ liệu → Trợ lý AI).'};aiReviewNow().then(()=>{const rv=rvGet();if(rv&&rv.data)botLog(reviewBody(rv))});return {msg:'Claude đang soát sổ…'}}
+  if(/^(soat so|soat ngay|claude soat|kiem tra so)$/.test(n)){if(!aiKey())return {msg:'Trợ lý AI đang tắt (Cài đặt → Dữ liệu → Trợ lý AI).'};aiReviewNow().then(()=>{const rv=rvGet();if(rv&&rv.data)botLog(reviewBody(rv))});return {msg:'AI đang soát sổ…'}}
   if(/^(xem )?nhan xet( claude| tuan( nay)?)?$/.test(n)){const rv=rvGet();return {msg:rv&&rv.data?reviewBody(rv):'Chưa có nhận xét.'+chipsQ(['soát sổ'])}}
   return null;
 }
 setTimeout(()=>{renderAiHome();try{const rv=rvGet();const due=!rv||(Date.now()-new Date(rv.at).getTime())>=7*864e5;if(aiKey()&&due&&(db.transactions||[]).length)aiReviewNow(true)}catch(e){}},5000);
 setTimeout(renderAiHome,900);
 
+/* ── Ngoại tệ · chế độ du lịch ── */
+const FXD={USD:25400,EUR:27500,GBP:32500,JPY:170,KRW:18.5,CNY:3500,THB:720,SGD:19000,MYR:5600,AUD:16500,TWD:800,HKD:3250,LAK:1.2,KHR:6.2,IDR:1.6,PHP:440,INR:300,CHF:29000,CAD:18500};
+const FXW=[['USD','usd|do la my|do la|dollar|do|$'],['EUR','eur|euro|€'],['GBP','gbp|bang anh|£'],['JPY','jpy|yen|¥'],['KRW','krw|won'],['CNY','cny|rmb|nhan dan te|te'],['THB','thb|baht|bat'],['SGD','sgd|do sing'],['MYR','myr|ringgit|rm'],['AUD','aud|do uc'],['TWD','twd|dai te'],['HKD','hkd'],['LAK','lak|kip'],['KHR','khr|riel'],['IDR','idr|rupiah'],['PHP','php|peso'],['INR','inr|rupee'],['CHF','chf'],['CAD','cad|do canada']];
+const FXA=FXW.flatMap(([c,a])=>a.split('|').map(w=>[w,c])).sort((x,y)=>y[0].length-x[0].length);
+const reE=s=>s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+const FXU=FXA.map(x=>reE(x[0])).join('|');
+const NUM='(\\d{1,3}(?:[.,]\\d{3})+|\\d+(?:[.,]\\d+)?)';
+const FXRE=new RegExp('(?<![\\p{L}\\d.,])([$€£¥])?\\s?'+NUM+'\\s?('+FXU+')?(?![\\p{L}\\d])','gu');
+function fxCode(w){w=String(w||'').trim();const up=w.toUpperCase();if(FXD[up])return up;const f=FXA.find(x=>x[0]===w);return f?f[1]:null}
+function fxCache(){try{return JSON.parse(localStorage.getItem('ftFx')||'{}')}catch(e){return {}}}
+function fxManual(){try{return JSON.parse(localStorage.getItem('ftFxManual')||'{}')}catch(e){return {}}}
+function fxRate(c){return fxManual()[c]||(fxCache().rates||{})[c]||FXD[c]}
+function fxFetch(){const c=fxCache();if(c.at&&Date.now()-c.at<20*36e5)return;fetch('https://open.er-api.com/v6/latest/USD').then(r=>r.json()).then(j=>{const R=j&&j.rates;if(!R||!R.VND)return;const rates={};Object.keys(FXD).forEach(k=>{if(R[k])rates[k]=Math.round(R.VND/R[k]*100)/100});localStorage.setItem('ftFx',JSON.stringify({at:Date.now(),rates}))}).catch(()=>{})}
+const travel=()=>{const c=localStorage.getItem('ftTravel');return FXD[c]?c:''};
+const fxFmt=(v,c)=>fmtK(v*fxRate(c));
+let FXL=[];
+function fxRewrite(t){
+  if(isSms(t))return null;const n=nz(t),tv=travel();if(/^(mua|ban)\s+[\d.,]+\s*[a-z]/.test(n)&&!/(usd|\$)/.test(n.slice(0,20)))return null;const reps=[];let m;FXRE.lastIndex=0;
+  while((m=FXRE.exec(n))){const pre=m[1],unit=m[3];let code=null;
+    if(pre)code=fxCode(pre);else if(unit)code=fxCode(unit);
+    if(!code&&tv){const before=n.slice(Math.max(0,m.index-8),m.index),after=n.slice(m.index+m[0].length,m.index+m[0].length+6);
+      if(/(?<![a-z])(thang|ngay|tuan|nam|lan|thu|ky|so|tk|the|t|q|x)\s*$/.test(before)||/^\s?(k|tr|trieu|ty|d|dong|vnd|nghin|ngan|cu|canh|lit|m|%|\/|:|h|g|gio|phut|tieng|nguoi|cai|ly|lan|ngay|dem|x)(?![a-z])/.test(after)||/bao nhieu|\?/.test(n))continue;code=tv}
+    if(!code)continue;const v=pnum(m[2]);if(!v)continue;const vnd=Math.round(v*fxRate(code)/100)*100;
+    reps.push({s:m.index,e:m.index+m[0].length,v,code,vnd})}
+  if(!reps.length)return null;fxFetch();
+  let out=t;reps.slice().reverse().forEach(r=>{const lead=/\s/.test(t[r.s]||'')?' ':'';out=out.slice(0,r.s)+lead+r.vnd+'đ '+out.slice(r.e)});
+  return {t:out.replace(/\s+/g,' ').trim(),list:reps};
+}
+function fxNote(r){if(!FXL.length)return;r.forEach(it=>{const c=FXL.find(x=>x.vnd===it.amount);if(!c)return;const s=c.v.toLocaleString('en-US')+' '+c.code;it.note=s+' × '+fxRate(c.code).toLocaleString('vi-VN')+'đ';it.why=(it.why?it.why+' · ':'')+s})}
+function fxCmd(n){
+  let m;
+  if(/^(tat|thoat|dung)( che do)? du lich$/.test(n)){localStorage.removeItem('ftTravel');return 'Đã tắt chế độ du lịch. Số không kèm đơn vị lại tính bằng tiền Việt.'}
+  if((m=/^(?:bat |mo )?(?:che do )?du lich\s+(?:bang |tien |dung )?(.+)$/.exec(n))){const c=fxCode(m[1]);if(!c)return null;localStorage.setItem('ftTravel',c);fxFetch();
+    return 'Đã bật <b>chế độ du lịch · '+c+'</b> (1 '+c+' ≈ '+fxRate(c).toLocaleString('vi-VN')+'đ).<br>Số không kèm đơn vị sẽ tính bằng '+c+', ví dụ “ăn tối 250” ≈ '+fxFmt(250,c)+'. Ghi “50k” vẫn là tiền Việt.'+chipsQ(['tỷ giá','tắt du lịch'])}
+  if((m=/^ty gia(?:\s+([a-z$€£¥ ]+?))?(?:\s+([\d.,]+))?$/.exec(n))){
+    if(m[1]&&m[2]){const c=fxCode(m[1]);if(!c)return 'Không nhận ra loại tiền “'+esc(m[1])+'”.';const o=fxManual();o[c]=pnum(m[2]);localStorage.setItem('ftFxManual',JSON.stringify(o));return 'Đã đặt tỷ giá tay: 1 '+c+' = <b>'+o[c].toLocaleString('vi-VN')+'đ</b>.'+chipsQ(['xoá tỷ giá '+c.toLowerCase()])}
+    fxFetch();const c0=m[1]?fxCode(m[1]):null;const L=c0?[c0]:[...new Set([travel(),'USD','EUR','THB','JPY','KRW','CNY','SGD'].filter(Boolean))];const man=fxManual(),ca=fxCache();
+    return '<b>Tỷ giá</b>'+(ca.at?' · cập nhật '+dmy(iso(new Date(ca.at))):' · tham khảo')+'<br>'+L.map(c=>'1 '+c+' = <b>'+fxRate(c).toLocaleString('vi-VN')+'đ</b>'+(man[c]?' (đặt tay)':'')).join('<br>')+'<br><span class="qa-why">Đặt tay: “tỷ giá thb 740”</span>'}
+  if((m=/^xoa ty gia\s+(.+)$/.exec(n))){const c=fxCode(m[1]);const o=fxManual();if(c&&o[c]){delete o[c];localStorage.setItem('ftFxManual',JSON.stringify(o));return 'Đã bỏ tỷ giá tay '+c+'.'}return 'Không có tỷ giá tay nào như vậy.'}
+  return null;
+}
+function miscIntent(n){
+  if(/^(lich (tra|thanh toan) the|lich the|lich no the|the (nao )?(sap )?den han)$/.test(n))return {msg:window.cardCalChat?cardCalChat():''};
+  if(/^(xem |cho xem )?(dong tien|du bao)|co thieu tien|thieu tien khong|du bao dong tien/.test(n))return {msg:window.fcChat?fcChat():''};
+  if(/^(sao luu|backup)( ngay| du lieu)?$/.test(n)){try{backupShare()}catch(e){}return {msg:'Đang tạo file sao lưu — chọn <b>Lưu vào Tệp</b> (iCloud Drive) hoặc Google Drive.'}}
+  return null;
+}
+/* ── Tách nhiều tin nhắn ngân hàng ── */
+const BANKHEAD=/^\s*(?:\[[^\]]{2,20}\]|(?:vpbank|vp bank|vib|mb|mbbank|mb bank|lion|lionbank|techcombank|tcb|vietcombank|vcb|acb|bidv|tpbank|tp bank|sacombank|agribank|vietinbank|ocb|hdbank|shb|msb|seabank|vcbdigibank|timo|cake|momo)\b|tk\s*\d|tai khoan|the\s*[x*]*\d{4}|\d{1,2}\/\d{1,2}(?:\/\d{2,4})?\s)/i;
+function smsSplit(t){
+  let ch=t.split(/\n\s*\n+/).map(s=>s.trim()).filter(Boolean);
+  if(ch.length>1)return ch;
+  const lines=t.split(/\n/).map(s=>s.trim()).filter(Boolean);if(lines.length<2)return [t];
+  const out=[];lines.forEach(l=>{if(!out.length||BANKHEAD.test(nz(l)))out.push(l);else out[out.length-1]+='\n'+l});
+  return out.length>1&&out.filter(isSms).length>=2?out:[t];
+}
 /* ── Chat UI ── */
 let items={},seq=0;
 function acctName(id){const a=accts().find(x=>x.id===id);return a?a.name:'—'}
@@ -8091,7 +8421,7 @@ function build(){
   o.innerHTML=`<div class="modal"><div class="modal-handle"></div>
   <div class="modal-title" style="display:flex;align-items:center;justify-content:space-between">Nhập nhanh<span style="display:flex;gap:6px"><button type="button" id="qa-tips-btn" onclick="qaTips()" style="border:1px solid var(--bdr,#dfe5ee);background:var(--light,#f0f2f8);color:var(--navy);font:600 13px inherit;font-family:inherit;cursor:pointer;padding:0 12px;min-height:34px;border-radius:10px">Mẹo</button><button type="button" id="qa-del-btn" onclick="qaSelMode(true)" style="border:1px solid var(--bdr,#dfe5ee);background:var(--light,#f0f2f8);color:var(--navy);font:600 13px inherit;font-family:inherit;cursor:pointer;padding:0 12px;min-height:34px;border-radius:10px">Xoá</button><button type="button" id="qa-help-btn" onclick="qaHelp()" style="border:1px solid var(--bdr,#dfe5ee);background:var(--light,#f0f2f8);color:var(--navy);font:600 13px inherit;font-family:inherit;cursor:pointer;padding:0 12px;min-height:34px;border-radius:10px">Phím tắt</button></span></div>
   <div id="qa-log"></div>
-  <div id="qa-selbar" style="display:none;gap:8px;padding-top:8px;border-top:1px solid var(--bdr,#e3e8ef)"><button type="button" class="qa-chip" style="min-height:44px" onclick="qaSelAll()">Chọn tất cả</button><button type="button" id="qa-seldel" class="qa-chip" style="flex:1;min-height:44px;background:#e0342a;color:#fff;border-color:transparent" onclick="qaSelDel()">Xoá</button><button type="button" class="qa-chip" style="min-height:44px" onclick="qaSelMode(false)">Huỷ</button></div><div id="qa-compose"><button id="qa-cam" type="button" aria-label="Chụp hoá đơn" onclick="qaCam()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg></button><input id="qa-file" type="file" accept="image/*" style="display:none" onchange="qaImg(this)"><textarea id="qa-input" rows="1" placeholder="ăn trưa 85k vib · dán tin nhắn NH"></textarea>
+  <div id="qa-selbar" style="display:none;gap:8px;padding-top:8px;border-top:1px solid var(--bdr,#e3e8ef)"><button type="button" class="qa-chip" style="min-height:44px" onclick="qaSelAll()">Chọn tất cả</button><button type="button" id="qa-seldel" class="qa-chip" style="flex:1;min-height:44px;background:#e0342a;color:#fff;border-color:transparent" onclick="qaSelDel()">Xoá</button><button type="button" class="qa-chip" style="min-height:44px" onclick="qaSelMode(false)">Huỷ</button></div><div id="qa-compose"><button id="qa-cam" type="button" aria-label="Chụp hoá đơn" onclick="qaCam()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg></button><input id="qa-file" type="file" accept="image/*,application/pdf" multiple style="display:none" onchange="qaImg(this)"><textarea id="qa-input" rows="1" placeholder="ăn trưa 85k vib · dán tin nhắn NH"></textarea>
   <button id="qa-send" type="button" aria-label="Gửi" onclick="qaSend()"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button></div></div>`;
   document.body.appendChild(o);
   const inp=$('qa-input');
@@ -8133,17 +8463,19 @@ window.qaSend=function(autoSave){
   inp.value='';inp.style.height='auto';
   log(`<div class="qa-me">${esc(t)}</div>`);histPush('me',t);
   {const mx=macroExpand(t);if(mx){t=mx;log('<div class="qa-bot">Lệnh tắt → '+esc(mx)+'</div>')}}
+  {const fc=fxCmd(nz(t));if(fc){botLog(fc);return}}
+  FXL=[];{const fx=fxRewrite(t);if(fx){t=fx.t;FXL=fx.list}}
   const n=nz(t);
   if(/^(hoan tac|undo|xoa (khoan|cai) vua)/.test(n)){const k=lastSaved.pop();if(typeof k==='string'){const kk=+k.slice(1);if(X[kk]&&X[kk].saved){qxUndo(kk);log('<div class="qa-bot">Đã hoàn tác.</div>')}else log('<div class="qa-bot">Không có khoản nào vừa lưu.</div>');return}if(k&&items[k]&&items[k].saved){qaUndo(k);log('<div class="qa-bot">Đã hoàn tác khoản '+esc(items[k].desc)+'.</div>')}else log('<div class="qa-bot">Không có khoản nào vừa lưu.</div>');return}
   try{const x=extIntent(t);if(x){if(x.ai){aiAsk(x.ai);return}if(x.msg){botLog(x.msg);return}if(x.nav){log('<div class="qa-bot">Mở <b>'+esc(x.nav.label)+'</b>…</div>');setTimeout(()=>{closeQaChat();x.nav.fn()},250);return}const k=++xseq;X[k]=x;log(xcard(k));return}}catch(e){console.warn(e)}
   try{const a=answer(t);if(a){botLog(a);return}}catch(e){console.warn(e)}
-  const r=parseText(t);try{tripTag(r,t)}catch(e){console.warn(e)}
+  const r=parseText(t);try{tripTag(r,t)}catch(e){console.warn(e)}try{fxNote(r)}catch(e){}
   if(!r.length&&!/\d/.test(t)&&t.length<60){botLog('Thiếu số tiền. Ví dụ: <b>'+esc(t.split(/,|\n/)[0].trim())+' 35k</b>');return}
   if(!r.length&&aiKey()){aiParse(t);return}
   if(!r.length){log(`<div class="qa-bot">Chưa hiểu. Ghi khoản: <b>“ăn trưa 85k vib”</b> · Hỏi: <b>“tháng này ăn uống bao nhiêu?”</b>, <b>“số dư vib”</b>. Gõ <b>giúp</b> để xem mọi lệnh.</div>`);return}
   const ks=r.map(it=>{const k=++seq;items[k]=it;return k});
   ks.forEach(k=>log(card(k)));
-  if(ks.length>1)log(`<div class="qa-btns" id="qa-all-${ks[0]}"><button type="button" class="qa-save" onclick="qaSaveAll('${ks.join(',')}',this)">Lưu tất cả (${ks.length}) · ${fmtK(ks.reduce((s,k)=>s+items[k].amount,0))}</button></div>`);
+  if(ks.length>1){const ok=ks.filter(k=>{try{return !dupOf(items[k])}catch(e){return true}}),dn=ks.length-ok.length;log(`<div class="qa-btns" id="qa-all-${ks[0]}"><button type="button" class="qa-save" onclick="qaSaveAll('${ok.join(',')}',this)"${ok.length?'':' disabled'}>${dn?'Lưu '+ok.length+' khoản mới':'Lưu tất cả ('+ks.length+')'} · ${fmtK(ok.reduce((s,k)=>s+items[k].amount,0))}</button></div>`+(dn?'<div class="qa-bot">Bỏ qua '+dn+' khoản có thể đã ghi (có cờ “Có thể trùng”). Vẫn bấm Lưu riêng được.</div>':''))}
   if(autoSave===true)ks.forEach(k=>qaSave(k));
 };
 window.qaFlip=function(k){const it=items[k];if(!it||it.saved)return;it.flow=it.flow==='in'?'out':'in';const g=smartGuess(it.desc,it.flow);it.category=g.category||pickCat(it.desc,it.flow,null);it.why=g.why;redraw(k)};
@@ -8152,7 +8484,7 @@ window.qaSave=function(k){
   const it=items[k];if(!it||it.saved)return;
   if(it.tripNew){const nm=it.tripNew;db.trips=db.trips||[];let tr=db.trips.find(x=>x.name===nm&&x.status!=='done');if(!tr){tr={id:'trip_'+Date.now(),name:nm,status:'open',domain:'personal',startDate:it.date,endDate:'',budget:0,note:''};db.trips.push(tr)}it.tripId=tr.id;it.tripNew='';Object.values(items).forEach(o=>{if(o.tripNew===nm){o.tripId=tr.id;o.tripNew=''}})}
   const id=Date.now()+k;
-  db.transactions.push({id,amount:it.amount,desc:it.desc,category:it.category,group:'personal',flow:it.flow,date:it.date,note:'',account:it.account,tripId:it.tripId||undefined});
+  db.transactions.push({id,amount:it.amount,desc:it.desc,category:it.category,group:'personal',flow:it.flow,date:it.date,note:it.note||'',account:it.account,tripId:it.tripId||undefined});
   it.saved=id;try{setAcct(it.account)}catch(e){}
   try{learn(it)}catch(e){}lastSaved.push(k);it.hid=histPush('ok','✓ '+(it.flow==='in'?'+':'−')+fmtK(it.amount)+' '+it.desc+' · '+acctName(it.account));queueWarn(it);
   try{save()}catch(e){}try{renderAll()}catch(e){}
