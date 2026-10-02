@@ -529,7 +529,7 @@ body.dark .tab-item.active{background:color-mix(in srgb,var(--nav-accent-dark,#8
   .fab{right:calc(50% - 220px + 18px)}
 }
 /* ── MOTION v1 ── */
-.screen.active.stag-run{animation:none}
+.screen.active[data-stag]{animation:none}
 .stag-run[data-stag]>*,.stag-run [data-stag]>*{animation:stagIn .8s cubic-bezier(.16,1,.3,1) both;animation-delay:calc(var(--si,0)*70ms)}
 @keyframes stagIn{from{opacity:0;transform:translateY(22px) scale(.97)}to{opacity:1;transform:none}}
 @keyframes stagFade{from{opacity:0}to{opacity:1}}
@@ -3163,7 +3163,7 @@ function ftMotionIn(scr){
   scr.querySelectorAll('[data-stag]').forEach(c=>{let i=0;[...c.children].forEach(ch=>{if(ch.offsetParent!==null)ch.style.setProperty('--si',Math.min(i++,8))})});
   [...scr.children].forEach((ch,i,a)=>{let k=0;for(let j=0;j<i;j++)if(a[j].offsetParent!==null)k++;ch.style.setProperty('--si',Math.min(k,8))});
   void scr.offsetWidth;scr.classList.add('stag-run');
-  scr._stagT=setTimeout(()=>scr.classList.remove('stag-run'),1500);
+  scr._stagT=setTimeout(()=>scr.classList.remove('stag-run'),1700);
   if(!ftRM())ftGrowBars(scr);
 }
 function ftGrowBars(root){
