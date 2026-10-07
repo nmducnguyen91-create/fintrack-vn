@@ -9336,5 +9336,53 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
  mount();setTimeout(mount,1500);
 })();
 </script>
+<script>
+/* ═══ Cửa sổ: mở sau luôn nằm trên · Back đóng cửa sổ · bàn phím không che ô nhập · mở/đóng mượt ═══ */
+(function(){
+  var st=document.createElement('style');st.id='ft-win-fix';
+  st.textContent='.toast{z-index:2147483000!important}#upd-banner{z-index:2147482000!important}'+
+    '.modal-overlay{-webkit-backdrop-filter:none!important;backdrop-filter:none!important;background:rgba(10,20,32,.46)}'+
+    '.modal{overscroll-behavior:contain;will-change:transform;-webkit-overflow-scrolling:touch}'+
+    '.modal-overlay .modal{padding-bottom:max(32px,calc(18px + env(safe-area-inset-bottom,0px)))}';
+  document.head.appendChild(st);
+  var Z=9001,stack=[],skip=0;
+  function isWin(n){if(!n||n.nodeType!==1)return false;var c=n.classList;if(c.contains('modal-overlay')||c.contains('img-viewer'))return true;
+    var s=n.style;return n.parentNode===document.body&&s.position==='fixed'&&(s.inset==='0px'||s.inset==='0')&&(+s.zIndex||0)>=200;}
+  function isOpen(n){var c=n.classList;return (c.contains('modal-overlay')||c.contains('img-viewer'))?c.contains('open'):n.isConnected;}
+  function onOpen(n){if(n._ftW)return;n._ftW=1;n.style.zIndex=String(++Z);stack.push(n);try{history.pushState({ftWin:stack.length},'')}catch(e){}}
+  function onClose(n){if(!n._ftW)return;n._ftW=0;resetKb(n);var i=stack.indexOf(n),p=n._ftPop;n._ftPop=0;if(i>=0)stack.splice(i,1);
+    if(!p&&i>=0){skip++;try{history.back()}catch(e){skip--}}}
+  function closeWin(n){
+    if(n.id==='add-modal'&&window.closeModal){closeModal();}
+    else if(n.id==='qa-chat'&&window.closeQaChat){closeQaChat();}
+    else{try{n.dispatchEvent(new MouseEvent('click',{bubbles:true}))}catch(e){}}
+    setTimeout(function(){if(n._ftW&&isOpen(n)){if(n.classList.contains('modal-overlay')||n.classList.contains('img-viewer'))n.classList.remove('open');else n.remove();}},30);
+  }
+  window.addEventListener('popstate',function(){
+    if(skip>0){skip--;return;}
+    var n=stack[stack.length-1];if(!n)return;n._ftPop=1;closeWin(n);
+  });
+  new MutationObserver(function(ms){ms.forEach(function(m){var t=m.target;
+    if(t.classList&&(t.classList.contains('modal-overlay')||t.classList.contains('img-viewer'))){if(t.classList.contains('open'))onOpen(t);else onClose(t);}
+  })}).observe(document.body,{subtree:true,attributes:true,attributeFilter:['class']});
+  new MutationObserver(function(ms){ms.forEach(function(m){
+    m.addedNodes.forEach(function(n){if(isWin(n)&&isOpen(n))onOpen(n);});
+    m.removedNodes.forEach(function(n){if(n._ftW)onClose(n);});
+  })}).observe(document.body,{childList:true});
+  document.querySelectorAll('.modal-overlay.open,.img-viewer.open').forEach(onOpen);
+  /* bàn phím iOS: đẩy cửa sổ lên trên bàn phím + cuộn tới ô đang nhập */
+  function resetKb(n){if(n&&n._ftKb){n.style.paddingBottom='';var m=n.querySelector('.modal');if(m)m.style.maxHeight='';n._ftKb=0;}}
+  function fitKb(){var vv=window.visualViewport;if(!vv)return;var n=stack[stack.length-1];
+    if(!n||n.id==='qa-chat'||!n.classList.contains('modal-overlay'))return;var m=n.querySelector('.modal');if(!m)return;
+    var kb=Math.max(0,window.innerHeight-vv.height-vv.offsetTop);
+    if(kb>120){n._ftKb=1;n.style.paddingBottom=kb+'px';m.style.maxHeight=Math.max(240,vv.height-16)+'px';
+      var a=document.activeElement;if(a&&m.contains(a)){var r=a.getBoundingClientRect(),mr=m.getBoundingClientRect(),lim=Math.min(mr.bottom,vv.height+vv.offsetTop)-16;
+        if(r.bottom>lim)m.scrollTop+=r.bottom-lim;else if(r.top<mr.top+8)m.scrollTop-=mr.top+8-r.top;}}
+    else resetKb(n);}
+  if(window.visualViewport){visualViewport.addEventListener('resize',fitKb);}
+  document.addEventListener('focusin',function(e){var t=e.target;if(t&&/INPUT|TEXTAREA|SELECT/.test(t.tagName))setTimeout(fitKb,320);});
+  document.addEventListener('focusout',function(){setTimeout(fitKb,120);});
+})();
+</script>
 </body>
 </html>
