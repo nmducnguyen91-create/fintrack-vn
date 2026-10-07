@@ -10,6 +10,17 @@
 <meta name="apple-mobile-web-app-title" content="FinTrack VN">
 <meta name="theme-color" content="#16314d">
 <link rel="manifest" href="manifest.json">
+<link rel="apple-touch-startup-image" media="(device-width: 440px) and (device-height: 956px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="splash/splash-1320x2868.png">
+<link rel="apple-touch-startup-image" media="(device-width: 402px) and (device-height: 874px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="splash/splash-1206x2622.png">
+<link rel="apple-touch-startup-image" media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="splash/splash-1290x2796.png">
+<link rel="apple-touch-startup-image" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="splash/splash-1179x2556.png">
+<link rel="apple-touch-startup-image" media="(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="splash/splash-1284x2778.png">
+<link rel="apple-touch-startup-image" media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="splash/splash-1170x2532.png">
+<link rel="apple-touch-startup-image" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="splash/splash-1125x2436.png">
+<link rel="apple-touch-startup-image" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="splash/splash-1242x2688.png">
+<link rel="apple-touch-startup-image" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="splash/splash-828x1792.png">
+<link rel="apple-touch-startup-image" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="splash/splash-750x1334.png">
+<link rel="apple-touch-startup-image" media="(device-width: 360px) and (device-height: 780px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="splash/splash-1080x2340.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icon-192.png">
 <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
@@ -542,6 +553,16 @@ button:not(:disabled):active,.btn:active,.chip:active,.fab:active,.nav-btn:activ
 .nv-ptr i{width:16px;height:16px;border-radius:50%;border:2.5px solid color-mix(in srgb,var(--navy,#1c4a77) 22%,transparent);border-top-color:var(--navy,#1c4a77)}
 .nv-ptr.spin i{animation:nvspin .8s linear infinite}
 @keyframes nvspin{to{transform:rotate(360deg)}}
+
+/* ── iOS TỐI ƯU ── */
+*,*::before,*::after{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+.modal{background:var(--card)!important}
+.bottom-nav{background:var(--card)!important}
+.modal-overlay,.onboard-overlay,#calc-overlay{background:rgba(10,20,32,.5)!important}
+#calc-overlay>div{background:var(--card)!important}
+#tb-switch{background:rgba(0,0,0,.45)}
+html,body{overscroll-behavior-y:none}
+.tx-item{content-visibility:auto;contain-intrinsic-size:auto 54px}
 </style>
 
 <style id="bible-v1">
@@ -2189,12 +2210,12 @@ body.navA .fab.nav-hide-fab,body.navB .fab.nav-hide-fab,body.navC .fab.nav-hide-
     <input type="hidden" id="rec-edit-id">
     <div class="fg-2col form-group">
       <div><label class="form-label">Loại</label>
-        <select class="form-input form-select" id="rec-type" onchange="updateRecCats()">
+        <select class="form-input form-select" id="rec-type" onchange="updateRecCats();fillRecAcct()">
           <option value="expense">Chi tiêu</option>
           <option value="income">Thu nhập</option>
         </select></div>
       <div><label class="form-label">Nhóm</label>
-        <select class="form-input form-select" id="rec-group" onchange="updateRecCats()">
+        <select class="form-input form-select" id="rec-group" onchange="updateRecCats();fillRecAcct()">
           <option value="personal">Cá nhân</option>
           <option value="company">Công ty</option>
           <option value="project">Công việc</option>
@@ -2217,6 +2238,7 @@ body.navA .fab.nav-hide-fab,body.navB .fab.nav-hide-fab,body.navC .fab.nav-hide-
         </select></div>
       <div id="rec-day-row"><label class="form-label">Vào ngày</label><input class="form-input" type="number" id="rec-day" min="1" max="31" placeholder="VD: 5"></div>
     </div>
+    <div class="form-group"><label class="form-label" id="rec-acct-lbl">Nguồn tiền</label><select class="form-input form-select" id="rec-acct"></select></div>
     <div class="form-group"><label class="form-label">Ngày kết thúc <span style="font-weight:400">(bỏ trống = lặp mãi)</span></label><input class="form-input" type="date" id="rec-end"></div>
     <div style="display:flex;gap:10px">
       <button class="btn btn-cancel" style="flex:1" onclick="closeRecModal()">Huỷ</button>
@@ -2739,6 +2761,16 @@ body.navA .fab.nav-hide-fab,body.navB .fab.nav-hide-fab,body.navC .fab.nav-hide-
 </div>
 <div class="toast" id="toast"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+if(typeof Chart==='undefined'){(function(){
+  const msg=c=>{try{const cv=c&&c.canvas?c.canvas:c;if(!cv||!cv.getContext)return;const g=cv.getContext('2d');const w=cv.width=cv.clientWidth*(devicePixelRatio||1)||300,hh=cv.height=(cv.clientHeight||150)*(devicePixelRatio||1);g.clearRect(0,0,w,hh);g.fillStyle='#8a94a6';g.font=(13*(devicePixelRatio||1))+'px -apple-system,system-ui,sans-serif';g.textAlign='center';g.fillText('Biểu đồ cần mạng để tải lần đầu',w/2,hh/2)}catch(e){}};
+  function St(c){msg(c);return{destroy(){},update(){},data:{datasets:[]},options:{}}}
+  St._stub=true;St._reg=[];St.register=(...p)=>{St._reg.push(...p)};St.getChart=()=>null;St.defaults={plugins:{legend:{},tooltip:{}},font:{}};
+  window.Chart=St;
+  const load=()=>{const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js';s.onload=()=>{try{if(St._reg.length)Chart.register(...St._reg);renderAll()}catch(e){}};s.onerror=()=>{window.Chart=St;window.addEventListener('online',load,{once:true})};window.Chart=undefined;document.head.appendChild(s);window.Chart=window.Chart||St};
+  window.addEventListener('online',load,{once:true});
+})()}
+</script>
 <div class="modal-overlay" id="acct-modal">
   <div class="modal">
     <div class="modal-handle"></div>
@@ -3187,6 +3219,15 @@ function ftGrowBars(root){
     setTimeout(()=>{el.style.transition='';if(p==='dash')el.style.strokeDashoffset=''},1200);
   }),60);
 }
+// ── iOS: rung nhẹ (iOS 18+ qua switch ẩn), giữ dữ liệu, lưu khi rời app ──
+try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persisted().then(p=>{if(!p)navigator.storage.persist()})}catch(e){}
+function ftFlush(){
+  try{localStorage.setItem(DB,JSON.stringify(leanDbForLocal()))}catch(e){}
+  try{if(syncTimeout&&window._ftSyncArgs){clearTimeout(syncTimeout);syncTimeout=null;pushToCloud(...window._ftSyncArgs)}}catch(e){}
+  try{if(_stDirty&&_stTools){clearTimeout(_stTimeout);pushSettings()}}catch(e){}
+}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')ftFlush()});
+window.addEventListener('pagehide',ftFlush);
 function ftTick(el){if(!el||ftRM())return;el.classList.remove('tick-pop');void el.offsetWidth;el.classList.add('tick-pop');setTimeout(()=>el.classList.remove('tick-pop'),450)}
 document.addEventListener('change',e=>{const t=e.target;if(t&&t.type==='checkbox'&&t.checked){const s=t.nextElementSibling;ftTick(s&&s.classList.contains('slider')?s:t)}},true);
 document.addEventListener('click',e=>{const t=e.target.closest&&e.target.closest('[data-tick]');if(t)ftTick(t)},true);
@@ -3343,6 +3384,7 @@ function renderAll(){try{ftDebtToXfer()}catch(e){}try{syncEfGoals()}catch(e){}
   const balance=thu-chi;
   renderTopbar();
   updateNavBadges();
+  const _home=()=>{
   renderNetWorth();
   renderMonthOverview();
   renderHealth();
@@ -3352,6 +3394,9 @@ function renderAll(){try{ftDebtToXfer()}catch(e){}try{syncEfGoals()}catch(e){}
   renderGoalHome();
   renderBudget(mTx);renderAlerts(mTx);renderSmartAlerts(mTx,thu,chi);renderRecent();renderAnnualReport();
   renderOverdueBadge();
+  };
+  clearTimeout(window._ftHomeT);
+  if(curTab==='home')_home();else window._ftHomeT=setTimeout(()=>{try{_home();try{initCollapsibles();applyAutoHide()}catch(e){}}catch(e){console.warn(e)}},900);
   try{initCollapsibles();applyAutoHide()}catch(e){applyCollapse()}
   if(curTab==='personal')renderPersonal();
   if(curTab==='crypto')renderCrypto();
@@ -4200,7 +4245,7 @@ function applyRecurring(){
       const nx=nextOccurrence(last,r.freq,r.day);
       if(nx>td)break;
       if(r.endDate&&nx>r.endDate)break;
-      db.transactions.push({id:Date.now()+Math.floor(Math.random()*1e6),amount:r.amount,desc:r.desc,category:r.category,group:(r.group==='income'?'personal':r.group),flow:(r.flow||(r.type==='income'?'in':'out')),date:nx,note:r.note,recurringId:r.id});
+      db.transactions.push({id:Date.now()+Math.floor(Math.random()*1e6),amount:r.amount,desc:r.desc,category:r.category,group:(r.group==='income'?'personal':r.group),flow:(r.flow||(r.type==='income'?'in':'out')),date:nx,note:r.note,recurringId:r.id,account:(r.account&&acctById(r.account))?r.account:'cash'});
       last=nx;changed=true;
     }
     r.lastDate=last;delete r.lastMonth;
@@ -4223,7 +4268,8 @@ function renderRecurring(){
     const isIn=r.type==='income';const icon=CAT_ICONS[r.category]||I.clip;const bg=isIn?'#e8f5e9':'#fdecea';
     const FL={weekly:'Hàng tuần',monthly:'Hàng tháng',quarterly:'Hàng quý',yearly:'Hàng năm'};
     const freq=r.freq||'monthly';
-    const cycle=FL[freq]+(freq==='weekly'?'':' · ngày '+r.day)+(r.endDate?' · đến '+r.endDate:'');
+    const _ra=r.account&&r.group!=='company'?acctById(r.account):null;
+    const cycle=FL[freq]+(freq==='weekly'?'':' · ngày '+r.day)+(_ra?' · '+escH(_ra.name):'')+(r.endDate?' · đến '+r.endDate:'');
     return`<div class="tx-item" data-swipe-edit="openRecurringForm('${r.id}')" data-swipe-del="deleteRecurring('${r.id}')" onclick="openRecurringForm('${r.id}')" style="cursor:pointer"><div class="tx-icon" style="background:${bg};color:${isIn?'#1c7947':'#b03a2e'}">${icon}</div><div class="tx-meta"><div class="tx-name">${r.desc||r.category}</div><div class="tx-sub">${r.category} · ${cycle}</div></div><div class="tx-right"><div class="tx-amt ${isIn?'g':'r'}">${isIn?'+':'−'}${fmtK(r.amount)} đ</div></div></div>`;
   }).join('');
 }
@@ -4240,8 +4286,21 @@ function openRecurringForm(id){
   document.getElementById('rec-freq').value=r?(r.freq||'monthly'):'monthly';
   document.getElementById('rec-day').value=r?(r.day||''):'';
   document.getElementById('rec-end').value=r?(r.endDate||''):'';
+  fillRecAcct(r?(r.account||''):'');
   toggleRecDayRow();
   document.getElementById('rec-modal').classList.add('open');
+}
+function fillRecAcct(sel){
+  const s=document.getElementById('rec-acct');if(!s)return;ensureAccounts();
+  if(sel===undefined)sel=s.value;
+  const isIn=document.getElementById('rec-type').value==='income';
+  const isCo=document.getElementById('rec-group').value==='company';
+  document.getElementById('rec-acct-lbl').textContent=isIn?'Nhận vào tài khoản':'Trả từ nguồn tiền';
+  const s2=s.closest('.form-group');if(s2)s2.style.display=isCo?'none':'';
+  const list=db.accounts.filter(a=>!isIn||a.type!=='credit');
+  if(sel&&!list.some(a=>a.id===sel))sel='';
+  s.innerHTML=list.map(a=>'<option value="'+escH(a.id)+'">'+escH(a.name)+(a.type==='credit'?' (thẻ)':'')+'</option>').join('');
+  s.value=sel||mainAcctId();
 }
 function closeRecModal(){document.getElementById('rec-modal').classList.remove('open')}
 function updateRecCats(){
@@ -4267,7 +4326,8 @@ function saveRecurringForm(){
     group:document.getElementById('rec-group').value,
     freq:document.getElementById('rec-freq').value,
     day:parseInt(document.getElementById('rec-day').value)||1,
-    endDate:document.getElementById('rec-end').value||''
+    endDate:document.getElementById('rec-end').value||'',
+    account:document.getElementById('rec-group').value==='company'?'':(document.getElementById('rec-acct').value||'')
   };
   db.recurring=db.recurring||[];
   if(id){
@@ -4624,7 +4684,7 @@ function confirmSettle(){
   d.settleFee=getMoneyVal('s-fee');
   d.settleDate=document.getElementById('s-date').value||today();
   d.remaining=0;
-  db.transactions.push({id:Date.now(),amount:(d.settleAmount||0)+(d.settleFee||0),desc:'Tất toán · '+(d.name||'Khoản nợ'),category:'Trả nợ',group:'personal',flow:'out',date:d.settleDate,account:'cash'});
+  db.transactions.push({id:Date.now(),amount:(d.settleAmount||0)+(d.settleFee||0),desc:'Tất toán · '+(d.name||'Khoản nợ'),category:'Trả nợ',group:'personal',flow:'out',date:d.settleDate,account:(()=>{const a=d.acct?acctById(d.acct):null;return (a&&a.type!=='credit')?a.id:'cash'})()});
   save();closeSettle();renderAll();renderDebts();
   toast('\u0110\u00e3 t\u1ea5t to\u00e1n kho\u1ea3n n\u1ee3 \u2713');
 }
@@ -6022,14 +6082,16 @@ function renderAcctChips(){ensureAccounts();const el=document.getElementById('f-
   el.innerHTML=db.accounts.map(a=>`<option value="${a.id}"${a.id===selAcct?' selected':''}>${a.name}${a.type==='credit'?' (thẻ TD)':''}</option>`).join('')}
 function setAcct(id){selAcct=id;try{localStorage.setItem('lastAcct',id)}catch(e){}}
 function populateXferSelects(){ensureAccounts();const f=document.getElementById('f-from'),t=document.getElementById('f-to');if(!f||!t)return;const opts=db.accounts.map(a=>`<option value="${a.id}">${a.name}</option>`).join('');const pf=f.value,pt=t.value;f.innerHTML=opts;t.innerHTML=opts;f.value=(pf&&acctById(pf))?pf:((selAcct&&acctById(selAcct))?selAcct:mainAcctId());const other=db.accounts.find(a=>a.id!==f.value);t.value=(pt&&pt!==f.value&&acctById(pt))?pt:(other?other.id:f.value)}
+// Ngày chốt sao kê thực tế của tháng (y,m): ngày 29–31 tự lùi về ngày cuối tháng ngắn
+function stmtDateOf(y,m,st){return new Date(y,m,Math.min(+st||1,new Date(y,m+1,0).getDate()))}
+function lastStmtDate(st,td){td=td||new Date();let c=stmtDateOf(td.getFullYear(),td.getMonth(),st);if(td.getDate()<c.getDate())c=stmtDateOf(td.getFullYear(),td.getMonth()-1,st);return c}
 function cardStmtClosed(card){
   // Số phải trả kỳ đã chốt = tổng dư nợ hiện tại − phần quẹt trong kỳ CHƯA chốt (tự gồm dư nợ cũ/ban đầu)
-  const st=card.stDay||1;const td=new Date();
+  const st=card.stDay||1;
   const fmtD=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
-  let close=new Date(td.getFullYear(),td.getMonth(),st);
-  if(td.getDate()<st)close=new Date(td.getFullYear(),td.getMonth()-1,st);
+  const close=lastStmtDate(st);
   const cStr=fmtD(close);
-  const pStr=fmtD(new Date(close.getFullYear(),close.getMonth()-1,st));
+  const pStr=fmtD(stmtDateOf(close.getFullYear(),close.getMonth()-1,st));
   ensureInst();
   // Chi tiêu đúng trong kỳ = giao dịch phát sinh (pStr, cStr] — không suy ra từ dư nợ hiện tại (tránh bị hụt khi đã có thanh toán bù trừ)
   const spend=(db.transactions||[]).filter(t=>t.group!=='company'&&t.flow==='out'&&(t.account||'')===card.id&&t.date>pStr&&t.date<=cStr).reduce((s,t)=>s+t.amount,0);
@@ -6038,9 +6100,11 @@ function cardStmtClosed(card){
   const dmp=(db.debts||[]).filter(d=>d.acct===card.id&&d.kind!=='receivable'&&(+d.remaining||0)>0&&+d.monthlyPayment&&(d.lastPayDate||d.lastPayMonth||'')<cStr).reduce((s,d)=>s+(+d.monthlyPayment),0);
   const instFee=(+card.instFeeMonthly||0);
   const paidInst=db.installments.filter(i=>i.card===card.id&&(i.lastPayDate||'')>=cStr).reduce((s,i)=>s+(+i.per||0),0);
-  let stmt=Math.max(0,spend+inst+dmp+instFee-Math.max(0,paidSince-paidInst));
-  if(card.stmtOverride!=null&&(!card.stmtOverrideKey||card.stmtOverrideKey===cStr))stmt=Math.max(0,(+card.stmtOverride)-paidSince);
-  return {stmt,spend,inst:inst+dmp+instFee,instOnly:inst+dmp,fee:instFee,paidSince,closeStr:cStr};
+  const _raw=spend+inst+dmp+instFee,_paid=Math.max(0,paidSince-paidInst);
+  let stmt=Math.max(0,_raw-_paid),over=Math.max(0,_paid-_raw);
+  if(card.stmtOverride!=null&&(!card.stmtOverrideKey||card.stmtOverrideKey===cStr)){stmt=Math.max(0,(+card.stmtOverride)-paidSince);over=Math.max(0,paidSince-(+card.stmtOverride))}
+  // over = phần trả vượt sao kê đã chốt → trừ vào chi tiêu kỳ đang mở (trả trước)
+  return {stmt,over,spend,inst:inst+dmp+instFee,instOnly:inst+dmp,fee:instFee,paidSince,closeStr:cStr};
 }
 function stmtSplit(a){const s=cardStmtClosed(a);const pay=s.stmt||0;let spend=s.spend||0,inst=s.instOnly!=null?s.instOnly:(s.inst||0),fee=s.fee||0;const raw=spend+inst+fee;if(raw>pay&&raw>0){const k=pay/raw;spend=Math.round(spend*k);inst=Math.round(inst*k);fee=Math.max(0,pay-spend-inst)}let other=Math.max(0,pay-spend-inst-fee);if(other<50000){spend+=other;other=0}return {pay,spend,inst,fee,other,s}}
 function stmtParts(x){return [['Chi tiêu đã chốt',x.spend],['Trả góp',x.inst],['Lãi & phí trả góp',x.fee],['Khác · chưa khớp giao dịch',x.other]].filter(r=>r[1]>0)}
@@ -6277,10 +6341,8 @@ function autoAdvanceInst(){
   ensureInst();let changed=false;const today=new Date();
   db.installments.forEach(it=>{
     const c=acctById(it.card);if(!c||c.type!=='credit'||!c.stDay)return;
-    const d=Math.min(+c.stDay,28);
-    const last=new Date(today.getFullYear(),today.getMonth(),d);
-    if(today.getDate()<d)last.setMonth(last.getMonth()-1);
-    const key=last.getFullYear()+'-'+String(last.getMonth()+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    const last=lastStmtDate(c.stDay,today);
+    const key=last.getFullYear()+'-'+String(last.getMonth()+1).padStart(2,'0')+'-'+String(last.getDate()).padStart(2,'0');
     if(!it.lastStmt){it.lastStmt=key;changed=true;return}
     const prev=new Date(it.lastStmt+'T00:00:00');
     const n=(last.getFullYear()-prev.getFullYear())*12+(last.getMonth()-prev.getMonth());
@@ -6304,8 +6366,9 @@ function cardDebtInfo(a){ensureInst();const s=cardStmtClosed(a),cs=s.closeStr;
   const insts=db.installments.filter(i=>i.card===a.id&&(i.paid||0)<i.term);
   const instRem=insts.reduce((x,i)=>x+instRemNow(i,cs),0);
   const linked=(db.debts||[]).filter(d=>d.acct===a.id&&d.kind!=='receivable'&&!d.settled).reduce((x,d)=>x+(+d.remaining||0),0);
-  const revolving=(s.stmt||0)+cyc;
-  return {stmt:s.stmt||0,cyc,cycN:cycTx.length,cycTx,instRem,insts,linked,revolving,total:revolving+instRem+linked,closeStr:cs,s,avail:a.limit?Math.max(0,a.limit-(revolving+instRem+linked)):null}}
+  const prepaid=Math.min(cyc,s.over||0);
+  const revolving=(s.stmt||0)+cyc-prepaid;
+  return {stmt:s.stmt||0,cyc,prepaid,cycN:cycTx.length,cycTx,instRem,insts,linked,revolving,total:revolving+instRem+linked,closeStr:cs,s,avail:a.limit?Math.max(0,a.limit-(revolving+instRem+linked)):null}}
 function cardsDebtTotal(){return (db.accounts||[]).filter(a=>a.type==='credit').reduce((s,a)=>s+cardDebtInfo(a).total,0)}
 function cashNow(){return (db.accounts||[]).filter(a=>a.type!=='credit').reduce((s,a)=>s+acctBalance(a),0)}
 function otherPayable(){const cr=new Set((db.accounts||[]).filter(a=>a.type==='credit').map(a=>a.id));return (db.debts||[]).filter(d=>d.kind!=='receivable'&&!d.settled&&!cr.has(d.acct)).reduce((s,d)=>s+(+d.remaining||0),0)}
@@ -6586,7 +6649,7 @@ function runGlobalSearch(){
 }
 // ── TOAST ──
 let toastTimer=null;
-function toast(msg){if(navigator.vibrate)try{navigator.vibrate(12)}catch(e){}const el=document.getElementById('toast');if(!el)return;el.textContent=msg;el.style.display='block';clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.style.display='none',2200)}
+function toast(msg){const el=document.getElementById('toast');if(!el)return;el.textContent=msg;el.style.display='block';clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.style.display='none',2200)}
 // ── ONBOARDING ──
 const OB_STEPS=[
  {icon:'<svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="var(--navy)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0z"/></svg>',title:'Chào mừng đến FinTrack',desc:'Ứng dụng quản lý tài chính cá nhân &amp; kinh doanh — thu chi, đầu tư, hồ sơ dịch vụ, nợ và mục tiêu. Mọi dữ liệu nằm trên máy bạn.'},
@@ -6781,23 +6844,18 @@ async function initFirebase() {
       // Bỏ qua thay đổi do CHÍNH thiết bị này tạo ra
       if (data._deviceId && data._deviceId === DEVICE_ID) return;
       const cloudSeq = data._seq || 0;
-      // Last-write-wins theo seq logic (không dùng đồng hồ máy): chỉ nhận nếu cloud mới hơn
-      if (cloudSeq <= localSeq) { lastCloudSeq = Math.max(lastCloudSeq, cloudSeq); return; }
       try {
         const parsed = JSON.parse(data.payload);
-        if (parsed && parsed.transactions) {
-          db = parsed;
-          loadServiceImages();
-          localStorage.setItem(DB, JSON.stringify(leanDbForLocal()));
-          localSeq = cloudSeq; lastCloudSeq = cloudSeq;
-          localStorage.setItem(DB+'_seq', String(localSeq));
-          localMtime = data._updatedAt || Date.now();
-          localStorage.setItem(DB+'_mtime', String(localMtime));
-          lastSyncTime = localMtime;
-          renderAll();
-          updateSyncUI('synced');
-          showSyncToast('Đã nhận dữ liệu mới từ thiết bị khác');
-        }
+        if (!parsed || !parsed.transactions) return;
+        // Bản mới hơn → nhận; hai bên cùng sửa (kể cả cùng seq) → gộp 3 chiều theo id rồi đẩy bản gộp lên
+        const dec = ftDecide(data, parsed);
+        if (dec[0] === 'ignore') { lastCloudSeq = Math.max(lastCloudSeq, cloudSeq); return; }
+        const needPush = ftApplyCloud(dec[0], parsed, data, dec[1]);
+        lastSyncTime = localMtime;
+        renderAll();
+        updateSyncUI('synced');
+        showSyncToast(dec[0]==='merge'?'Đã gộp thay đổi từ thiết bị khác':'Đã nhận dữ liệu mới từ thiết bị khác');
+        if (needPush) scheduleSync(setDoc, doc, serverTimestamp);
       } catch(e) { console.warn('Sync parse error', e); }
     });
 
@@ -6818,6 +6876,38 @@ async function initFirebase() {
   }
 }
 
+// ── Đồng bộ: gộp 3 chiều theo id khi hai thiết bị cùng sửa ──
+function ftH(v){const s=JSON.stringify(v===undefined?null:v,(k,x)=>typeof x==='string'&&(x==='[IMG_LOCAL]'||(x.length>2000&&x.startsWith('data:')))?'#img':x)||'';let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return h+':'+s.length}
+const ftIsIdArr=v=>Array.isArray(v)&&v.every(x=>x&&typeof x==='object'&&x.id!=null);
+function ftBaseOf(d){const b={};for(const k in d){const v=d[k];if(ftIsIdArr(v)){const m={};v.forEach(x=>m[String(x.id)]=ftH(x));b[k]={a:m}}else b[k]={h:ftH(v)}}return b}
+function ftGetBase(prev){try{return JSON.parse(localStorage.getItem(DB+(prev?'_baseprev':'_base'))||'null')}catch(e){return null}}
+function ftSetBase(d,rotate){try{if(rotate){const cur=localStorage.getItem(DB+'_base');if(cur)localStorage.setItem(DB+'_baseprev',cur)}localStorage.setItem(DB+'_base',JSON.stringify(ftBaseOf(d)))}catch(e){}}
+function ftPushed(){const v=parseInt(localStorage.getItem(DB+'_pushed'));if(isNaN(v)){localStorage.setItem(DB+'_pushed',String(localSeq));return localSeq}return v}
+function ftSetPushed(n){localStorage.setItem(DB+'_pushed',String(n))}
+function ftMerge(L,C,B){B=B||{};const out={};const keys=new Set([...Object.keys(L||{}),...Object.keys(C||{})]);
+  keys.forEach(k=>{const lv=L[k],cv=C[k],b=B[k];
+    if(ftIsIdArr(lv)&&ftIsIdArr(cv)&&(!b||b.a)){const bm=b?b.a:{};const cm=new Map(cv.map(x=>[String(x.id),x]));const lm=new Set();const res=[];
+      lv.forEach(l=>{const id=String(l.id);lm.add(id);const c=cm.get(id),lh=ftH(l);
+        if(c){res.push(lh===bm[id]?c:l)}else if(!(id in bm&&lh===bm[id]))res.push(l)});
+      cv.forEach(c=>{const id=String(c.id);if(lm.has(id))return;if(id in bm&&ftH(c)===bm[id])return;res.push(c)});
+      out[k]=res;return}
+    const lh=ftH(lv);const pick=(b&&b.h===lh)?cv:(lv===undefined&&!(b)?cv:lv);if(pick!==undefined)out[k]=pick});
+  return out}
+// Quyết định khi nhận bản cloud từ thiết bị khác: 'ignore' | 'adopt' | 'merge'
+function ftDecide(data,cloudDb){const cs=data._seq||0;if(data._deviceId&&data._deviceId===DEVICE_ID)return['ignore'];const pushed=ftPushed(),pending=localSeq>pushed;
+  if(!pending&&cs>localSeq)return['adopt'];
+  if(cs>pushed)return['merge',ftGetBase(false)];
+  if(ftH(cloudDb)===ftH(db))return['ignore'];
+  return['merge',ftGetBase(cs===pushed)||ftGetBase(false)]}
+function ftApplyCloud(kind,cloudDb,data,base){const cs=data._seq||0;
+  if(kind==='adopt'){db=cloudDb;localSeq=Math.max(cs,localSeq)}
+  else{const m=ftMerge(db,cloudDb,base);const same=ftH(m)===ftH(cloudDb);db=m;localSeq=same?Math.max(cs,localSeq):Math.max(localSeq,cs)+1}
+  lastCloudSeq=Math.max(lastCloudSeq,cs);ftSetPushed(cs);ftSetBase(cloudDb,false);
+  loadServiceImages();
+  localStorage.setItem(DB, JSON.stringify(leanDbForLocal()));
+  localStorage.setItem(DB+'_seq', String(localSeq));
+  localMtime = data._updatedAt || Date.now();localStorage.setItem(DB+'_mtime', String(localMtime));
+  return localSeq>cs}
 async function pullFromCloud(getDoc, doc) {
   try {
     const docRef = userDocRef(doc);
@@ -6832,25 +6922,21 @@ async function pullFromCloud(getDoc, doc) {
 
     // Lần đầu trên thiết bị này (chưa có thay đổi cục bộ) → lấy bản cloud.
     // Sau đó chỉ lấy cloud nếu cloud có phiên bản MỚI HƠN (theo seq, không dùng đồng hồ).
-    const adopt = (localSeq === 0) || (cloudSeq > localSeq);
-    if (adopt) {
-      db = cloudDb;
-      loadServiceImages();
-      localStorage.setItem(DB, JSON.stringify(leanDbForLocal()));
-      localSeq = Math.max(cloudSeq, localSeq);
-      localStorage.setItem(DB+'_seq', String(localSeq));
-      localMtime = data._updatedAt || Date.now();
-      localStorage.setItem(DB+'_mtime', String(localMtime));
+    const dec = localSeq === 0 ? ['adopt'] : ftDecide(data, cloudDb);
+    if (dec[0] !== 'ignore') {
+      ftApplyCloud(dec[0], cloudDb, data, dec[1]);
       renderAll();
+      if (dec[0] === 'merge') try{showSyncToast('Đã gộp thay đổi từ thiết bị khác')}catch(e){}
     }
     lastSyncTime = data._updatedAt || Date.now();
   } catch(e) { console.warn('Pull error:', e); }
 }
 
 function scheduleSync(setDoc, doc, serverTimestamp) {
+  window._ftSyncArgs=[setDoc, doc, serverTimestamp];
   clearTimeout(syncTimeout);
   updateSyncUI('pending');
-  syncTimeout = setTimeout(() => pushToCloud(setDoc, doc, serverTimestamp), 1500);
+  syncTimeout = setTimeout(() => {syncTimeout=null;pushToCloud(setDoc, doc, serverTimestamp)}, 1500);
 }
 
 async function pushToCloud(setDoc, doc, serverTimestamp) {
@@ -6866,16 +6952,18 @@ async function pushToCloud(setDoc, doc, serverTimestamp) {
     const payload = JSON.stringify(dbToSync);
     const docRef = userDocRef(doc);
     const ts = Date.now();
+    const seqSent = localSeq;
     await setDoc(docRef, {
       payload,
       _deviceId: DEVICE_ID,
       _updatedAt: ts,
-      _seq: localSeq,
+      _seq: seqSent,
       _version: 4
     }, { merge: true });
     updateSyncUI('synced');
     lastSyncTime = ts;
-    lastCloudSeq = localSeq;
+    lastCloudSeq = Math.max(lastCloudSeq, seqSent);
+    ftSetPushed(seqSent); ftSetBase(dbToSync, true);
     // Đồng bộ mốc thời gian local với bản vừa đẩy lên để không bị kéo ngược lại
     localMtime = ts;
     localStorage.setItem(DB+'_mtime', String(localMtime));
@@ -7103,10 +7191,11 @@ function showUpdateBanner(){
   document.body.appendChild(b);
 }
 
-setTimeout(initFirebase, 500);
+setTimeout(initFirebase, 30);
 
 // Đăng ký Service Worker → cài được như app điện thoại + dùng offline
-if (false && 'serviceWorker' in navigator) {
+if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+  navigator.serviceWorker.addEventListener('message', ev => { if (ev.data && ev.data.type === 'ft-update') showUpdateBanner(); });
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('sw.js').then(reg => {
       // Chủ động kiểm tra bản mới mỗi khi mở app
@@ -8600,7 +8689,7 @@ body.dark .qa-bot{background:#1b2637}body.dark .qa-flow.out{background:#3a1f22}b
 #qa-bubble{position:fixed;left:0;top:0;z-index:150;width:56px;height:56px;border-radius:50%;border:none;background:radial-gradient(circle at 30% 25%,#2d6aa8 0%,#1a3c5e 70%);color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 3px rgba(255,255,255,.95),0 6px 18px rgba(26,60,94,.38);cursor:pointer;touch-action:none;-webkit-tap-highlight-color:transparent;will-change:transform}
 #qa-bubble.drag{box-shadow:0 0 0 3px rgba(255,255,255,.95),0 12px 28px rgba(16,40,64,.4);opacity:.94}
 #qa-bubble:active:not(.drag){filter:brightness(1.1)}
-#qa-bubble.qa-hide,body:has(.modal-overlay.open) #qa-bubble,body:has(#calc-overlay:not([style*="none"])) #qa-bubble{opacity:0;pointer-events:none}
+#qa-bubble.qa-hide,body:has(.modal-overlay.open:not(#qa-chat)) #qa-bubble,body:has(#calc-overlay:not([style*="none"])) #qa-bubble{opacity:0;pointer-events:none}
 body.dark #qa-bubble{background:radial-gradient(circle at 30% 25%,#3b7fc6,#23507f 70%);box-shadow:0 0 0 3px rgba(255,255,255,.18),0 6px 18px rgba(0,0,0,.45)}
 body.ft-priv canvas{filter:blur(9px)}
 .qa-meta{display:flex;flex-wrap:wrap;gap:6px;opacity:1!important;margin-top:2px}
@@ -8638,7 +8727,7 @@ function build(){
   welcome();renderHist();
 }
 
-function qaFit(){const o=$('qa-chat');const vv=window.visualViewport;if(!o||!vv)return;const m=o.querySelector('.modal');const open=o.classList.contains('open');const kb=open&&window.innerHeight-vv.height>120;
+function qaFit(){const o=$('qa-chat');const vv=window.visualViewport;if(!o||!vv)return;if(o.classList.contains('qa-pop')){const l=$('qa-log');if(l)l.scrollTop=l.scrollHeight;return}const m=o.querySelector('.modal');const open=o.classList.contains('open');const kb=open&&window.innerHeight-vv.height>120;
  if(kb){o.style.top=vv.offsetTop+'px';o.style.height=vv.height+'px';o.style.bottom='auto';m.style.setProperty('height',Math.min(window.innerHeight*.82,vv.height-6)+'px','important');m.style.setProperty('max-height',(vv.height-6)+'px','important');m.style.setProperty('padding-bottom','10px','important')}
  else{o.style.top=o.style.height=o.style.bottom='';['height','max-height','padding-bottom'].forEach(p=>m.style.removeProperty(p))}
  const l=$('qa-log');if(l)l.scrollTop=l.scrollHeight}
@@ -8969,27 +9058,136 @@ function settingsRow(){
 
 function bubble(){
   if($('qa-bubble'))return;
-  const b=document.createElement('button');b.id='qa-bubble';b.type='button';b.setAttribute('aria-label','Nhập nhanh');
-  b.innerHTML='<svg width="28" height="28" viewBox="0 0 24 24"><path d="M12 3.5c-4.97 0-9 3.47-9 7.75 0 2.3 1.17 4.37 3.03 5.79-.13 1.1-.62 2.3-1.53 3.21 1.9.1 3.62-.6 4.72-1.5.9.2 1.83.3 2.78.3 4.97 0 9-3.47 9-7.8S16.97 3.5 12 3.5z" fill="#fff"/><path d="M12 7.6v7.2M8.4 11.2h7.2" stroke="#1a3c5e" stroke-width="2.2" stroke-linecap="round"/></svg>';
-  document.body.appendChild(b);
-  const K='qa_bubble_pos';let pos;try{pos=JSON.parse(localStorage.getItem(K)||'null')}catch(e){}
-  const S=56,M=10;
-  const vh=()=>window.innerHeight;
+  const ICON_CHAT='<svg class="qb-i qb-chat" width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.6c-4.9 0-8.9 3.4-8.9 7.6 0 2.3 1.2 4.3 3 5.7-.1 1.1-.6 2.2-1.5 3.1 1.9.1 3.6-.6 4.7-1.5.9.2 1.8.3 2.7.3 4.9 0 8.9-3.4 8.9-7.6S16.9 3.6 12 3.6z" fill="currentColor"/><circle cx="8.3" cy="11.2" r="1.25" fill="var(--act,#1a3c5e)"/><circle cx="12" cy="11.2" r="1.25" fill="var(--act,#1a3c5e)"/><circle cx="15.7" cy="11.2" r="1.25" fill="var(--act,#1a3c5e)"/></svg>';
+  const ICON_X='<svg class="qb-i qb-x" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>';
+  const st=document.createElement('style');st.id='qb-style';st.textContent=`
+#qa-bubble{position:fixed;left:0;top:0;z-index:150;width:56px;height:56px;padding:0;border-radius:50%;border:none;background:var(--act,#1a3c5e)!important;color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;box-shadow:0 0 0 3px var(--bg),0 8px 20px -4px rgba(16,40,64,.45)!important;will-change:transform;transition:opacity .2s}
+body.dark #qa-bubble{background:#2f6db0!important;box-shadow:0 0 0 3px var(--bg),0 8px 20px -4px rgba(0,0,0,.6)!important}
+#qa-bubble.drag{box-shadow:0 0 0 3px var(--bg),0 16px 30px -6px rgba(16,40,64,.5)!important;opacity:1}
+#qa-bubble:active{transform:none}
+#qa-bubble .qb-i{position:absolute;transition:transform .35s cubic-bezier(.34,1.56,.64,1),opacity .2s}
+#qa-bubble .qb-x{opacity:0;transform:rotate(-90deg) scale(.6)}
+#qa-bubble.open .qb-chat{opacity:0;transform:rotate(90deg) scale(.6)}
+#qa-bubble.open .qb-x{opacity:1;transform:none}
+#qa-bubble.open{z-index:210}
+#qa-chat.qa-pop{align-items:flex-start;background:rgba(10,20,32,.42)!important}
+#qa-chat.qa-pop .modal{position:fixed;left:auto;right:10px;width:calc(100% - 20px);max-width:420px;height:var(--qp-h,70dvh)!important;max-height:var(--qp-h,70dvh)!important;top:var(--qp-top,90px);margin:0;border-radius:24px!important;border:1px solid var(--bdr)!important;padding:14px 14px 12px!important;box-shadow:0 24px 60px -18px rgba(10,20,32,.5);overflow:visible;transform-origin:var(--qp-ox,calc(100% - 28px)) -10px;transform:translateY(14px) scale(.92);opacity:0;transition:transform .2s ease-in,opacity .15s ease-in}
+#qa-chat.qa-pop.open .modal{transform:none;opacity:1;transition:transform .45s cubic-bezier(.16,1,.3,1),opacity .2s ease-out}
+#qa-chat.qa-pop .modal::before{content:'';position:absolute;top:-7px;left:var(--qp-ax,calc(100% - 35px));width:14px;height:14px;background:var(--card);border-left:1px solid var(--bdr);border-top:1px solid var(--bdr);transform:rotate(45deg);border-radius:3px 0 0 0}
+#qa-chat.qa-pop .modal-handle{display:none}
+#qa-chat.qa-pop .modal-title{margin:0 0 8px;align-items:flex-start!important;gap:8px}
+#qa-chat.qa-pop .qp-h{display:flex;flex-direction:column;gap:2px;min-width:0}
+#qa-chat.qa-pop .qp-h b{font-size:18px;font-weight:700;line-height:1.25}
+#qa-chat.qa-pop .qp-h small{font-size:13px;font-weight:400;color:var(--muted);line-height:1.3}
+#qa-chat.qa-pop .modal-title>span button{min-height:36px!important;padding:0 10px!important;font-size:13.5px!important}
+#qa-chat.qa-pop #qa-log{padding:4px 2px 10px}
+#qa-chat.qa-pop .qa-bot{position:relative;margin-left:34px;max-width:calc(100% - 40px);border-radius:18px 18px 18px 5px}
+#qa-chat.qa-pop .qa-bot::before{content:'';position:absolute;left:-34px;bottom:0;width:26px;height:26px;border-radius:50%;background:var(--act,#1a3c5e) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 4.5c-4.4 0-8 3-8 6.8 0 2 1 3.8 2.7 5.1-.1 1-.5 2-1.3 2.8 1.7.1 3.2-.5 4.2-1.3.8.2 1.6.3 2.4.3 4.4 0 8-3 8-6.8s-3.6-6.9-8-6.9z' fill='%23fff'/%3E%3C/svg%3E") center/16px no-repeat}
+#qa-chat.qa-pop .qa-me{background:var(--act,#1a3c5e);border-radius:18px 18px 5px 18px}
+#qa-chat.qa-pop #qa-compose{border-top:none;padding-top:6px;align-items:center}
+#qa-chat.qa-pop #qa-input{border-radius:24px;min-height:46px;padding:12px 16px!important;background:var(--light)}
+#qa-chat.qa-pop #qa-send{width:46px;height:46px;background:var(--act,#1a3c5e);transition:opacity .2s,transform .35s cubic-bezier(.34,1.56,.64,1)}
+#qa-chat.qa-pop #qa-send.dim{opacity:.38;pointer-events:none}
+#qa-chat.qa-pop #qa-cam{width:44px;height:44px;margin:0}
+#qa-live .ql-k{font-size:13px;color:var(--muted);margin-bottom:6px}
+.ql-c{display:flex;flex-wrap:wrap;gap:6px}
+.ql-chip{display:inline-flex;align-items:center;min-height:28px;padding:3px 10px;border-radius:999px;font-size:14px;font-weight:600;background:var(--card);border:1px solid var(--bdr);color:var(--text);font-variant-numeric:tabular-nums}
+.ql-chip.out{color:var(--red)}.ql-chip.in{color:var(--green)}
+.ql-chip.pop{animation:qlPop .4s cubic-bezier(.34,1.56,.64,1) both}
+@keyframes qlPop{0%{transform:scale(.5);opacity:0}60%{transform:scale(1.12);opacity:1}100%{transform:scale(1)}}
+`;document.head.appendChild(st);
+  const b=document.createElement('button');b.id='qa-bubble';b.type='button';b.setAttribute('aria-label','Mở khung nhập nhanh');
+  b.innerHTML=ICON_CHAT+ICON_X;document.body.appendChild(b);
+  const K='qa_bubble_pos2',S=56,M=10;
+  let pos=null;try{pos=JSON.parse(localStorage.getItem(K)||'null')}catch(e){}
+  const st0={side:pos&&pos.s==='l'?'l':'r',ry:pos&&isFinite(pos.ry)?pos.ry:.5,open:false};
+  const probe=document.createElement('div');probe.style.cssText='position:fixed;top:0;left:0;width:0;height:0;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom);visibility:hidden;pointer-events:none';document.body.appendChild(probe);
+  const safeT=()=>parseFloat(getComputedStyle(probe).paddingTop)||0,safeB=()=>parseFloat(getComputedStyle(probe).paddingBottom)||0;
   const box=()=>{const r=document.body.getBoundingClientRect(),cs=getComputedStyle(document.body);const l=Math.max(0,r.left+(parseFloat(cs.paddingLeft)||0)),rt=Math.min(window.innerWidth,r.right-(parseFloat(cs.paddingRight)||0));return rt-l>S+2*M?{l,r:rt}:{l:0,r:window.innerWidth}};
-  const minY=()=>70,maxY=()=>vh()-S-(window.innerWidth>900?24:96);
-  function place(side,y,anim){y=Math.max(minY(),Math.min(maxY(),y));const B=box(),x=side==='l'?B.l+M:B.r-S-M;b.style.transition=anim?'transform .32s cubic-bezier(.2,.9,.3,1.15)':'none';b.style.transform='translate3d('+x+'px,'+y+'px,0)';b._s=side;b._y=y}
-  place(pos&&pos.s||'l',pos&&pos.y||vh()-S-170,false);
-  let drag=null;
-  b.addEventListener('pointerdown',e=>{if(document.getElementById('fab-btn')){try{b.setPointerCapture(e.pointerId)}catch(x){}drag=null;b._tap=1;return}const B=box();drag={x0:e.clientX,y0:e.clientY,bx:b._s==='l'?B.l+M:B.r-S-M,by:b._y,moved:false,B};try{b.setPointerCapture(e.pointerId)}catch(x){}});
-  b.addEventListener('pointermove',e=>{if(!drag)return;const dx=e.clientX-drag.x0,dy=e.clientY-drag.y0;if(!drag.moved&&Math.hypot(dx,dy)<6)return;drag.moved=true;b.classList.add('drag');b.style.transition='none';const x=Math.max(drag.B.l,Math.min(drag.B.r-S,drag.bx+dx)),y=Math.max(minY(),Math.min(maxY(),drag.by+dy));b.style.transform='translate3d('+x+'px,'+y+'px,0)';drag.cx=x;drag.cy=y});
-  const up=()=>{if(b._tap){b._tap=0;openQaChat();return}if(!drag)return;const d=drag;drag=null;b.classList.remove('drag');if(!d.moved){openQaChat();return}const side=(d.cx+S/2)<(d.B.l+d.B.r)/2?'l':'r';place(side,d.cy,true);try{localStorage.setItem(K,JSON.stringify({s:side,y:b._y}))}catch(e){}};
-  b.addEventListener('pointerup',up);b.addEventListener('pointercancel',()=>{if(drag){drag.moved=true;up()}});
-  window.addEventListener('resize',()=>place(b._s,b._y,false));
-  const anchor=()=>{const fb=document.getElementById('fab-btn');if(!fb||b.classList.contains('drag'))return;const r=fb.getBoundingClientRect(),cs=getComputedStyle(fb);if(!r.width||cs.display==='none'||cs.visibility==='hidden'||+cs.opacity===0)return;const x=r.left+(r.width-S)/2,y=r.top-S-14;b.style.transition='transform .18s ease';b.style.transform='translate3d('+x+'px,'+y+'px,0)';b._fx=1};
-  ['scroll','resize','orientationchange'].forEach(ev=>window.addEventListener(ev,()=>requestAnimationFrame(anchor),{passive:true}));setInterval(anchor,400);setTimeout(anchor,50);
-  try{new MutationObserver(()=>requestAnimationFrame(anchor)).observe(document.getElementById('fab-btn'),{attributes:true,attributeFilter:['style','class']})}catch(e){}
-  const sync=()=>{let hide=false;try{hide=curTab==='settings'}catch(e){}b.classList.toggle('qa-hide',hide)};
-  sync();try{const o=window.showTab;if(typeof o==='function'&&!o._qa){window.showTab=function(){const r=o.apply(this,arguments);sync();return r};window.showTab._qa=1}}catch(e){}
+  const minY=()=>Math.max(12,safeT()+8);
+  const maxY=()=>{const n=document.querySelector('.bottom-nav');let lim=window.innerHeight-safeB()-12;if(n){const r=n.getBoundingClientRect(),cs=getComputedStyle(n);if(r.height&&cs.display!=='none'&&+cs.opacity>0&&r.top<window.innerHeight)lim=Math.min(lim,r.top-10)}return Math.max(minY()+S,lim-S)};
+  const yOf=ry=>minY()+(maxY()-minY())*Math.max(0,Math.min(1,ry));
+  const xOf=side=>{const B=box();return side==='l'?B.l+M:B.r-S-M};
+  const set=(x,y,tr)=>{b.style.transition=tr||'opacity .2s';b.style.transform='translate3d('+x+'px,'+y+'px,0)';b._x=x;b._y=y};
+  const SPR='transform .45s cubic-bezier(.34,1.4,.64,1),opacity .2s';
+  const rest=anim=>set(xOf(st0.side),yOf(st0.ry),anim?SPR:null);
+  function layout(){
+    const o=$('qa-chat');if(!o)return;const B=box();const top=minY()+S+12;
+    const vv=window.visualViewport;const vh=vv?vv.height+vv.offsetTop:window.innerHeight;
+    const hgt=Math.max(260,Math.min(vh-top-10,Math.round(window.innerHeight*.72)));
+    o.style.setProperty('--qp-top',top+'px');o.style.setProperty('--qp-h',hgt+'px');
+    const m=o.querySelector('.modal');if(!m)return;
+    const w=Math.min(420,B.r-B.l-20);m.style.right=(window.innerWidth-B.r+10)+'px';m.style.width=w+'px';
+    const bx=B.r-M-S/2,ml=B.r-10-w,ax=bx-ml-7;o.style.setProperty('--qp-ax',ax+'px');o.style.setProperty('--qp-ox',(ax+7)+'px');
+  }
+  function decorate(){
+    const o=$('qa-chat');if(!o||o.dataset.pop)return;o.dataset.pop='1';o.classList.add('qa-pop');
+    const t=o.querySelector('.modal-title');if(t&&t.firstChild&&t.firstChild.nodeType===3){const hd=document.createElement('div');hd.className='qp-h';hd.innerHTML='<b>Nhập nhanh</b><small>Giữ và kéo bong bóng để đổi chỗ</small>';t.replaceChild(hd,t.firstChild)}
+    const l=$('qa-log');if(l&&!$('qa-hello'))l.insertAdjacentHTML('afterbegin','<div class="qa-bot" id="qa-hello">Nhắn như chat để ghi khoản, ví dụ: <b>“ăn trưa 85k vib hôm qua”</b> hoặc <b>“lương 25tr vào vcb”</b>.</div>');
+    const inp=$('qa-input'),send=$('qa-send');if(!inp||!send)return;
+    inp.placeholder='Nhắn để ghi khoản…';
+    inp.addEventListener('input',()=>requestAnimationFrame(live));
+    send.classList.add('dim');
+    inp.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();e.stopImmediatePropagation();popSend()}},true);
+    send.onclick=popSend;
+  }
+  let LIVE=null;
+  function chipsOf(r){const out=[];r.slice(0,3).forEach((it,i)=>{const p=r.length>1?(i+1)+'·':'';
+    out.push({k:p+'f'+it.flow+it.amount,t:(it.flow==='in'?'+':'−')+fmtK(it.amount),c:it.flow==='in'?'in':'out'});
+    if(it.category)out.push({k:p+'c'+it.category,t:it.category});
+    if(it.account){let a=null;try{a=acctById(it.account)}catch(e){}if(a)out.push({k:p+'a'+a.id,t:a.name})}
+    if(it.date&&it.date!==today())out.push({k:p+'d'+it.date,t:dmy(it.date).slice(0,5)})});
+    if(r.length>3)out.push({k:'more'+r.length,t:'+'+(r.length-3)+' khoản'});return out}
+  function live(){
+    const inp=$('qa-input'),send=$('qa-send'),l=$('qa-log');if(!inp||!l)return;
+    const t=inp.value.trim();send.classList.toggle('dim',!t);
+    let r=[];if(t&&/\d/.test(t)&&!isQ(nz(t))){try{r=parseText(amtRewrite(t))||[]}catch(e){r=[]}}
+    LIVE=r.length?r:null;let el=$('qa-live');
+    if(!LIVE){if(el)el.remove();return}
+    if(!el){el=document.createElement('div');el.className='qa-bot';el.id='qa-live';el.innerHTML='<div class="ql-k">Mình hiểu là:</div><div class="ql-c"></div>'}
+    if(el!==l.lastElementChild)l.appendChild(el);
+    const bx=el.querySelector('.ql-c'),old=new Map([...bx.children].map(c=>[c.dataset.k,c]));const keep=new Set();
+    chipsOf(LIVE).forEach(c=>{let n=old.get(c.k);if(!n){n=document.createElement('span');n.className='ql-chip pop'+(c.c?' '+c.c:'');n.dataset.k=c.k;n.textContent=c.t;n.addEventListener('animationend',()=>n.classList.remove('pop'),{once:true})}bx.appendChild(n);keep.add(c.k)});
+    old.forEach((n,k)=>{if(!keep.has(k))n.remove()});
+    l.scrollTop=l.scrollHeight;
+  }
+  function popSend(){
+    const inp=$('qa-input');if(!inp||!inp.value.trim())return;
+    const r=LIVE;const lv=$('qa-live');if(lv)lv.remove();LIVE=null;
+    let auto=false;if(r&&r.length){try{auto=!r.some(it=>dupOf(it))}catch(e){auto=false}}
+    qaSend(auto);
+    if(auto){const ch=chipsOf(r).map(c=>'<span class="ql-chip pop'+(c.c?' '+c.c:'')+'">'+esc(c.t)+'</span>').join('');
+      const name=r.length>1?r.length+' khoản':(r[0].desc||r[0].category||'khoản mới');
+      log('<div class="qa-bot">Đã thêm “'+esc(name)+'”<div class="ql-c" style="margin-top:6px">'+ch+'</div></div>')}
+    $('qa-send').classList.add('dim');
+    const l=$('qa-log');if(l)requestAnimationFrame(()=>{l.scrollTop=l.scrollHeight});
+  }
+  function openUI(){st0.open=true;b.classList.add('open');b.setAttribute('aria-label','Đóng khung nhập nhanh');set(xOf('r'),minY(),SPR);decorate();layout();live()}
+  function closeUI(){st0.open=false;b.classList.remove('open');b.setAttribute('aria-label','Mở khung nhập nhanh');rest(true)}
+  const _open=window.openQaChat,_close=window.closeQaChat;
+  window.openQaChat=function(){build();decorate();layout();openUI();return _open.apply(this,arguments)};
+  window.closeQaChat=function(){const r=_close.apply(this,arguments);if(st0.open)closeUI();return r};
+  let d=null;
+  b.addEventListener('pointerdown',e=>{if(e.button>0)return;d={id:e.pointerId,x0:e.clientX,y0:e.clientY,bx:b._x,by:b._y,moved:false,B:box()};try{b.setPointerCapture(e.pointerId)}catch(x){}});
+  b.addEventListener('pointermove',e=>{if(!d||e.pointerId!==d.id)return;const dx=e.clientX-d.x0,dy=e.clientY-d.y0;
+    if(!d.moved){if(st0.open||Math.hypot(dx,dy)<7)return;d.moved=true;b.classList.add('drag')}
+    const x=Math.max(d.B.l+M,Math.min(d.B.r-S-M,d.bx+dx)),y=Math.max(minY(),Math.min(maxY(),d.by+dy));
+    b.style.transition='none';b.style.transform='translate3d('+x+'px,'+y+'px,0)';d.cx=x;d.cy=y});
+  const up=()=>{if(!d)return;const g=d;d=null;try{b.releasePointerCapture(g.id)}catch(x){}
+    if(!g.moved){if(st0.open)closeQaChat();else openQaChat();return}
+    b.classList.remove('drag');b._x=g.cx;b._y=g.cy;
+    st0.side=(g.cx+S/2)<(g.B.l+g.B.r)/2?'l':'r';
+    const lo=minY(),hi=maxY();st0.ry=hi>lo?(g.cy-lo)/(hi-lo):.5;
+    rest(true);
+    try{localStorage.setItem(K,JSON.stringify({s:st0.side,ry:+st0.ry.toFixed(4)}))}catch(x){}};
+  b.addEventListener('pointerup',up);
+  b.addEventListener('pointercancel',()=>{if(!d)return;if(d.moved)up();else d=null});
+  let rz=0;const onRz=()=>{cancelAnimationFrame(rz);rz=requestAnimationFrame(()=>{if(d)return;if(st0.open){set(xOf('r'),minY());layout()}else rest(false)})};
+  window.addEventListener('resize',onRz);window.addEventListener('orientationchange',onRz);
+  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(st0.open)layout()});
+  try{const nv=document.querySelector('.bottom-nav');if(nv)new MutationObserver(()=>{if(!st0.open&&!d)rest(false)}).observe(nv,{attributes:true,attributeFilter:['class','style']})}catch(e){}
+  rest(false);setTimeout(()=>rest(false),300);
+  if($('qa-chat')&&$('qa-chat').classList.contains('open'))openUI();
 }
 function boot(){injectStyle();bubble();formBoost();settingsRow();handleHash()}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();

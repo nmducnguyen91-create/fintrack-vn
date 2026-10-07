@@ -7018,10 +7018,11 @@ function showUpdateBanner(){
   document.body.appendChild(b);
 }
 
-setTimeout(initFirebase, 500);
+setTimeout(initFirebase, 30);
 
 // Đăng ký Service Worker → cài được như app điện thoại + dùng offline
-if (false && 'serviceWorker' in navigator) {
+if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+  navigator.serviceWorker.addEventListener('message', ev => { if (ev.data && ev.data.type === 'ft-update') showUpdateBanner(); });
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('sw.js').then(reg => {
       // Chủ động kiểm tra bản mới mỗi khi mở app
