@@ -26,6 +26,7 @@
 <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
 <title>FinTrack VN</title>
 <style>
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{
   --navy:#1a3c5e;--navy2:#2a5480;--navy3:#102840;
@@ -171,6 +172,9 @@ body:has(.modal-overlay.open) .fab,body:has(.modal-overlay.open) .bottom-nav,bod
 .screen{max-width:520px;margin-left:auto!important;margin-right:auto!important;box-sizing:border-box}
 /* MODAL */
 .modal-overlay{position:fixed;inset:0;background:rgba(10,20,32,.38);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);z-index:200;display:flex;align-items:flex-end;justify-content:center;opacity:0;visibility:hidden;pointer-events:none;transition:opacity .24s ease,visibility 0s linear .32s}
+body:has(.modal-overlay.open) #upd-banner{bottom:auto!important;top:calc(12px + env(safe-area-inset-top,0px))}
+#qa-bubble{transition:opacity .25s}
+@media (pointer:coarse){.sec-head-action,.term-q,.budget-row span[onclick],button[onclick^="shiftOverviewMonth"]{position:relative}.sec-head-action::after,.budget-row span[onclick]::after,button[onclick^="shiftOverviewMonth"]::after{content:"";position:absolute;inset:-12px -8px}.term-q::after{content:"";position:absolute;inset:-14px}}#qa-bubble.qa-scroll{opacity:.22!important}
 .modal-overlay.open{cursor:pointer}.modal-overlay.open .modal{cursor:auto}
 .modal-overlay.open{opacity:1;visibility:visible;pointer-events:auto;transition:opacity .2s ease}
 .modal-overlay .modal{transform:translateY(104%);transition:transform .3s cubic-bezier(.55,.06,.68,.19)}
@@ -214,6 +218,7 @@ body.dark .tier-head{color:#8fb4e0}
 .sec-head.clps{cursor:pointer;user-select:none}
 .clps-chev{font-size:15px;color:var(--navy);transition:transform .18s;display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:7px;background:var(--light);margin-left:8px;vertical-align:middle}
 .sec-head.collapsed .clps-chev{transform:rotate(-90deg)}
+body.dark .clps-chev{color:var(--text,#e6ebf2)!important}
 .home-clps.hidden{display:none}
 [data-clps].hidden{display:none!important}
 .ah-strip{margin:6px 12px 0;padding:8px 13px;border:1px dashed var(--bdr);border-radius:11px;font-size:13px;color:var(--muted);cursor:pointer;background:var(--card)}
@@ -3700,7 +3705,10 @@ function initCollapsibles(){
       if(el.hasAttribute('data-clps'))return;
       const prev=el.previousElementSibling;
       if(prev&&(prev.classList.contains('sec-head')||prev.hasAttribute('data-clps-head')))return;
-      const lbl=(el.querySelector('.set-t')||{}).textContent||(pid==='settings-budget'?'Ngân sách hàng tháng':'Dữ liệu');
+      if(/gradient/.test(el.getAttribute('style')||''))return; // thẻ giới thiệu, không cần tiêu đề lặp
+      const ts=el.querySelectorAll('.set-t');
+      if(!ts.length&&prev&&prev.classList.contains('card'))return; // phần nối tiếp thẻ trên
+      const lbl=ts.length>1?(pid==='settings-budget'?'Hạn mức theo nhóm':'Sao lưu & khôi phục'):ts.length?ts[0].textContent:(pid==='settings-budget'?'Ngân sách':'Dữ liệu');
       const key='c_'+(pid+'_'+lbl).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'').slice(0,28);
       const head=document.createElement('div');
       head.className='sec-head clps';head.setAttribute('data-clps-head',key);
@@ -4198,7 +4206,7 @@ function renderSmartAlerts(mTx,thu,chi){
   el.style.display='';
   const row=r=>{const hs=(r.sub.find(s=>s[0]==='Hạn'||s[0]==='Ngày')||['',''])[1];const m=/^(.*?)\s·\s([^·]+)$/.exec(r.title);const name=(m?m[1]:r.title).replace(/\s·\ssao kê đã chốt/,'');const amt=m?m[2]:'';
     const dm=/(\d{2})\/(\d{2})/.exec(hs);const d=r.n===0?'Hôm nay':r.n===1?'Ngày mai':(dm?dm[1]+'/'+dm[2]:'');const hot=r.n!=null&&r.n<=1;
-    return '<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--line,#f2f4f9)"><span style="flex-shrink:0;width:64px;font-size:13px;font-weight:'+(hot?700:500)+';color:'+(hot?'var(--red,var(--red))':'var(--muted)')+';font-variant-numeric:tabular-nums">'+d+'</span><span style="flex:1;min-width:0;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+escH(name)+'</span><span style="flex-shrink:0;font-size:15px;font-weight:700;font-variant-numeric:tabular-nums">'+escH(amt)+'</span></div>'};
+    return '<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--line,#f2f4f9)"><span style="flex-shrink:0;min-width:64px;white-space:nowrap;font-size:13px;font-weight:'+(hot?700:500)+';color:'+(hot?'var(--red,var(--red))':'var(--muted)')+';font-variant-numeric:tabular-nums">'+d+'</span><span style="flex:1;min-width:0;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+escH(name)+'</span><span style="flex-shrink:0;font-size:15px;font-weight:700;font-variant-numeric:tabular-nums">'+escH(amt)+'</span></div>'};
   const total=rows.reduce((s,r)=>{const m=/·\s([\d.,]+)(tr|K|k)?$/.exec(r.title);if(!m)return s;return s+parseFloat(m[1])*(m[2]==='tr'?1e6:/k/i.test(m[2]||'')?1e3:1)},0);
   el.innerHTML='<div style="margin:10px 12px 0;background:var(--card);border:1px solid var(--bdr);border-radius:14px;padding:12px 14px 4px">'
    +'<div style="display:flex;align-items:baseline;justify-content:space-between;padding-bottom:8px"><span style="font-size:14.5px;font-weight:800;color:var(--text);text-transform:uppercase;letter-spacing:.5px">Sắp đến hạn · '+H+' ngày</span>'+(total?'<span style="font-size:16px;font-weight:800;color:var(--red,var(--red));font-variant-numeric:tabular-nums">'+fmtK(total)+'</span>':'')+'</div>'
@@ -4423,7 +4431,7 @@ function renderForecast(){
   const _ev=f.events.filter(e=>e.type!=='Ước tính');const _lim=window.fcShowAll?_ev.length:6;
   const rows=_ev.slice(0,_lim).map(e=>'<div style="display:flex;gap:9px;align-items:baseline;padding:7px 0;border-bottom:1px dashed var(--bdr);font-size:13px">'
     +'<span style="color:var(--muted);white-space:nowrap">'+fmtDMY(e.date)+'</span>'
-    +'<span style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+e.name+'</span>'
+    +'<span style="flex:1;min-width:0;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.3;word-break:break-word">'+e.name+'</span>'
     +'<b style="color:'+(e.amt>=0?'var(--green)':'var(--red)')+';white-space:nowrap">'+(e.amt>=0?'+':'−')+fmtK(Math.abs(e.amt))+'</b>'
     +'<span style="color:'+(e.bal<0?'var(--red)':'var(--muted)')+';font-size:13px;white-space:nowrap">→ '+(e.bal<0?'−':'')+fmtK(Math.abs(e.bal))+'</span></div>').join('')+(_ev.length>6?'<button type="button" onclick="window.fcShowAll=!window.fcShowAll;renderForecast()" style="width:100%;margin-top:8px;min-height:38px;border:none;background:var(--light);border-radius:10px;color:var(--navy);font-weight:600;font-size:14.5px;font-family:inherit;cursor:pointer">'+(window.fcShowAll?'Thu gọn':'Xem thêm '+(_ev.length-6)+' khoản')+'</button>':'');
   el.innerHTML='<div style="padding:13px 15px">'
@@ -4925,6 +4933,8 @@ function initJobBarDrag(){
   },{passive:true});
   document.addEventListener('pointercancel',()=>{el=null},{passive:true});
 }
+/* Bong bóng chat mờ đi khi cuộn để không che nội dung */
+(function(){let t=null;addEventListener('scroll',()=>{const b=document.getElementById('qa-bubble');if(!b||b.classList.contains('drag'))return;b.classList.add('qa-scroll');clearTimeout(t);t=setTimeout(()=>b.classList.remove('qa-scroll'),650)},{passive:true})})();
 /* Chạm ra ngoài khung (vùng tối) để đóng — mọi cửa sổ con & khung chat */
 (function(){let downOv=null;
   document.addEventListener('pointerdown',e=>{const t=e.target;downOv=(t&&t.classList&&t.classList.contains('modal-overlay')&&t.classList.contains('open'))?t:null},true);
@@ -5285,6 +5295,7 @@ function renderPersonalStats(){
   const sorted=Object.entries(catMap).sort((a,b)=>b[1]-a[1]);
   const labels=sorted.map(e=>e[0]);const data=sorted.map(e=>e[1]);const colors=CAT_COLORS.slice(0,labels.length);
   if(charts.personal)charts.personal.destroy();
+  {const cw=document.getElementById('personal-chart');if(cw&&cw.parentElement)cw.parentElement.style.display=labels.length?'':'none'}
   if(labels.length){
     charts.personal=new Chart(document.getElementById('personal-chart').getContext('2d'),{type:'doughnut',data:{labels,datasets:[{data,backgroundColor:colors,borderWidth:2,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{display:false}}}});
     document.getElementById('personal-legend').innerHTML=labels.map((l,i)=>`<div class="legend-item"><div class="legend-dot" style="background:${colors[i]}"></div>${l}: ${chi?Math.round(data[i]/chi*100):0}%</div>`).join('');
@@ -7049,6 +7060,9 @@ setInterval(() => {
 // Theo dõi kết nối mạng
 window.addEventListener('offline', () => updateSyncUI('offline'));
 window.addEventListener('online', () => { if (firebaseReady) { updateSyncUI('syncing'); manualSync(); } });
+// Quay lại app sau khi ẩn lâu (iOS hay ngắt kết nối realtime) → đồng bộ lại ngay
+(function(){let hid=0;document.addEventListener('visibilitychange',()=>{if(document.hidden){hid=Date.now();return}
+  if(hid&&Date.now()-hid>45000&&firebaseReady&&navigator.onLine){hid=0;try{manualSync(true)}catch(e){}}})})();
 
 function showSyncToast(msg) {
   const el = document.getElementById('toast');
@@ -7057,15 +7071,15 @@ function showSyncToast(msg) {
   setTimeout(() => el.style.display = 'none', 3000);
 }
 
-async function manualSync() {
-  if (!firebaseReady) { toast('Firebase chưa kết nối!'); return; }
-  toast('Đang đồng bộ...');
+async function manualSync(silent) {
+  if (!firebaseReady) { if(!silent)toast('Firebase chưa kết nối!'); return; }
+  if(!silent)toast('Đang đồng bộ...');
   try {
     const { getDoc, doc, setDoc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js');
     await pullFromCloud(getDoc, doc);
     await pushToCloud(setDoc, doc, serverTimestamp);
-    toast('Đồng bộ hoàn tất!');
-  } catch(e) { toast('Lỗi đồng bộ: ' + e.message); }
+    if(!silent)toast('Đồng bộ hoàn tất!');else try{updateSyncUI('synced')}catch(_){}
+  } catch(e) { if(!silent)toast('Lỗi đồng bộ: ' + e.message);else try{updateSyncUI('offline')}catch(_){} }
 }
 
 
@@ -7223,7 +7237,7 @@ async function migrateLegacyDoc(getDoc, setDoc, doc){
 function showUpdateBanner(){
   if(document.getElementById('upd-banner'))return;
   var b=document.createElement('div'); b.id='upd-banner';
-  b.style.cssText='position:fixed;left:50%;transform:translateX(-50%);bottom:calc(78px + env(safe-area-inset-bottom,0px));z-index:99998;background:#122a4d;color:#fff;border-radius:30px;padding:10px 10px 10px 18px;display:flex;align-items:center;gap:12px;box-shadow:0 8px 24px rgba(0,0,0,.35);font-size:14.5px;font-weight:600';
+  b.style.cssText='position:fixed;left:50%;transform:translateX(-50%);bottom:calc(100px + env(safe-area-inset-bottom,0px));z-index:99998;background:#122a4d;color:#fff;border-radius:30px;padding:10px 10px 10px 18px;display:flex;align-items:center;gap:12px;box-shadow:0 8px 24px rgba(0,0,0,.35);font-size:14.5px;font-weight:600';
   b.innerHTML='Có bản cập nhật mới <button onclick="location.reload()" style="border:none;cursor:pointer;background:#4ade80;color:#0c2b16;font-weight:800;font-size:14.5px;border-radius:20px;padding:8px 14px">Cập nhật</button>';
   document.body.appendChild(b);
 }
@@ -7517,14 +7531,14 @@ window.renderCardCal=function(){
   const debt=cards.reduce((s,a)=>s+cardDebt(a),0);
   const D30=D.filter(r=>r.days>=0&&r.days<=30).reduce((s,r)=>s+r.amt,0);
   const stat=(l,v,c)=>'<div style="flex:1;min-width:0;background:var(--light);border-radius:12px;padding:10px 12px"><div style="font-size:13px;color:var(--muted)">'+l+'</div><b style="font-size:16.5px;color:'+(c||'var(--text)')+';white-space:nowrap">'+v+'</b></div>';
-  let h='<div style="padding:12px 14px 8px"><div style="display:flex;gap:8px">'+stat('Tổng dư nợ '+cards.length+' thẻ',fmtK(debt)+' đ')+stat('Phải trả 30 ngày tới (gồm dự kiến)',fmtK(D30)+' đ',D30?'var(--red)':'')+'</div>';
+  let h='<div style="padding:12px 14px 8px"><div style="display:flex;gap:8px">'+stat('Tổng dư nợ '+cards.length+' thẻ',fmtK(debt)+' đ')+stat('Phải trả 30 ngày tới',fmtK(D30)+' đ',D30?'var(--red)':'')+'</div>';
   Object.keys(by).slice(0,3).forEach(m=>{const L=by[m],tot=L.reduce((s,r)=>s+r.amt,0);
     h+='<div style="display:flex;justify-content:space-between;align-items:baseline;margin:16px 2px 8px"><span style="font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">Tháng '+(+m.slice(5))+'/'+m.slice(0,4)+(L.every(r=>r.est)?' · dự kiến':'')+'</span><span style="font-size:13px;color:var(--muted)">Tổng <b style="font-size:15px;color:var(--text)">'+fmtK(tot)+' đ</b></span></div><div style="display:flex;flex-direction:column;gap:8px">';
     h+=L.map(r=>{const hot=r.k===0&&r.amt>0&&r.days<=5;const nm=cName(r.a);const zero=!r.amt;
       const when=r.k===0&&!r.est?(r.days<=0?'Hôm nay':'Còn '+r.days+' ngày'):r.est?'Dự kiến'+(r.cyc?' · '+r.cyc:''):'';
       const P=Array.isArray(r.parts)?r.parts:[[r.parts,'']];const one=P.length===1;const n=P.length+1+(r.k===0&&r.amt>0?1:0);
       let g='<div style="grid-row:1/span '+n+';width:40px;height:40px;border-radius:11px;background:'+(hot?'var(--red)':'var(--light)')+';display:flex;align-items:center;justify-content:center"><b style="font-size:16.5px;color:'+(hot?'#fff':'var(--text)')+'">'+String(r.d.getDate()).padStart(2,'0')+'</b></div>'
-        +'<div style="min-width:0;display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;min-height:40px;align-content:center"><span style="font-size:15px;font-weight:600">'+escH(nm)+'</span>'+(when?'<span style="font-size:13px;font-weight:600;color:'+(hot?'var(--red)':'var(--muted)')+'">· '+when+'</span>':'')+'</div>'
+        +'<div style="min-width:0;display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;min-height:40px;align-content:center"><span style="font-size:15px;font-weight:600">'+escH(nm)+'</span>'+(when?'<span style="font-size:13px;font-weight:600;color:'+(hot?'var(--red)':'var(--muted)')+'">'+when+'</span>':'')+'</div>'
         +'<b style="font-size:15px;white-space:nowrap;align-self:center;text-align:right;font-variant-numeric:tabular-nums;color:'+(zero?'var(--muted)':hot?'var(--red)':'var(--text)')+'">'+fmtK(r.amt)+'</b>';
       g+=P.map(p=>'<span style="font-size:14.5px;color:var(--muted);line-height:1.35">'+escH(p[0])+'</span><span style="font-size:14.5px;color:var(--muted);text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums">'+(p[1]!==''?fmtK(p[1]):'')+'</span>').join('');
       if(r.k===0&&r.amt>0)g+='<span></span><button type="button" onclick="openQaChat(\'Trả thẻ '+escH(nm).replace(/'/g,'')+'\')" style="justify-self:end;margin-top:6px;min-width:64px;min-height:34px;border:none;background:'+(hot?'var(--red)':'var(--navy)')+';color:#fff;border-radius:9px;padding:0 14px;font-weight:600;font-size:14.5px;font-family:inherit;cursor:pointer">Trả</button>';
@@ -9154,7 +9168,7 @@ body.dark #qa-bubble{background:#2f6db0!important;box-shadow:0 0 0 3px var(--bg)
     const hgt=Math.max(260,Math.min(vh-top-10,Math.round(window.innerHeight*.72)));
     o.style.setProperty('--qp-top',top+'px');o.style.setProperty('--qp-h',hgt+'px');
     const m=o.querySelector('.modal');if(!m)return;
-    const w=Math.min(420,B.r-B.l-20);m.style.right=(window.innerWidth-B.r+10)+'px';m.style.width=w+'px';
+    const w=Math.min(420,B.r-B.l-20);m.style.right=((document.documentElement.clientWidth||window.innerWidth)-B.r+10)+'px';m.style.width=w+'px';
     const bx=B.r-M-S/2,ml=B.r-10-w,ax=bx-ml-7;o.style.setProperty('--qp-ax',ax+'px');o.style.setProperty('--qp-ox',(ax+7)+'px');
   }
   function decorate(){
