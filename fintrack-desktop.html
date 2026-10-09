@@ -2826,6 +2826,7 @@ body:not(#_dx) .fab{bottom:32px!important;right:32px!important}
     </div>
     <div class="form-group" id="d-acct-wrap"><label class="form-label">Liên kết tài khoản / thẻ</label>
       <select class="form-input form-select" id="d-acct"><option value="">— Không liên kết —</option></select></div>
+    <div class="form-group" id="d-cash-wrap"><label class="form-label" id="d-cash-label">Tiền đưa ra từ</label><select class="form-input form-select" id="d-cash"></select><div id="d-cash-hint" style="font-size:12.5px;color:var(--muted);margin-top:5px;line-height:1.4"></div></div>
     <div class="form-group"><label class="form-label">Ghi chú</label><input class="form-input" id="d-note" placeholder="Ghi chú thêm..."></div>
     <div class="btn-row">
       <button class="btn btn-cancel" onclick="closeDebtForm()">Hủy</button>
@@ -4731,7 +4732,17 @@ function openDebtForm(idx){
   document.getElementById('d-start').value=d.startDate||today();
   document.getElementById('d-note').value=d.note||'';
   document.getElementById('debt-del-row').style.display=editDebtIdx!=null?'':'none';
+  updDebtCash(true);
 }
+// Khoản nợ mới: ghi luôn tiền ra (cho vay) / tiền vào (đi vay) để số dư tài khoản đúng
+function updDebtCash(reset){const w=document.getElementById('d-cash-wrap'),s=document.getElementById('d-cash');if(!w||!s)return;
+  if(editDebtIdx!=null){w.style.display='none';return}w.style.display='';
+  const r=debtKind==='receivable';ensureAccounts();
+  if(reset||!s.options.length){s.innerHTML='<option value="">— Không ghi (tiền đã tính từ trước) —</option>'+db.accounts.filter(a=>a.type!=='credit').map(a=>'<option value="'+a.id+'">'+a.name+'</option>').join('')}
+  if(reset||s.dataset.k!==debtKind){s.value=r?mainAcctId():'';s.dataset.k=debtKind}
+  document.getElementById('d-cash-label').textContent=r?'Tiền cho vay lấy từ':'Tiền vay nhận vào';
+  document.getElementById('d-cash-hint').textContent=r?'Tài khoản này giảm ngay; khi thu về sẽ tăng lại. Không tính là chi tiêu.':'Tài khoản này tăng ngay; khi trả sẽ giảm. Không tính là thu nhập.';}
+{const _sdk=setDebtKind;setDebtKind=function(){const r=_sdk.apply(this,arguments);try{updDebtCash()}catch(e){}return r}}
 function closeDebtForm(){document.getElementById('debt-modal').classList.remove('open');editDebtIdx=null}
 function saveDebt(){
   const name=document.getElementById('d-name').value.trim();if(!name){warnField('d-name','Nhập tên khoản nợ');return}
@@ -4741,9 +4752,12 @@ function saveDebt(){
   const obj={mode:debtMode,dueDate:fl?(document.getElementById('d-due').value||''):'',kind:debtKind,name,party:document.getElementById('d-party').value.trim(),type:document.getElementById('d-type').value,acct:document.getElementById('d-acct').value||'',principal,remaining,monthlyPayment:getMoneyVal('d-monthly'),rate:parseFloat(document.getElementById('d-rate').value)||0,term:parseInt(document.getElementById('d-term').value)||0,paid:parseInt(document.getElementById('d-paid').value)||0,startDate:document.getElementById('d-start').value,note:document.getElementById('d-note').value};
   if(fl){obj.rate=0;obj.term=0;obj.paid=0;obj.monthlyPayment=0}
   db.debts=db.debts||[];
-  if(editDebtIdx!=null)db.debts[editDebtIdx]={...db.debts[editDebtIdx],...obj};else db.debts.push(obj);
+  let cashTx=false;
+  if(editDebtIdx!=null)db.debts[editDebtIdx]={...db.debts[editDebtIdx],...obj};else{db.debts.push(obj);
+    const ca=(document.getElementById('d-cash')||{}).value||'';const amt=principal||remaining;
+    if(ca&&amt>0){const r=obj.kind==='receivable';db.transactions.push({id:Date.now(),amount:amt,desc:(r?'Cho vay · ':'Vay · ')+name+(obj.party?' ('+obj.party+')':''),category:'Trả nợ',group:'personal',flow:'xfer',date:obj.startDate||today(),note:'',from:r?ca:'',to:r?'':ca,account:ca,ext:name,debtPay:1});cashTx=true}}
   const nConv=convertCardDebts();
-  save();closeDebtForm();renderAll();renderDebts();toast(nConv?'Đã chuyển thành khoản trả góp thẻ ✓':'Đã lưu khoản nợ ✓');
+  save();closeDebtForm();renderAll();renderDebts();toast(nConv?'Đã chuyển thành khoản trả góp thẻ ✓':cashTx?'Đã lưu khoản nợ · đã ghi tiền '+(obj.kind==='receivable'?'ra':'vào')+' ✓':'Đã lưu khoản nợ ✓');
 }
 // Nợ gắn thẻ tín dụng có kỳ/tiền kỳ = trả góp thẻ → tự chuyển sang db.installments (một dữ liệu duy nhất)
 function convertCardDebts(){
@@ -4836,7 +4850,7 @@ function txRow(t,opts){
   if(t.flow==='xfer'){
     const fa=acctById(t.from),ta=acctById(t.to);
     const dh=opts.hideDate?'':`<div class="tx-date">${dateLabel(t.date)}</div>`;
-    return`<div class="tx-item" data-txid="${t.id}" data-swipe-edit="openEditTx('${t.id}')" data-swipe-del="deleteTxById('${t.id}')" onclick="openEditTx('${t.id}')" style="cursor:pointer"><div class="tx-icon" style="background:var(--light);color:var(--navy);font-size:16px;font-weight:700">⇄</div><div class="tx-meta"><div class="tx-name">${t.desc||'Chuyển khoản'}</div><div class="tx-sub">${fa?fa.name:(t.ext||'Bên ngoài')} → ${ta?ta.name:(t.ext||'Bên ngoài')}${t.debtPay?' · trả/thu nợ, không tính chi':''}${t.note?' · '+t.note:''}</div></div><div class="tx-right"><div class="tx-amt" style="color:var(--navy)">${fmtK(t.amount)} đ</div>${dh}</div></div>`;
+    return`<div class="tx-item" data-txid="${t.id}" data-swipe-edit="openEditTx('${t.id}')" data-swipe-del="deleteTxById('${t.id}')" onclick="openEditTx('${t.id}')" style="cursor:pointer"><div class="tx-icon" style="background:var(--light);color:var(--navy);font-size:16px;font-weight:700">⇄</div><div class="tx-meta"><div class="tx-name">${t.desc||'Chuyển khoản'}</div><div class="tx-sub">${t.debtPay?(ta&&!fa?'Thu nợ → '+ta.name:fa&&!ta?fa.name+' → '+(/^Cho vay/.test(t.desc||'')?'Cho vay':'Trả nợ'):(fa?fa.name:(t.ext||'Bên ngoài'))+' → '+(ta?ta.name:(t.ext||'Bên ngoài'))):(fa?fa.name:(t.ext||'Bên ngoài'))+' → '+(ta?ta.name:(t.ext||'Bên ngoài'))}${t.note?' · '+t.note:''}</div></div><div class="tx-right"><div class="tx-amt" style="color:${t.debtPay&&ta&&!fa?'var(--green)':t.debtPay&&fa&&!ta?'var(--red)':'var(--navy)'}">${t.debtPay&&ta&&!fa?'+':t.debtPay&&fa&&!ta?'−':''}${fmtK(t.amount)} đ</div>${dh}</div></div>`;
   }
   const isIn=t.flow==='in';const icon=CAT_ICONS[t.category]||I.clip;
   const bg=isIn?'#e8f5e9':'#fdecea';const sign=isIn?'+':'−';
