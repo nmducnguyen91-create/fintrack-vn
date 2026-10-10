@@ -9835,5 +9835,28 @@ if(typeof AH_SUBS!=='undefined'&&AH_SUBS.settings)AH_SUBS.settings=AH_SUBS.setti
 try{if(typeof settingsSubTab!=='undefined'&&settingsSubTab==='account'){const b=document.querySelector('#screen-settings .tab-item');b&&_sst(b,'budget')}}catch(e){}
 })();
 </script>
+<script>
+/* App ngoài màn hình chính (iPhone): app chỉ "ngủ" khi thoát ra, không tải lại → tự kiểm tra bản mới mỗi lần quay lại */
+(function(){
+if(!('serviceWorker' in navigator)||location.protocol==='file:')return;
+let last=0,busy=false;
+async function curVer(){try{const k=await caches.keys();return (k.find(x=>/^fintrack-shell-v\d+$/.test(x))||'')}catch(e){return ''}}
+async function check(force){if(busy||(!force&&Date.now()-last<60e3))return;busy=true;last=Date.now();
+  try{const r=await fetch('sw.js?t='+Date.now(),{cache:'no-store'});if(!r.ok)return;const m=(await r.text()).match(/fintrack-shell-v\d+/);const cur=await curVer();
+    if(m&&cur&&m[0]!==cur){const reg=await navigator.serviceWorker.getRegistration();if(reg)reg.update().catch(()=>{});try{showUpdateBanner()}catch(e){}}}catch(e){}finally{busy=false}}
+window.ftCheckUpdate=check;
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')check()});
+addEventListener('pageshow',e=>{if(e.persisted)check(true)});
+addEventListener('focus',()=>check());
+setInterval(()=>{if(document.visibilityState==='visible')check()},15*60e3);
+setTimeout(()=>check(true),8000);
+/* Bấm "Cập nhật": chờ bản mới cài xong rồi mới tải lại, tránh mở lại đúng bản cũ */
+window.ftApplyUpdate=async function(){const b=document.querySelector('#upd-banner button');if(b){b.disabled=true;b.textContent='Đang tải…'}
+  try{const reg=await navigator.serviceWorker.getRegistration();if(reg){await reg.update().catch(()=>{});const w=reg.installing||reg.waiting;
+    if(w){await new Promise(res=>{const t=setTimeout(res,6000);navigator.serviceWorker.addEventListener('controllerchange',()=>{clearTimeout(t);res()},{once:true});try{w.postMessage({type:'skip'})}catch(e){}})}}}catch(e){}
+  location.reload()};
+document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('#upd-banner button');if(b){e.preventDefault();e.stopImmediatePropagation();ftApplyUpdate()}},true);
+})();
+</script>
 </body>
 </html>

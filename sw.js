@@ -1,5 +1,5 @@
 // FinTrack VN — service worker: mở tức thì từ bộ nhớ máy, cập nhật ngầm
-const CACHE = 'fintrack-shell-v306';
+const CACHE = 'fintrack-shell-v307';
 const ASSETS = [
   './',
   'fintrack-vn.html',
@@ -20,6 +20,8 @@ self.addEventListener('install', e => {
     ))
   ));
 });
+
+self.addEventListener('message', e => { if (e.data && e.data.type === 'skip') self.skipWaiting(); });
 
 self.addEventListener('activate', e => {
   e.waitUntil((async () => {
