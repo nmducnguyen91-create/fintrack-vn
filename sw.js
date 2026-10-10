@@ -1,5 +1,5 @@
 // FinTrack VN — service worker: mở tức thì từ bộ nhớ máy, cập nhật ngầm
-const CACHE = 'fintrack-shell-v295';
+const CACHE = 'fintrack-shell-v306';
 const ASSETS = [
   './',
   'fintrack-vn.html',
