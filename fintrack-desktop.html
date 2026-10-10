@@ -3396,7 +3396,7 @@ function renderTopbar(){
   const svChiT=db.services.reduce((s,sv)=>s+svcChi(sv),0);
   // Ghi nhận lợi nhuận: chỉ hồ sơ ĐÃ HOÀN THÀNH, vào tháng giao dịch cuối cùng của hồ sơ
   const svDoneMonth=sv=>{const ds=(sv.transactions||[]).map(t=>t.date).filter(Boolean).sort();return ds.length?monthOf(ds[ds.length-1]):monthOf(sv.date)};
-  const svProfitM=db.services.filter(sv=>sv.status==='done'&&svDoneMonth(sv)===m).reduce((s,sv)=>s+(svcThu(sv)-svcChi(sv)),0);
+  const svProfitM=db.services.filter(sv=>sv.billing!=='recurring'&&!sv.toCash&&sv.status==='done'&&svDoneMonth(sv)===m).reduce((s,sv)=>s+(svcThu(sv)-svcChi(sv)),0);/* định kỳ & hồ sơ ghi tiền mặt đã nằm trong Thu chi cá nhân */
   const mDebt=monthlyDebtDue();
   const G='#7ee8a2',R='#ffb3ab',B='#b3d4ff',P='#d4b3ff',W='#fff',O='#ffcf99';
   const k=x=>fmtK(x)+' đ';
@@ -7022,7 +7022,6 @@ async function initFirebase() {
         lastSyncTime = localMtime;
         renderAll();
         updateSyncUI('synced');
-        showSyncToast(dec[0]==='merge'?'Đã gộp thay đổi từ thiết bị khác':'Đã nhận dữ liệu mới từ thiết bị khác');
         if (needPush) scheduleSync(setDoc, doc, serverTimestamp);
       } catch(e) { console.warn('Sync parse error', e); }
     });
@@ -7094,7 +7093,6 @@ async function pullFromCloud(getDoc, doc) {
     if (dec[0] !== 'ignore') {
       ftApplyCloud(dec[0], cloudDb, data, dec[1]);
       renderAll();
-      if (dec[0] === 'merge') try{showSyncToast('Đã gộp thay đổi từ thiết bị khác')}catch(e){}
     }
     lastSyncTime = data._updatedAt || Date.now();
   } catch(e) { console.warn('Pull error:', e); }
@@ -7259,7 +7257,6 @@ async function initSettingsSync(doc,setDoc,getDoc,onSnapshot){
     const s=snap.data()[SETTINGS_FIELD];if(!s||s.deviceId===DEVICE_ID)return;
     const cs=s.seq||0;if(cs<=settingsSeq)return;
     adoptSettings(s);
-    if(typeof showSyncToast==='function')showSyncToast('Đã nhận cài đặt mới từ thiết bị khác');
   });
 }
 // Init Firebase sau khi app load
@@ -9577,6 +9574,168 @@ function ftCleanDesc(desc,cat){desc=String(desc||'').trim();return desc&&cat&&ft
     db.transactions.forEach(t=>{if(t&&t.flow!=='xfer'&&t.desc&&ftCleanDesc(t.desc,t.category)===''){t.desc='';n++}});
     if(n){try{save()}catch(e){}}}
   const _ra=window.renderAll;if(typeof _ra==='function')window.renderAll=function(){try{migrate()}catch(e){}return _ra.apply(this,arguments)};
+})();
+</script>
+<script>
+/* Dịch vụ định kỳ: tư vấn thường xuyên, thu phí theo tháng / quý */
+(function(){
+const REC=sv=>!!sv&&sv.billing==='recurring';window.svcIsRec=REC;
+const pad=n=>String(n).padStart(2,'0');
+function addM(ds,n){const[y,m,d]=ds.split('-').map(Number);const t=new Date(y,m-1+n,1);const dim=new Date(t.getFullYear(),t.getMonth()+1,0).getDate();return t.getFullYear()+'-'+pad(t.getMonth()+1)+'-'+pad(Math.min(d,dim))}
+function recLabel(sv,ds){const[y,m]=ds.split('-').map(Number);if(sv.cycle!=='quarter')return'tháng '+pad(m)+'/'+y;const e=addM(ds,2);const[y2,m2]=e.split('-').map(Number);return'quý T'+pad(m)+(y2!==y?'/'+y:'')+'–T'+pad(m2)+'/'+y2}
+window.svcRecPeriods=function(sv){const step=sv.cycle==='quarter'?3:1,fee=+sv.fee||0,start=sv.date||today(),td=today();let upto=td;if(sv.endDate&&sv.endDate<upto)upto=sv.endDate;let pool=svcThu(sv);const list=[];
+  for(let i=0;i<360;i++){const s=addM(start,i*step);if(s>upto)break;const paid=Math.min(fee,Math.max(0,pool));pool-=paid;list.push({start:s,fee,paid,full:fee>0&&paid>=fee,over:fee>0&&paid<fee&&s<td})}
+  let next=addM(start,list.length*step);if(sv.status!=='open'||(sv.endDate&&next>sv.endDate))next=null;
+  return{list,next,credit:Math.max(0,pool)}};
+const _isO=isOverdue;window.isOverdue=function(sv){if(REC(sv))return sv.status==='open'&&svcRecPeriods(sv).list.some(p=>p.over);return _isO(sv)};
+const _rsl=renderServiceList;window.renderServiceList=function(){_rsl.apply(this,arguments);(db.services||[]).filter(REC).forEach(sv=>{const c=document.querySelector('.svc-card[onclick="openSvcDetail(\''+sv.id+'\')"]');if(!c)return;const P=svcRecPeriods(sv),ov=isOverdue(sv);
+  const st=c.querySelector('.svc-status');if(st){st.textContent=sv.status==='open'?(ov?'Nợ phí kỳ':'Định kỳ'):(sv.status==='done'?'Đã kết thúc':'Huỷ');st.className='svc-status '+(sv.status==='open'?(ov?'overdue':'open'):sv.status)}
+  const meta=c.querySelector('.svc-meta-row');if(meta)meta.insertAdjacentHTML('afterbegin','<span style="color:var(--navy);font-weight:600">'+(sv.cycle==='quarter'?'Thu hàng quý':'Thu hàng tháng')+'</span><span>Đã thu '+P.list.filter(p=>p.full).length+'/'+P.list.length+' kỳ</span>');
+  const lb=c.querySelector('.svc-bar-label');if(lb)lb.textContent='Phí/kỳ'})};
+let showAll=false;
+const _osd=openSvcDetail;window.openSvcDetail=function(id){if(id!==svcDetailId)showAll=false;_osd.apply(this,arguments);const sv=db.services.find(s=>s.id===id);if(!sv)return;const r=REC(sv);
+  const chips={open:['Đang xử lý','Đang hoạt động'],done:['Hoàn thành','Kết thúc HĐ'],cancel:['Huỷ','Huỷ']};Object.keys(chips).forEach(k=>{const b=document.getElementById('ds-'+k);if(b)b.textContent=chips[k][r?1:0]});
+  const feeEl=document.getElementById('mp-fee'),re=document.getElementById('mp-remain');const feeL=feeEl.previousElementSibling,remL=re.previousElementSibling;
+  let panel=document.getElementById('svc-rec-panel');if(!panel){panel=document.createElement('div');panel.id='svc-rec-panel';const tl=document.getElementById('svc-detail-txlist');tl.parentNode.insertBefore(panel,tl.previousElementSibling)}
+  if(!r){panel.style.display='none';panel.innerHTML='';feeL.textContent='Tổng phí DV';remL.textContent='Còn phải thu';return}
+  const rb=document.getElementById('ds-renew-box');if(rb)rb.style.display='none';
+  const P=svcRecPeriods(sv),fee=+sv.fee||0,thu=svcThu(sv),remain=P.list.length*fee-thu,cyc=sv.cycle==='quarter'?'quý':'tháng';
+  feeL.textContent='Phí / '+cyc;feeEl.textContent=fmtK(fee)+' đ';remL.textContent='Còn nợ phí';
+  re.textContent=remain>0?fmtK(remain)+' đ':(remain<0?'Trả trước '+fmtK(-remain):'✓ Đủ kỳ');re.style.color=remain>0?'var(--red)':'var(--green)';
+  const info=document.getElementById('svc-detail-info');const g=info.querySelector('div');if(g)g.insertAdjacentHTML('beforeend','<div><span style="color:var(--muted)">Thu phí</span><br><b>Hàng '+cyc+' · '+fmtK(fee)+' đ</b></div><div><span style="color:var(--muted)">Kết thúc HĐ</span><br><b>'+(sv.endDate?fmtDMY(sv.endDate):'Không thời hạn')+'</b></div>');
+  const row=(dot,dc,title,sub,right)=>'<div class="svc-tx-item"><div class="svc-tx-dot" style="background:'+dc[0]+';color:'+dc[1]+';font-weight:700">'+dot+'</div><div class="svc-tx-meta"><div class="svc-tx-name">'+title+'</div><div class="svc-tx-sub">'+sub+'</div></div><div class="svc-tx-right">'+right+'</div></div>';
+  const btn=s=>'<button onclick="svcRecCollect(\''+s+'\')" style="font-size:13px;font-weight:700;padding:8px 12px;min-height:36px;border-radius:8px;border:none;background:var(--navy);color:#fff;cursor:pointer;white-space:nowrap">Ghi thu</button>';
+  const cap=s=>s.charAt(0).toUpperCase()+s.slice(1);
+  let rows=[];
+  if(P.next)rows.push(row('›',['var(--light)','var(--muted)'],cap(recLabel(sv,P.next))+' · kỳ tới','Đến hạn '+fmtDMY(P.next)+(P.credit>=fee&&fee?' · đã trả trước':''),P.credit>=fee&&fee?'<div class="svc-tx-amt" style="color:var(--green)">✓</div>':btn(P.next)));
+  const past=[...P.list].reverse();const vis=showAll?past:past.slice(0,6);
+  vis.forEach(p=>{const st=p.full?['✓',['#e8f5e9','#1c7947']]:(p.over?['!',['#fdecea','#b03a2e']]:['○',['#fff3e0','#b26a00']]);
+    const sub='Đến hạn '+fmtDMY(p.start)+(p.full?' · đã thu':(p.paid?' · đã thu '+fmtK(p.paid)+'/'+fmtK(p.fee):(p.over?' · quá hạn':' · chưa thu')));
+    rows.push(row(st[0],st[1],cap(recLabel(sv,p.start)),sub,p.full?'<div class="svc-tx-amt" style="color:var(--green)">+'+fmtK(p.fee)+'</div>':btn(p.start)))});
+  if(!rows.length)rows.push('<div class="empty" style="padding:18px">Chưa đến kỳ thu đầu tiên</div>');
+  if(past.length>6)rows.push('<div onclick="svcRecToggle()" style="padding:12px;text-align:center;font-size:13px;font-weight:600;color:var(--navy);cursor:pointer">'+(showAll?'Thu gọn':'Xem tất cả '+past.length+' kỳ')+'</div>');
+  panel.style.display='';
+  panel.innerHTML='<div style="font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">Các kỳ thu phí</div><div style="background:var(--card);border:1px solid var(--bdr);border-radius:12px;margin-bottom:10px;overflow:hidden">'+rows.join('')+'</div>'};
+window.svcRecToggle=function(){showAll=!showAll;if(svcDetailId)openSvcDetail(svcDetailId)};
+window.svcRecCollect=function(start){const sv=db.services.find(s=>s.id===svcDetailId);if(!sv)return;const p=svcRecPeriods(sv).list.find(x=>x.start===start);const amt=p?Math.max(0,p.fee-p.paid):(+sv.fee||0);if(!amt){toast('Chưa đặt phí mỗi kỳ');return}
+  if(!sv.transactions)sv.transactions=[];const tx={id:'tx'+Date.now().toString(36)+Math.random().toString(36).slice(2,7),type:'income',amount:amt,date:today(),desc:'Phí '+recLabel(sv,start),note:''};sv.transactions.push(tx);save();openSvcDetail(sv.id);
+  toastUndo('Đã ghi thu '+fmtK(amt)+' đ',()=>{const i=sv.transactions.indexOf(tx);if(i>=0)sv.transactions.splice(i,1);save();if(svcDetailId===sv.id)openSvcDetail(sv.id);else renderAll()})};
+function endFix(sv,status){if(!REC(sv))return;if(status!=='open'){if(!sv.endDate){sv.endDate=today();sv._autoEnd=1}}else if(sv._autoEnd){sv.endDate='';delete sv._autoEnd}}
+const _sds=setDetailStatus;window.setDetailStatus=function(status){const sv=db.services.find(s=>s.id===svcDetailId);endFix(sv,status);_sds.apply(this,arguments);if(REC(sv)&&svcDetailId)openSvcDetail(svcDetailId)};
+const _sqd=svcQuickDone;window.svcQuickDone=function(id){endFix(db.services.find(s=>s.id===id),'done');_sqd.apply(this,arguments)};
+/* Form */
+function lbl(id,txt){const e=document.getElementById(id);let p=e&&e.parentElement;while(p&&!p.querySelector(':scope>label'))p=p.parentElement;const l=p&&p.querySelector(':scope>label');if(l)l.textContent=txt}
+window.sfSetBilling=function(b){window._sfBill=b;document.querySelectorAll('#sf-billing .chip').forEach(c=>c.classList.toggle('active',c.dataset.b===b));const r=b!=='once',cyc=b==='quarter'?'quý':'tháng';
+  lbl('sf-fee',r?'Phí mỗi '+cyc+' (đ)':'Phí dịch vụ (đ)');lbl('sf-cost',r?'Chi phí dự kiến / kỳ (đ)':'Chi phí dự kiến (đ)');lbl('sf-date',r?'Ngày bắt đầu HĐ':'Ngày nhận hồ sơ');lbl('sf-deadline',r?'Kết thúc HĐ (nếu có)':'Hạn xử lý');
+  const ty=document.getElementById('sf-type');if(r&&ty&&ty.value==='Tư vấn pháp lý')ty.value='Tư vấn thường xuyên'};
+(function inject(){const fee=document.getElementById('sf-fee');if(!fee||document.getElementById('sf-billing'))return;const ty=document.getElementById('sf-type');if(ty&&![...ty.options].some(o=>o.value==='Tư vấn thường xuyên')){const o=document.createElement('option');o.textContent='Tư vấn thường xuyên';ty.insertBefore(o,ty.options[1]||null)}
+  const row=fee.closest('.fg-2col');const box=document.createElement('div');box.id='sf-billing';box.className='form-group';
+  box.innerHTML='<label class="form-label">Hình thức thu phí</label><div style="display:flex;gap:6px;flex-wrap:wrap"><button type="button" class="chip active" data-b="once" onclick="sfSetBilling(\'once\')">Trọn gói</button><button type="button" class="chip" data-b="month" onclick="sfSetBilling(\'month\')">Định kỳ hàng tháng</button><button type="button" class="chip" data-b="quarter" onclick="sfSetBilling(\'quarter\')">Định kỳ hàng quý</button></div>';
+  row.parentNode.insertBefore(box,row)})();
+const _osf=openSvcForm;window.openSvcForm=function(editId){_osf.apply(this,arguments);const sv=editId?db.services.find(s=>s.id===editId):null;if(REC(sv)){document.getElementById('sf-deadline').value=sv.endDate||'';sfSetBilling(sv.cycle==='quarter'?'quarter':'month')}else sfSetBilling('once')};
+const _ss=saveService;window.saveService=function(){const b=window._sfBill||'once',eid=svcEditId,n=db.services.length,end=document.getElementById('sf-deadline').value;_ss.apply(this,arguments);
+  if(document.getElementById('svc-form-modal').classList.contains('open'))return;const sv=eid?db.services.find(s=>s.id===eid):(db.services.length>n?db.services[db.services.length-1]:null);if(!sv)return;
+  if(b==='once'){if(!REC(sv))return;delete sv.billing;delete sv.cycle;delete sv.endDate;delete sv._autoEnd}else{sv.billing='recurring';sv.cycle=b;sv.endDate=end||'';sv.deadline='';delete sv._autoEnd}
+  save();renderAll()};
+})();
+</script>
+<script>
+/* Dịch vụ → cộng vào Tiền mặt: định kỳ (mỗi khoản ghi) + trọn gói (khi Hoàn thành, từ nay) */
+(function(){
+function cashId(){const A=db.accounts||[];const c=A.find(a=>a.id==='cash')||A.find(a=>a.type==='cash')||A.find(a=>a.type!=='credit');return c&&c.id}
+window.svcCashTotal=function(){return(db.services||[]).reduce((s,sv)=>{if(sv.billing==='recurring'||(sv.toCash&&sv.status==='done'))return s+svcThu(sv)-svcChi(sv);return s},0)};
+const _ab=acctBalance;window.acctBalance=function(a){let b=_ab.apply(this,arguments);if(a&&a.id===cashId())b+=svcCashTotal();return b};
+function mark(sv,status){if(!sv||sv.billing==='recurring')return;if(status==='done')sv.toCash=1;else delete sv.toCash}
+const _sds=setDetailStatus;window.setDetailStatus=function(status){mark(db.services.find(s=>s.id===svcDetailId),status);_sds.apply(this,arguments)};
+const _sqd=svcQuickDone;window.svcQuickDone=function(id){mark(db.services.find(s=>s.id===id),'done');_sqd.apply(this,arguments)};
+})();
+</script>
+<script>
+/* Dịch vụ → dòng Thu trong Thu chi cá nhân (Tiền mặt), liên kết 2 chiều với hồ sơ */
+(function(){
+window.svcCashTotal=()=>0;
+function cashId(){const A=db.accounts||[];const c=A.find(a=>a.id==='cash')||A.find(a=>a.type==='cash')||A.find(a=>a.type!=='credit');return c?c.id:'cash'}
+const nid=()=>Date.now()*1000+Math.floor(Math.random()*1000);
+const who=sv=>sv.client||sv.name||'Khách hàng';
+function want(){const W=[];const ac=cashId();(db.services||[]).forEach(sv=>{
+  if(sv.billing==='recurring'){(sv.transactions||[]).forEach(x=>{if(!x.amount)return;if(!x.lid)x.lid=nid();W.push({id:x.lid,svcId:sv.id,svcTxId:x.id,amount:x.amount,flow:x.type==='expense'?'out':'in',date:x.date||today(),desc:(x.desc||(x.type==='expense'?'Chi phí dịch vụ':'Phí tư vấn'))+' · '+who(sv),note:x.note||''})})}
+  else if(sv.toCash&&sv.status==='done'){const net=svcThu(sv)-svcChi(sv);if(!net)return;if(!sv.cashDate)sv.cashDate=today();if(!sv.lid)sv.lid=nid();W.push({id:sv.lid,svcId:sv.id,svcTxId:'done',amount:Math.abs(net),flow:net>0?'in':'out',date:sv.cashDate,desc:'Dịch vụ · '+(sv.name||'Hồ sơ')+(sv.client?' ('+sv.client+')':''),note:'Lợi nhuận hồ sơ hoàn thành'})}
+ });return W.map(w=>Object.assign(w,{category:'Dịch vụ',group:'personal',account:ac}))}
+window.svcSyncLedger=function(){if(!db||!Array.isArray(db.transactions))return;const W=want(),map=new Map(W.map(w=>[String(w.id),w]));
+  db.transactions=db.transactions.filter(t=>!t.svcId||map.has(String(t.id)));
+  const have=new Map(db.transactions.filter(t=>t.svcId).map(t=>[String(t.id),t]));
+  W.forEach(w=>{const t=have.get(String(w.id));if(t){if(!t.account||t.account==='cash'||!(db.accounts||[]).some(a=>a.id===t.account))t.account=w.account;const acc=t.account;Object.assign(t,w,{account:acc})}else db.transactions.push(w)})};
+const _save=save;window.save=function(){try{svcSyncLedger()}catch(e){console.warn('svc ledger',e)}return _save.apply(this,arguments)};
+/* Mở / xoá dòng liên kết từ sổ Thu chi */
+const _oet=openEditTx;window.openEditTx=function(id){const t=(db.transactions||[]).find(x=>String(x.id)===String(id));if(t&&t.svcId&&db.services.some(s=>s.id===t.svcId)){openSvcDetail(t.svcId);toast('Khoản này thuộc hồ sơ dịch vụ — sửa tại đây');return}return _oet.apply(this,arguments)};
+const _dtb=deleteTxById;window.deleteTxById=function(id){const t=(db.transactions||[]).find(x=>String(x.id)===String(id));const sv=t&&t.svcId&&db.services.find(s=>s.id===t.svcId);if(!sv)return _dtb.apply(this,arguments);
+  if(t.svcTxId==='done'){const prev=sv.toCash;delete sv.toCash;save();renderAll();toastUndo('Đã bỏ ghi tiền mặt cho hồ sơ',()=>{sv.toCash=prev;save();renderAll()});return}
+  const i=(sv.transactions||[]).findIndex(x=>x.id===t.svcTxId);if(i<0){_dtb.apply(this,arguments);return}const item=sv.transactions[i];sv.transactions.splice(i,1);save();renderAll();toastUndo('Đã xoá khoản (cả trong hồ sơ)',()=>{sv.transactions.splice(i,0,item);save();renderAll()})};
+const _sds=setDetailStatus;window.setDetailStatus=function(status){const sv=db.services.find(s=>s.id===svcDetailId);if(sv&&sv.billing!=='recurring'&&status==='done'&&sv.status!=='done')sv.cashDate=today();_sds.apply(this,arguments)};
+const _sqd=svcQuickDone;window.svcQuickDone=function(id){const sv=db.services.find(s=>s.id===id);if(sv&&sv.billing!=='recurring'&&sv.status!=='done')sv.cashDate=today();_sqd.apply(this,arguments)};
+try{const n=JSON.stringify((db.transactions||[]).filter(t=>t.svcId).map(t=>[t.id,t.amount,t.date]));svcSyncLedger();if(JSON.stringify((db.transactions||[]).filter(t=>t.svcId).map(t=>[t.id,t.amount,t.date]))!==n){_save();renderAll()}}catch(e){}
+})();
+</script>
+<script>
+/* Ẩn tab / mục con → ẩn luôn lối nhập tương ứng ở nút + */
+(function(){
+const tOff=t=>{const b=document.getElementById('nav-'+t);return !!(b&&b.classList.contains('ah-off'))};
+const sOff=(s,x)=>{try{const b=ahSubBtn(s,x);return !!(b&&b.classList.contains('ah-off'))}catch(e){return false}};
+const off={company:()=>tOff('company')||sOff('company','company'),project:()=>tOff('company')||sOff('company','project'),service:()=>tOff('service')||sOff('service','list'),invest:()=>tOff('crypto')};
+window.ftEntryOff=off;
+const _oam=openAddModal;window.openAddModal=function(domain,showPicker){
+  if(domain&&domain!=='personal'&&off[domain]&&off[domain]())domain='personal';
+  const r=_oam.call(this,domain,showPicker);
+  if(showPicker){const dc=document.getElementById('dom-company'),dp=document.getElementById('dom-project');const hc=off.company(),hp=off.project();
+    if(dc)dc.style.display=hc?'none':'';if(dp)dp.style.display=hp?'none':'';
+    const row=document.getElementById('domain-row');if(row&&hc&&hp)row.style.display='none'}
+  return r};
+const _sd=typeof setDomain==='function'?setDomain:null;if(_sd)window.setDomain=function(d){if(d!=='personal'&&off[d]&&off[d]())d='personal';return _sd.call(this,d)};
+const _oqa=openQuickAdd;window.openQuickAdd=function(){const r=_oqa.apply(this,arguments);const m=document.getElementById('quick-add-menu');if(m){const rules=[["openAddModal('company')",off.company],['openJobForm(',off.project],['openSvcForm(',off.service],["openAddModal('invest')",off.invest]];
+  m.querySelectorAll('button').forEach(b=>{const oc=b.getAttribute('onclick')||'';if(rules.some(([s,f])=>oc.indexOf(s)>-1&&f()))b.remove()})}return r};
+})();
+</script>
+<script>
+/* Form hồ sơ dịch vụ gọn hơn: chọn hình thức trước, phần phụ thu gọn */
+(function(){
+const g=id=>document.getElementById(id);const M=document.querySelector('#svc-form-modal .modal');if(!M||M.dataset.slim)return;M.dataset.slim='1';
+const top=id=>{let p=g(id);while(p&&p.parentElement!==M)p=p.parentElement;return p};
+const handle=M.querySelector('.modal-handle'),title=g('svc-form-title'),bill=g('sf-billing'),nameG=top('sf-name'),cliG=top('sf-client'),typeG=top('sf-type'),dateG=top('sf-date'),feeG=top('sf-fee'),calc=g('sf-calc'),first=g('sf-firstpay-section'),btns=M.querySelector('.btn-row');
+if(!bill||!nameG||!feeG||!btns)return;
+const keep=new Set([handle,title,bill,nameG,cliG,typeG,dateG,feeG,calc,first,btns]);[...M.children].forEach(c=>{if(!keep.has(c))c.remove()});
+const lnk='background:none;border:none;color:var(--navy);font-weight:600;font-size:14px;padding:0;min-height:40px;cursor:pointer;display:flex;align-items:center;gap:6px;font-family:inherit;text-align:left';
+const mk=h=>{const d=document.createElement('div');d.innerHTML=h;return d.firstElementChild};
+/* Hình thức: thanh chọn 3 nút */
+bill.innerHTML='<div class="type-toggle" style="margin-bottom:4px"><button type="button" class="type-btn active" data-b="once" onclick="sfSetBilling(\'once\')">Trọn gói</button><button type="button" class="type-btn" data-b="month" onclick="sfSetBilling(\'month\')">Hàng tháng</button><button type="button" class="type-btn" data-b="quarter" onclick="sfSetBilling(\'quarter\')">Hàng quý</button></div><div id="sf-bill-hint" style="font-size:13px;color:var(--muted)">Thu theo từng hồ sơ, xong việc là hoàn thành</div>';
+/* Chi phí dự kiến: ẩn sau liên kết */
+const costCol=feeG.children[1];const cDisp=v=>v?costCol.style.removeProperty('display'):costCol.style.setProperty('display','none','important');cDisp(false);feeG.style.gridTemplateColumns='1fr';
+const costLnk=mk('<button type="button" id="sf-cost-lnk" style="'+lnk+';margin:-4px 0 4px">＋ Chi phí dự kiến</button>');
+window.sfShowCost=function(on){cDisp(on);feeG.style.gridTemplateColumns=on?'1fr 1fr':'1fr';costLnk.style.display=on?'none':'';if(on){try{g('sf-cost').focus()}catch(e){}}else{setMoneyVal('sf-cost',0);updateSfCalc()}};
+costLnk.onclick=()=>sfShowCost(true);
+/* Khoản thu đầu tiên: ẩn sau liên kết */
+const box=first&&first.querySelector('div[style*="sbg"]');if(first){[...first.children].forEach(c=>{if(c!==box)c.remove()});box.style.display='none';box.style.marginBottom='8px'}
+const firstLnk=mk('<button type="button" id="sf-first-lnk" style="'+lnk+'">＋ Khách đã trả / cọc trước</button>');
+window.sfShowFirst=function(on){if(!box)return;box.style.display=on?'':'none';firstLnk.style.display=on?'none':'';if(on){const b=window._sfBill||'once';if(b!=='once'&&!getMoneyVal('sf-firstpay'))setMoneyVal('sf-firstpay',getMoneyVal('sf-fee'));try{g('sf-firstpay').focus()}catch(e){}}};
+firstLnk.onclick=()=>sfShowFirst(true);if(first)first.insertBefore(firstLnk,box);
+/* Chi tiết thêm: loại DV + ghi chú */
+typeG.style.display='none';
+const moreLnk=mk('<button type="button" id="sf-more-lnk" style="'+lnk+'"></button>');
+const moreTxt=()=>{const t=g('sf-type').value,n=g('sf-note').value.trim();moreLnk.innerHTML='＋ Loại dịch vụ, ghi chú <span style="font-weight:400;color:var(--muted)">· '+(t||'')+(n?' · có ghi chú':'')+'</span>'};
+window.sfShowMore=function(on){typeG.style.display=on?'':'none';moreLnk.style.display=on?'none':''};
+moreLnk.onclick=()=>sfShowMore(true);g('sf-type').addEventListener('change',moreTxt);
+/* Sắp xếp lại */
+const sep=()=>mk('<div style="height:1px;background:var(--bdr);margin:4px 0 6px"></div>');
+[handle,title,bill,nameG,cliG,feeG,costLnk,calc,dateG,sep(),first,moreLnk,typeG,btns].forEach(n=>{if(n)M.appendChild(n)});
+bill.style.marginBottom='12px';
+/* Gợi ý theo hình thức + chi phí ẩn với định kỳ */
+const _sb=sfSetBilling;window.sfSetBilling=function(b){_sb.apply(this,arguments);document.querySelectorAll('#sf-billing [data-b]').forEach(c=>c.classList.toggle('active',c.dataset.b===b));
+  const h=g('sf-bill-hint');if(h)h.textContent=b==='once'?'Thu theo từng hồ sơ, xong việc là hoàn thành':'Tư vấn thường xuyên · thu mỗi '+(b==='quarter'?'quý':'tháng')+', tự nhắc khi đến kỳ';
+  firstLnk.textContent=b==='once'?'＋ Khách đã trả / cọc trước':'＋ Đã thu kỳ đầu';
+  const fn=g('sf-firstnote');if(fn&&!fn.value)fn.placeholder=b==='once'?'Cọc 50%, TT lần 1...':'Phí kỳ đầu';
+  moreTxt()};
+const _osf=openSvcForm;window.openSvcForm=function(editId){_osf.apply(this,arguments);sfShowCost(getMoneyVal('sf-cost')>0);sfShowFirst(false);sfShowMore(!!g('sf-note').value.trim());moreTxt()};
+const _usc=updateSfCalc;window.updateSfCalc=function(){_usc.apply(this,arguments);if(!getMoneyVal('sf-cost'))calc.style.display='none'};
+moreTxt();
 })();
 </script>
 </body>
