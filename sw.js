@@ -1,10 +1,10 @@
 // FinTrack VN — service worker: mở tức thì từ bộ nhớ máy, cập nhật ngầm
-const CACHE = 'fintrack-shell-v313';
+const CACHE = 'fintrack-shell-v314';
 const ASSETS = [
   './',
   'fintrack-vn.html',
   'fintrack-desktop.html',
-  'desktop-extras.js?v=274',
+  'desktop-extras.js?v=280',
   'manifest.json',
   'icon-192.png',
   'icon-512.png',
