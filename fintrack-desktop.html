@@ -3111,6 +3111,10 @@ function migrateData(){
         const target=Math.max(0,TOTAL_DEBT-instRem-dbtRem);
         _mb.opening=(_mb.opening||0)-(target-Math.max(0,-acctBalance(_mb)));}catch(e){}}
   }
+  // Gỡ nhãn demo khỏi tài khoản đã được dùng thật (có giao dịch / khoản góp không phải demo) — tránh "Xoá dữ liệu demo" xoá nhầm thẻ thật
+  (db.accounts||[]).forEach(a=>{if(!a.demo)return;const id=a.id;
+    const used=(db.transactions||[]).some(t=>!t.demo&&(t.account===id||t.from===id||t.to===id))||(db.installments||[]).some(i=>!i.demo&&i.card===id);
+    if(used){delete a.demo;changed=true}});
   if(!db._ccDemo2){db._ccDemo2=true;changed=true;ensureAccounts();
     if(!db.accounts.some(a=>a.id==='ac_mab'))db.accounts.push({id:'ac_mab',name:'Thẻ MB Bank',type:'credit',opening:0,limit:100000000,stDay:15,dueDay:28,demo:true});
   }
@@ -4496,7 +4500,9 @@ function forecastData(days){
     const nm=String(a.name||'').replace(/^thẻ\s+/i,'');let sPay=0;try{sPay=stmtSplit(a).pay||0}catch(e){sPay=CI.stmt||0}
     const per=k=>{const l=CI.insts.filter(i=>i.term-(i.paid||0)-(instInStmt(i,CI.closeStr)?1:0)>k);return l.reduce((x,i)=>x+(+i.per||0),0)+(l.length?(+a.instFeeMonthly||0):0)};
     let d=nextDueDate(a);if(!d)return;
-    if(sPay>0){if(d>=td&&d<=end)events.push({date:iso(d),name:'Hạn thẻ '+nm+' · sao kê đã chốt',amt:-sPay,type:'Thẻ'});d=new Date(d.getFullYear(),d.getMonth()+1,a.dueDay)}
+    // Hạn của sao kê ĐÃ CHỐT = ngày dueDay đầu tiên sau ngày chốt. Nếu d chính là hạn đó: ghi phần còn phải trả (nếu còn), rồi luôn chuyển sang tháng sau — chi kỳ mới thuộc sao kê sau, không thuộc hạn này.
+    const _cd=new Date(CI.closeStr);_cd.setHours(0,0,0,0);let _sd=new Date(_cd.getFullYear(),_cd.getMonth(),a.dueDay);if(_sd<=_cd)_sd=new Date(_cd.getFullYear(),_cd.getMonth()+1,a.dueDay);
+    if(iso(d)===iso(_sd)||sPay>0){if(sPay>0&&d>=td&&d<=end)events.push({date:iso(d),name:'Hạn thẻ '+nm+' · sao kê đã chốt',amt:-sPay,type:'Thẻ'});d=new Date(d.getFullYear(),d.getMonth()+1,a.dueDay)}
     let k=0,first=true;
     while(d<=end){const amt=(first?CI.cyc:0)+per(k);if(amt>0&&d>=td)events.push({date:iso(d),name:'Hạn thẻ '+nm+(first&&CI.cyc?' (dự kiến · chi kỳ mới + góp)':' (trả góp)'),amt:-Math.round(amt),type:'Thẻ'});first=false;k++;d=new Date(d.getFullYear(),d.getMonth()+1,a.dueDay)}
   });
@@ -6849,6 +6855,8 @@ function finishOnboard(keepDemo){
   localStorage.setItem('ob_done','1');
   document.getElementById('onboard-modal').style.display='none';
   if(!keepDemo){
+    if(ftCount(db)>0&&!confirm('Xoá toàn bộ dữ liệu hiện có để tạo sổ trống?'))return;
+    try{window.bkSnap&&window.bkSnap('Trước khi tạo sổ trống')}catch(e){}
     db={transactions:[],cryptoTrades:[],assets:[],debts:[],services:[],journals:[],goals:[],recurring:[],projects:['Công việc 1'],budgets:{personal:0,company:0,project:0}};
     save();renderAll();showTab('home');toast('Đã tạo sổ trống — bắt đầu ghi nhé ✓');
   }
@@ -7044,6 +7052,15 @@ async function initFirebase() {
   }
 }
 
+
+// ── Chống mất dữ liệu ──
+// 1) Môi trường xem thử (trình thiết kế / bản xem trước) KHÔNG được ghi lên máy chủ thật.
+const FT_SANDBOX=/claudeusercontent\.com$|(^|\.)claude\.ai$/.test(location.hostname)&&localStorage.getItem('ftAllowSandboxSync')!=='1';
+// 2) Đếm mục dữ liệu thật để phát hiện lần ghi làm mất nhiều dữ liệu.
+function ftCount(d){d=d||{};const n=k=>Array.isArray(d[k])?d[k].length:0;return n('transactions')+n('services')+n('cryptoTrades')+n('debts')+n('assets')+n('installments')}
+function ftBigLoss(from,to){const a=ftCount(from),b=ftCount(to);return a>=5&&(a-b)>=5&&b<a*0.6?{a,b}:null}
+async function ftCloudBackup(payload,why){try{const T=window._stTools;if(!T||!AUTH_UID||!payload)return;const slot='backup_auto_'+(((+localStorage.getItem('ftBkSlot')||0)%5)+1);localStorage.setItem('ftBkSlot',String((+localStorage.getItem('ftBkSlot')||0)+1));
+  await T.setDoc(T.doc(firestoreDb,'users',AUTH_UID,'fintrack',slot),{payload,_savedAt:Date.now(),why:why||'',_deviceId:DEVICE_ID})}catch(e){console.warn('cloud backup',e)}}
 // ── Đồng bộ: gộp 3 chiều theo id khi hai thiết bị cùng sửa ──
 function ftH(v){const s=JSON.stringify(v===undefined?null:v,(k,x)=>typeof x==='string'&&(x==='[IMG_LOCAL]'||(x.length>2000&&x.startsWith('data:')))?'#img':x)||'';let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return h+':'+s.length}
 const ftIsIdArr=v=>Array.isArray(v)&&v.every(x=>x&&typeof x==='object'&&x.id!=null);
@@ -7068,7 +7085,7 @@ function ftDecide(data,cloudDb){const cs=data._seq||0;if(data._deviceId&&data._d
   if(ftH(cloudDb)===ftH(db))return['ignore'];
   return['merge',ftGetBase(cs===pushed)||ftGetBase(false)]}
 function ftApplyCloud(kind,cloudDb,data,base){const cs=data._seq||0;
-  if(kind==='adopt'){db=cloudDb;localSeq=Math.max(cs,localSeq)}
+  if(kind==='adopt'){if(ftBigLoss(db,cloudDb)){try{window.bkSnap&&window.bkSnap('Trước khi nhận bản ít dữ liệu hơn')}catch(e){}}db=cloudDb;localSeq=Math.max(cs,localSeq)}
   else{const m=ftMerge(db,cloudDb,base);const same=ftH(m)===ftH(cloudDb);db=m;localSeq=same?Math.max(cs,localSeq):Math.max(localSeq,cs)+1}
   lastCloudSeq=Math.max(lastCloudSeq,cs);ftSetPushed(cs);ftSetBase(cloudDb,false);
   loadServiceImages();
@@ -7108,8 +7125,15 @@ function scheduleSync(setDoc, doc, serverTimestamp) {
 
 async function pushToCloud(setDoc, doc, serverTimestamp) {
   if (!firebaseReady || !firestoreDb) return;
+  if (FT_SANDBOX) { updateSyncUI('synced'); console.info('Bản xem thử: không ghi lên máy chủ'); return; }
   try {
     updateSyncUI('syncing');
+    // Chặn ghi đè làm mất nhiều dữ liệu: đọc bản trên máy chủ, sao lưu rồi hỏi lại
+    try{const T=window._stTools;if(T&&T.getDoc){const s=await T.getDoc(userDocRef(doc));const cd=s.exists()?s.data():null;let cdb=null;try{cdb=cd&&cd.payload?JSON.parse(cd.payload):null}catch(e){}
+      const L=cdb&&ftBigLoss(cdb,db);
+      if(L){await ftCloudBackup(cd.payload,'trước lần ghi '+L.a+'→'+L.b);try{await window.bkSnap('Trước khi ghi mất dữ liệu')}catch(e){}
+        if(!confirm('Cảnh báo: lần đồng bộ này sẽ giảm dữ liệu trên máy chủ từ '+L.a+' xuống '+L.b+' mục.\n\nĐã lưu bản sao trên máy chủ.\nOK = vẫn ghi · Huỷ = lấy lại bản trên máy chủ')){
+          db=cdb;localSeq=Math.max(localSeq,cd._seq||0);ftSetPushed(cd._seq||0);ftSetBase(cdb,false);localStorage.setItem(DB,JSON.stringify(leanDbForLocal()));localStorage.setItem(DB+'_seq',String(localSeq));lastCloudSeq=Math.max(lastCloudSeq,cd._seq||0);renderAll();updateSyncUI('synced');toast('Đã lấy lại dữ liệu trên máy chủ ✓');return}}}}catch(e){console.warn('loss guard',e)}
     // Loại bỏ ảnh base64 lớn trước khi sync (tiết kiệm quota)
     const dbToSync = JSON.parse(JSON.stringify(db));
     dbToSync.services = (dbToSync.services || []).map(sv => ({
@@ -7685,7 +7709,7 @@ function bkOpen(){return new Promise((ok,no)=>{if(BKDB)return ok(BKDB);if(!windo
 async function bkList(){const d=await bkOpen();return new Promise(ok=>{const q=d.transaction('snaps').objectStore('snaps').getAll();q.onsuccess=()=>ok((q.result||[]).sort((a,b)=>b.at-a.at));q.onerror=()=>ok([])})}
 async function bkTx(fn){const d=await bkOpen();return new Promise(ok=>{const tx=d.transaction('snaps','readwrite');fn(tx.objectStore('snaps'));tx.oncomplete=()=>ok();tx.onerror=()=>ok()})}
 const dtf=at=>{const d=new Date(at);return dm(d)+'/'+d.getFullYear()+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')};
-window.bkSnap=async function(reason){try{const data=JSON.stringify(db);await bkTx(s=>s.put({at:Date.now(),n:(db.transactions||[]).length,size:data.length,reason:reason||'Lưu tay',data}));const L=await bkList();if(L.length>8)await bkTx(s=>L.slice(8).forEach(x=>s.delete(x.at)));localStorage.setItem('ftBkAuto',String(Date.now()));renderBackup();if(reason==='Lưu tay')toast('Đã tạo bản lưu trên máy ✓')}catch(e){toast('Không lưu được: '+e.message)}};
+window.bkSnap=async function(reason){try{const data=JSON.stringify(db);await bkTx(s=>s.put({at:Date.now(),n:(db.transactions||[]).length,size:data.length,reason:reason||'Lưu tay',data}));const L=await bkList();const A=L.filter(x=>/Tự động/.test(x.reason)),O=L.filter(x=>!/Tự động/.test(x.reason));const del=[...A.slice(14),...O.slice(10)];if(del.length)await bkTx(s=>del.forEach(x=>s.delete(x.at)));if(/Tự động/.test(reason||''))localStorage.setItem('ftBkAuto',String(Date.now()));renderBackup();if(reason==='Lưu tay')toast('Đã tạo bản lưu trên máy ✓')}catch(e){toast('Không lưu được: '+e.message)}};
 window.backupShare=async function(){
   const name='fintrack-'+today()+'.json',blob=new Blob([JSON.stringify(db,null,1)],{type:'application/json'});
   const mark=()=>{localStorage.setItem('ftBkExport',String(Date.now()));renderBackup()};
@@ -7706,7 +7730,9 @@ window.renderBackup=async function(){
   const row=(ic,t,s,right)=>'<div style="display:flex;align-items:center;gap:12px;padding:11px 0;border-top:1px solid var(--bdr)"><div style="width:36px;height:36px;border-radius:10px;background:var(--light);color:var(--navy);display:flex;align-items:center;justify-content:center;flex-shrink:0">'+ic+'</div><div style="flex:1;min-width:0"><div style="font-size:15px;font-weight:600">'+t+'</div><div style="font-size:13px;color:var(--muted);margin-top:1px;line-height:1.4">'+s+'</div></div>'+(right||'')+'</div>';
   const sv=p=>'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+p+'</svg>';
   el.innerHTML='<div style="font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px">Dữ liệu đang được lưu ở</div>'
-   +row(sv('<rect x="7" y="2" width="10" height="20" rx="2"/><line x1="11" y1="18" x2="13" y2="18"/>'),'Bộ nhớ app trên máy này',L.length+' bản · '+kb+' KB · tự lưu mỗi tuần, giữ 8 bản gần nhất')
+   +row(sv('<rect x="7" y="2" width="10" height="20" rx="2"/><line x1="11" y1="18" x2="13" y2="18"/>'),'Bộ nhớ app trên máy này',L.length+' bản · '+kb+' KB · tự lưu mỗi ngày, giữ 14 ngày')
+   +row(sv('<path d="M17.5 19a4.5 4.5 0 100-9h-1.8A7 7 0 104 14.9"/><path d="M12 12v9M8.5 17.5L12 21l3.5-3.5"/>'),'Máy chủ (Firebase)','Tự lưu mỗi ngày, giữ 7 ngày gần nhất · '+(localStorage.getItem('ftBkCloudDay')===isoD(new Date())?'<b style="color:var(--green)">đã lưu hôm nay</b>':'chưa lưu hôm nay'))
+   +'<div id="bk-cloud" style="margin-top:4px"></div>'
    +row(sv('<path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>'),'Ra ngoài · '+(dest?escH(dest):'Tệp / iCloud / Drive'),'Gần nhất: <b style="color:'+(late?'var(--red)':'var(--text)')+'">'+(ex?dtf(ex)+(days?' · '+days+' ngày trước':' · hôm nay'):'chưa có')+'</b>'+(late?' · nên sao lưu':''))
    +'<div style="display:flex;gap:8px;align-items:center;margin-top:6px"><input id="bk-dest" class="form-input" placeholder="Ghi nơi lưu, VD: iCloud Drive › FinTrack" value="'+escH(dest)+'" style="flex:1;min-width:0;font-size:15px" onchange="localStorage.setItem(\'ftBkDest\',this.value.trim());renderBackup()"></div>'
    +'<div style="font-size:13px;color:var(--muted);margin-top:6px;line-height:1.45">iPhone không cho app tự chọn thư mục cố định — mỗi lần bấm sao lưu, chọn đúng thư mục ở bảng chia sẻ (Lưu vào Tệp → chọn thư mục).</div>'
@@ -7715,13 +7741,32 @@ window.renderBackup=async function(){
    +(L.length?'<div style="display:flex;flex-direction:column;gap:8px;margin-top:8px">'+L.map((s,i)=>{const d=new Date(s.at),hm=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'),auto=/Tự động/.test(s.reason),pre=/Trước khi/.test(s.reason);
       return '<div style="display:flex;align-items:center;gap:12px;padding:12px;border:1px solid var(--bdr);border-radius:14px;background:var(--light)">'
        +'<div style="width:46px;height:46px;border-radius:12px;background:var(--card,#fff);display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;line-height:1.05"><b style="font-size:17px">'+String(d.getDate()).padStart(2,'0')+'</b><span style="font-size:13px;color:var(--muted)">Th'+(d.getMonth()+1)+'</span></div>'
-       +'<div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap"><b style="font-size:15px">'+escH(auto?'Tự động hằng tuần':pre?'Trước khi khôi phục':s.reason)+'</b>'+(i===0?'<span style="font-size:13px;font-weight:700;color:var(--green);background:#e3f6ea;border-radius:6px;padding:1px 6px">Mới nhất</span>':'')+'</div>'
+       +'<div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap"><b style="font-size:15px">'+escH(auto?'Tự động hằng ngày':pre?'Trước khi khôi phục':s.reason)+'</b>'+(i===0?'<span style="font-size:13px;font-weight:700;color:var(--green);background:#e3f6ea;border-radius:6px;padding:1px 6px">Mới nhất</span>':'')+'</div>'
        +'<div style="font-size:14.5px;color:var(--muted);margin-top:2px">'+hm+' · '+d.getFullYear()+' · '+s.n+' giao dịch · '+Math.max(1,Math.round(s.size/1024))+' KB</div></div>'
-       +'<div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0"><button type="button" onclick="bkRestore('+s.at+')" style="min-width:84px;min-height:32px;border-radius:9px;border:1px solid var(--navy);background:var(--card,#fff);color:var(--navy);font-weight:600;font-size:14.5px;font-family:inherit;cursor:pointer">Khôi phục</button><button type="button" onclick="bkDownload('+s.at+')" style="min-width:84px;min-height:32px;border-radius:9px;border:1px solid var(--bdr);background:transparent;color:var(--muted);font-weight:600;font-size:14.5px;font-family:inherit;cursor:pointer">Lưu ra…</button></div></div>'}).join('')+'</div>':'<div style="font-size:15px;color:var(--muted);padding:6px 0">Chưa có bản nào — app tự lưu mỗi tuần.</div>')
+       +'<div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0"><button type="button" onclick="bkRestore('+s.at+')" style="min-width:84px;min-height:32px;border-radius:9px;border:1px solid var(--navy);background:var(--card,#fff);color:var(--navy);font-weight:600;font-size:14.5px;font-family:inherit;cursor:pointer">Khôi phục</button><button type="button" onclick="bkDownload('+s.at+')" style="min-width:84px;min-height:32px;border-radius:9px;border:1px solid var(--bdr);background:transparent;color:var(--muted);font-weight:600;font-size:14.5px;font-family:inherit;cursor:pointer">Lưu ra…</button></div></div>'}).join('')+'</div>':'<div style="font-size:15px;color:var(--muted);padding:6px 0">Chưa có bản nào — app tự lưu mỗi ngày.</div>')
    +'<button class="btn" style="width:100%;margin-top:10px" onclick="bkSnap(\'Lưu tay\')">Tạo bản lưu trên máy ngay</button>'
-   +'<div style="font-size:14.5px;color:var(--muted);margin-top:8px;line-height:1.5">Bản trên máy giữ 8 bản gần nhất, dùng khi lỡ xoá hoặc đồng bộ sai. Nên sao lưu ra Tệp/iCloud mỗi tuần để phòng mất máy.</div>';
+   +'<div style="font-size:14.5px;color:var(--muted);margin-top:8px;line-height:1.5">Mỗi ngày app tự lưu 1 bản trên máy (giữ 14 ngày) và 1 bản trên máy chủ (giữ 7 ngày) — dùng khi lỡ xoá hoặc đồng bộ sai. Nên thỉnh thoảng sao lưu ra Tệp/iCloud để phòng mất tài khoản.</div>';
+  try{const C=await bkCloudList();const ce=document.getElementById('bk-cloud');if(ce&&C.length)ce.innerHTML='<details><summary style="cursor:pointer;font-size:14px;font-weight:600;color:var(--navy);padding:4px 0 6px">Xem '+C.length+' bản trên máy chủ</summary><div style="display:flex;flex-direction:column;gap:6px">'+C.map(c=>'<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;border:1px solid var(--bdr);border-radius:12px"><span style="flex:1;font-size:14.5px"><b>'+c.day.split('-').reverse().join('/')+'</b> · '+(c.n||0)+' giao dịch</span><button type="button" onclick="bkCloudRestore('+c.slot+')" style="min-height:32px;padding:0 12px;border-radius:9px;border:1px solid var(--navy);background:var(--card,#fff);color:var(--navy);font-weight:600;font-size:14px;font-family:inherit;cursor:pointer">Khôi phục</button></div>').join('')+'</div></details>'}catch(e){}
 };
-setTimeout(async()=>{try{if(!(db.transactions||[]).length)return;const last=+localStorage.getItem('ftBkAuto')||0;if(Date.now()-last>=7*864e5)await bkSnap('Tự động hằng tuần');else renderBackup()}catch(e){}},9000);
+/* Sao lưu tự động MỖI NGÀY: 1 bản trên máy (giữ 14 ngày) + 1 bản trên máy chủ (giữ 7 ngày, ô theo thứ trong tuần) */
+const bkDay=()=>isoD(new Date());
+window.bkCloudSave=async function(){try{if(typeof FT_SANDBOX!=='undefined'&&FT_SANDBOX)return false;const T=window._stTools;if(!T||!firebaseReady||!AUTH_UID)return false;
+  const d=new Date(),day=bkDay();await T.setDoc(T.doc(firestoreDb,'users',AUTH_UID,'fintrack','daily_'+d.getDay()),{payload:JSON.stringify(db),day,_savedAt:Date.now(),n:(db.transactions||[]).length,_deviceId:DEVICE_ID});
+  localStorage.setItem('ftBkCloudDay',day);return true}catch(e){console.warn('daily cloud backup',e);return false}};
+window.bkCloudList=async function(){const T=window._stTools;if(!T||!firebaseReady||!AUTH_UID)return[];const out=[];
+  for(let i=0;i<7;i++){try{const s=await T.getDoc(T.doc(firestoreDb,'users',AUTH_UID,'fintrack','daily_'+i));if(s.exists()){const x=s.data();out.push({slot:i,day:x.day,at:x._savedAt,n:x.n})}}catch(e){}}
+  return out.sort((a,b)=>b.at-a.at)};
+window.bkCloudRestore=async function(slot){const T=window._stTools;if(!T)return;const s=await T.getDoc(T.doc(firestoreDb,'users',AUTH_UID,'fintrack','daily_'+slot));if(!s.exists())return;const x=s.data();
+  if(!confirm('Khôi phục bản máy chủ ngày '+x.day.split('-').reverse().join('/')+' ('+x.n+' giao dịch)?\n\nDữ liệu hiện tại được lưu thành một bản trên máy trước khi thay.'))return;
+  let d;try{d=JSON.parse(x.payload)}catch(e){toast('Bản lưu bị hỏng');return}if(!d||!Array.isArray(d.transactions)){toast('Bản lưu không hợp lệ');return}
+  await bkSnap('Trước khi khôi phục');db=d;save();renderAll();toast('Đã khôi phục ✓')};
+window.bkDaily=async function(){try{if(!(db.transactions||[]).length)return;const day=bkDay();
+  const last=+localStorage.getItem('ftBkAuto')||0;if(!last||isoD(new Date(last))!==day)await bkSnap('Tự động hằng ngày');
+  if(localStorage.getItem('ftBkCloudDay')!==day)await bkCloudSave();
+  renderBackup()}catch(e){}};
+setTimeout(bkDaily,9000);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')setTimeout(bkDaily,4000)});
+setInterval(bkDaily,60*60*1000);
 
 /* ── Widget iPhone ── */
 const WG_KEY='AIzaSyAwpp6UWe7yMLqhQlOmGc2lWHOVUqQFkYQ';
@@ -9660,8 +9705,8 @@ function cashId(){const A=db.accounts||[];const c=A.find(a=>a.id==='cash')||A.fi
 const nid=()=>Date.now()*1000+Math.floor(Math.random()*1000);
 const who=sv=>sv.client||sv.name||'Khách hàng';
 function want(){const W=[];const ac=cashId();(db.services||[]).forEach(sv=>{
-  if(sv.billing==='recurring'){(sv.transactions||[]).forEach(x=>{if(!x.amount)return;if(!x.lid)x.lid=nid();W.push({id:x.lid,svcId:sv.id,svcTxId:x.id,amount:x.amount,flow:x.type==='expense'?'out':'in',date:x.date||today(),desc:(x.desc||(x.type==='expense'?'Chi phí dịch vụ':'Phí tư vấn'))+' · '+who(sv),note:x.note||''})})}
-  else if(sv.toCash&&sv.status==='done'){const net=svcThu(sv)-svcChi(sv);if(!net)return;if(!sv.cashDate)sv.cashDate=today();if(!sv.lid)sv.lid=nid();W.push({id:sv.lid,svcId:sv.id,svcTxId:'done',amount:Math.abs(net),flow:net>0?'in':'out',date:sv.cashDate,desc:'Dịch vụ · '+(sv.name||'Hồ sơ')+(sv.client?' ('+sv.client+')':''),note:'Lợi nhuận hồ sơ hoàn thành'})}
+  if(sv.billing==='recurring'){(sv.transactions||[]).forEach(x=>{if(!x.amount)return;if(!x.lid)x.lid=nid();W.push({id:x.lid,svcId:sv.id,svcTxId:x.id,amount:x.amount,flow:x.type==='expense'?'out':'in',date:x.date||today(),desc:(sv.name||'Hồ sơ dịch vụ'),note:(x.desc||(x.type==='expense'?'Chi phí':'Thu phí'))})})}
+  else if(sv.toCash&&sv.status==='done'){const net=svcThu(sv)-svcChi(sv);if(!net)return;if(!sv.cashDate)sv.cashDate=today();if(!sv.lid)sv.lid=nid();W.push({id:sv.lid,svcId:sv.id,svcTxId:'done',amount:Math.abs(net),flow:net>0?'in':'out',date:sv.cashDate,desc:(sv.name||'Hồ sơ dịch vụ'),note:net>0?'Lợi nhuận':'Lỗ'})}
  });return W.map(w=>Object.assign(w,{category:'Dịch vụ',group:'personal',account:ac}))}
 window.svcSyncLedger=function(){if(!db||!Array.isArray(db.transactions))return;const W=want(),map=new Map(W.map(w=>[String(w.id),w]));
   db.transactions=db.transactions.filter(t=>!t.svcId||map.has(String(t.id)));
